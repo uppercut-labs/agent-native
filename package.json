@@ -1,0 +1,62 @@
+{
+  "name": "@uppercut-labs/agent-native",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Early implementation scaffold for agent-native capability contracts.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uppercut-labs/agent-native.git"
+  },
+  "bugs": {
+    "url": "https://github.com/uppercut-labs/agent-native/issues"
+  },
+  "homepage": "https://github.com/uppercut-labs/agent-native#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./contracts": {
+      "types": "./dist/core/contracts.d.ts",
+      "import": "./dist/core/contracts.js"
+    },
+    "./schema/zod": {
+      "types": "./dist/adapters/zod.d.ts",
+      "import": "./dist/adapters/zod.js"
+    },
+    "./diagnostics": {
+      "types": "./dist/core/diagnostics.d.ts",
+      "import": "./dist/core/diagnostics.js"
+    }
+  },
+  "scripts": {
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.browser.json",
+    "lint": "biome lint .",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "build": "tsc -p tsconfig.build.json",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "ajv": "8.20.0",
+    "typescript": "7.0.2"
+  }
+}
