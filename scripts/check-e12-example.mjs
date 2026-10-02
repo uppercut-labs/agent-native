@@ -1,0 +1,80 @@
+import { spawnSync } from 'node:child_process';
+import { copyFile, mkdir, readdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const projectSource = path.join(repositoryRoot, 'examples', 'e12-shared-unit-converter', 'project');
+const exportRoot = path.join(repositoryRoot, 'examples', 'e12-shared-unit-converter', '.exported');
+const vendorRoot = path.join(exportRoot, 'vendor');
+const packageManifest = JSON.parse(
+  await readFile(path.join(repositoryRoot, 'package.json'), 'utf8'),
+);
+const archiveName = `${packageManifest.name.slice(1).replace('/', '-')}-${packageManifest.version}.tgz`;
+const archivePath = path.join(vendorRoot, archiveName);
+const packageManagerCli = process.env.npm_execpath;
+
+if (packageManagerCli === undefined) {
+  throw new Error('Run this example check through the repository npm script.');
+}
+
+function runNpm(args, cwd) {
+  const result = spawnSync(process.execPath, [packageManagerCli, ...args], {
+    cwd,
+    stdio: 'inherit',
+    windowsHide: true,
+  });
+  if (result.error !== undefined) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    throw new Error(`npm ${args.join(' ')} failed with exit code ${result.status}`);
+  }
+}
+
+async function copyProjectFiles(sourceRoot, targetRoot) {
+  await mkdir(targetRoot, { recursive: true });
+  for (const entry of await readdir(sourceRoot, { withFileTypes: true })) {
+    const sourcePath = path.join(sourceRoot, entry.name);
+    const targetPath = path.join(targetRoot, entry.name);
+    if (entry.isDirectory()) {
+      await copyProjectFiles(sourcePath, targetPath);
+    } else if (entry.name !== 'package.template.json') {
+      await copyFile(sourcePath, targetPath);
+    }
+  }
+}
+
+runNpm(['run', 'build'], repositoryRoot);
+await mkdir(vendorRoot, { recursive: true });
+try {
+  await unlink(archivePath);
+} catch (error) {
+  if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') {
+    throw error;
+  }
+}
+runNpm(['pack', '--pack-destination', vendorRoot], repositoryRoot);
+await copyProjectFiles(projectSource, exportRoot);
+
+const packageTemplate = JSON.parse(
+  await readFile(path.join(projectSource, 'package.template.json'), 'utf8'),
+);
+packageTemplate.dependencies['@uppercut-labs/agent-native'] = `file:./vendor/${archiveName}`;
+await writeFile(
+  path.join(exportRoot, 'package.json'),
+  `${JSON.stringify(packageTemplate, null, 2)}\n`,
+);
+
+try {
+  await unlink(path.join(exportRoot, 'package-lock.json'));
+} catch (error) {
+  if (!(error instanceof Error) || !('code' in error) || error.code !== 'ENOENT') {
+    throw error;
+  }
+}
+runNpm(['install', '--package-lock-only', '--ignore-scripts'], exportRoot);
+runNpm(['ci'], exportRoot);
+runNpm(['test'], exportRoot);
+runNpm(['start'], exportRoot);
+process.stdout.write(`Standalone E12 project installed and tested at ${exportRoot}\n`);

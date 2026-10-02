@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "test/fixtures",
+    "outDir": ".test-dist"
+  },
+  "include": ["test/fixtures/sdk-any-boundary.ts"]
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "input": { "value": 12, "from": "in", "to": "cm" },
+    "output": { "value": 30.48, "unit": "cm" }
+  },
+  {
+    "input": { "value": 30.48, "from": "cm", "to": "in" },
+    "output": { "value": 12, "unit": "in" }
+  },
+  {
+    "input": { "value": 3.5, "from": "cm", "to": "cm" },
+    "output": { "value": 3.5, "unit": "cm" }
+  }
+]

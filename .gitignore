@@ -2,3 +2,5 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+.test-dist/
+examples/e12-shared-unit-converter/.exported/

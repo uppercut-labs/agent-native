@@ -45,17 +45,20 @@
   "scripts": {
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.browser.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.browser.json && tsc --noEmit -p tsconfig.sdk-proof.json",
     "lint": "biome lint .",
-    "test": "npm run build && node --test test/*.test.mjs",
+    "test": "npm run build && npm run build:test-fixtures && node --test test/*.test.mjs",
+    "build:test-fixtures": "tsc -p tsconfig.sdk-proof.json --noEmit false",
     "build": "tsc -p tsconfig.build.json",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
+    "example:e12": "node scripts/check-e12-example.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run example:e12"
   },
   "dependencies": {
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@modelcontextprotocol/server": "2.3.0",
     "ajv": "8.20.0",
     "typescript": "7.0.2"
   }

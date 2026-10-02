@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import Ajv2020 from 'ajv/dist/2020.js';
 import { test } from 'node:test';
-import { createDiagnosticObservation, defineCapability } from '../dist/index.js';
+import {
+  createDiagnosticObservation,
+  defineCapability,
+  DIAGNOSTIC_OBSERVATION_JSON_SCHEMA,
+} from '../dist/index.js';
 import { fromZod } from '../dist/adapters/zod.js';
 import * as z from 'zod';
 
@@ -144,6 +148,10 @@ test('defines immutable identities and rejects invalid major versions', () => {
 });
 
 test('serializes passed, failed, and unknown observations without payload fields', () => {
+  const validateObservation = new Ajv2020({ allErrors: true }).compile(
+    DIAGNOSTIC_OBSERVATION_JSON_SCHEMA,
+  );
+
   for (const status of ['passed', 'failed', 'unknown']) {
     const observation = createDiagnosticObservation({
       checkId: 'UAN-001.schema-spike',
@@ -158,7 +166,17 @@ test('serializes passed, failed, and unknown observations without payload fields
       evidenceRefs: ['E-UAN-001-01'],
     });
     assert.deepEqual(Object.keys(serialized).sort(), ['checkId', 'evidenceRefs', 'status']);
+    assert.equal(validateObservation(serialized), true);
   }
+
+  assert.equal(
+    validateObservation({
+      checkId: 'UAN-001.schema-spike',
+      status: 'pending',
+      evidenceRefs: [],
+    }),
+    false,
+  );
 
   assert.throws(
     () => createDiagnosticObservation({ checkId: 'bad-id', status: 'failed' }),

@@ -12,6 +12,21 @@ export type DiagnosticObservationOptions = {
   readonly evidenceRefs?: readonly string[];
 };
 
+export const DIAGNOSTIC_OBSERVATION_JSON_SCHEMA: Readonly<Record<string, unknown>> = Object.freeze({
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  type: 'object',
+  properties: {
+    checkId: { type: 'string', pattern: '^UAN-[0-9]{3}\\.[a-z0-9-]+$' },
+    status: { type: 'string', enum: ['passed', 'failed', 'unknown'] },
+    evidenceRefs: {
+      type: 'array',
+      items: { type: 'string', pattern: '^[A-Z][A-Z0-9._-]*$' },
+    },
+  },
+  required: ['checkId', 'status', 'evidenceRefs'],
+  additionalProperties: false,
+});
+
 export function createDiagnosticObservation(
   options: DiagnosticObservationOptions,
 ): DiagnosticObservation {

@@ -4,7 +4,10 @@ export type {
   CapabilityDefinitionOptions,
   CapabilityIdentity,
 } from './core/contracts.js';
-export { createDiagnosticObservation } from './core/diagnostics.js';
+export {
+  createDiagnosticObservation,
+  DIAGNOSTIC_OBSERVATION_JSON_SCHEMA,
+} from './core/diagnostics.js';
 export type {
   DiagnosticObservation,
   DiagnosticObservationOptions,
