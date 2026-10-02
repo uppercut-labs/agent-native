@@ -1,0 +1,49 @@
+{
+  "formatVersion": 1,
+  "ticket": "UAN-001",
+  "status": "local-baseline-verified",
+  "checkedOn": "2026-10-02",
+  "requirements": [
+    {
+      "id": "R03",
+      "status": "partial",
+      "evidence": ["test/core.test.mjs", "src/adapters/zod.ts"],
+      "scope": "Two UAN-001 shapes validated; all future supported schema paths remain to be tested."
+    },
+    {
+      "id": "R19",
+      "status": "partial",
+      "evidence": [
+        "tsconfig.browser.json",
+        "test/browser-contract-import.ts",
+        "test/core.test.mjs"
+      ],
+      "scope": "Core contract import only; no real-browser or full browser-bundle claim."
+    },
+    {
+      "id": "R23",
+      "status": "partial",
+      "evidence": ["biome.json", "tsconfig.json", "package.json"],
+      "scope": "Current owned source passes style and type checks; future examples and adapters are unbuilt."
+    }
+  ],
+  "examples": [
+    {
+      "id": "E12",
+      "status": "UAN-001-install-and-local-example-passed",
+      "source": "examples/e12-shared-unit-converter/project",
+      "exporter": "scripts/check-e12-example.mjs",
+      "installSource": "Fresh package tarball generated from this repository; no monorepo alias."
+    }
+  ],
+  "upstream": {
+    "mcpSdk": "@modelcontextprotocol/server@2.3.0",
+    "typeBoundary": "JsonSchemaType.default is compile-time confirmed as any, immediately normalized to unknown and runtime validated.",
+    "protocolConformance": "not-run"
+  },
+  "release": {
+    "npmPublished": false,
+    "hostCompatibility": "unknown",
+    "license": "MIT"
+  }
+}
