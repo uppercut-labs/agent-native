@@ -131,6 +131,8 @@ test('defines immutable identities and rejects invalid major versions', () => {
     description: 'Find an album by slug.',
     input: albumLookupInput,
     output: albumLookupOutput,
+    risk: 'read',
+    access: { kind: 'public' },
   });
 
   assert.equal(Object.isFrozen(capability), true);
@@ -142,6 +144,8 @@ test('defines immutable identities and rejects invalid major versions', () => {
         description: 'Find an album by slug.',
         input: albumLookupInput,
         output: albumLookupOutput,
+        risk: 'read',
+        access: { kind: 'public' },
       }),
     RangeError,
   );

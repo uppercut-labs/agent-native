@@ -1,4 +1,7 @@
-import { convertDistance } from './converter.mjs';
+import { runConversion } from './converter.mjs';
 
-const result = convertDistance({ value: 12, from: 'in', to: 'cm' });
-process.stdout.write(`${result.value} ${result.unit}\n`);
+const result = await runConversion({ value: 12, from: 'in', to: 'cm' });
+if (result.kind !== 'success') {
+  throw new Error(`Conversion failed: ${result.reason}`);
+}
+process.stdout.write(`${result.value.value} ${result.value.unit}\n`);

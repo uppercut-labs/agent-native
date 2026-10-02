@@ -18,4 +18,6 @@ export const browserContractImport = defineCapability({
   description: 'Look up an item by its identifier.',
   input: stringSchema,
   output: stringSchema,
+  risk: 'read',
+  access: { kind: 'public' },
 });

@@ -1,0 +1,17 @@
+{
+  "name": "e01-album-catalog-execution",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/cli.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@uppercut-labs/agent-native": "0.0.0",
+    "zod": "4.6.5"
+  }
+}

@@ -2,28 +2,48 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as z from 'zod';
-import { convertDistance, convertDistanceCapability } from '../src/converter.mjs';
+import {
+  convertDistanceCapability,
+  localConversionBinding,
+  runConversion,
+} from '../src/converter.mjs';
 
 const fixtures = JSON.parse(
   await readFile(new URL('../fixtures/conversions.json', import.meta.url), 'utf8'),
 );
 
-test('runs the fixed conversion fixtures through the pure capability binding', () => {
+test('executes conversion fixtures through the selected local binding', async () => {
   for (const fixture of fixtures) {
-    const result = convertDistance(fixture.input);
-    assert.deepEqual(result, fixture.output);
-    assert.deepEqual(convertDistanceCapability.output.parse(result), fixture.output);
+    const result = await runConversion(fixture.input);
+    assert.equal(result.kind, 'success');
+    if (result.kind === 'success') {
+      assert.equal(result.bindingId, localConversionBinding.id);
+      assert.deepEqual(result.value, fixture.output);
+      assert.deepEqual(convertDistanceCapability.output.parse(result.value), fixture.output);
+    }
   }
 });
 
-test('rejects unsupported units through the contract schema', () => {
-  assert.throws(() => convertDistance({ value: 2, from: 'mi', to: 'cm' }), z.ZodError);
-});
+test('fails closed on invalid input before calling a binding', async () => {
+  const result = await runConversion({ value: 2, from: 'mi', to: 'cm' });
 
-test('rejects non-finite values through the contract schema', () => {
+  assert.equal(result.kind, 'failure');
+  if (result.kind === 'failure') {
+    assert.equal(result.reason, 'invalid-input');
+    assert.equal(result.observation.status, 'failed');
+  }
   assert.throws(
-    () => convertDistance({ value: Number.POSITIVE_INFINITY, from: 'in', to: 'cm' }),
+    () => convertDistanceCapability.input.parse({ value: 2, from: 'mi', to: 'cm' }),
     z.ZodError,
   );
-  assert.throws(() => convertDistance({ value: Number.NaN, from: 'cm', to: 'in' }), z.ZodError);
+});
+
+test('rejects non-finite values through the input contract', async () => {
+  for (const value of [Number.POSITIVE_INFINITY, Number.NaN]) {
+    const result = await runConversion({ value, from: 'cm', to: 'in' });
+    assert.equal(result.kind, 'failure');
+    if (result.kind === 'failure') {
+      assert.equal(result.reason, 'invalid-input');
+    }
+  }
 });

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "license": "MIT",
-  "description": "Early implementation scaffold for agent-native capability contracts.",
+  "description": "Early implementation of typed capability contracts and local execution.",
   "repository": {
     "type": "git",
     "url": "https://github.com/uppercut-labs/agent-native.git"
@@ -33,6 +33,14 @@
       "types": "./dist/core/contracts.d.ts",
       "import": "./dist/core/contracts.js"
     },
+    "./registry": {
+      "types": "./dist/registry.d.ts",
+      "import": "./dist/registry.js"
+    },
+    "./executor": {
+      "types": "./dist/core/executor.d.ts",
+      "import": "./dist/core/executor.js"
+    },
     "./schema/zod": {
       "types": "./dist/adapters/zod.d.ts",
       "import": "./dist/adapters/zod.js"
@@ -50,8 +58,10 @@
     "test": "npm run build && npm run build:test-fixtures && node --test test/*.test.mjs",
     "build:test-fixtures": "tsc -p tsconfig.sdk-proof.json --noEmit false",
     "build": "tsc -p tsconfig.build.json",
-    "example:e12": "node scripts/check-e12-example.mjs",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run example:e12"
+    "build:browser-proof": "tsc -p tsconfig.browser-proof.json",
+    "example:e01": "node scripts/check-example.mjs e01-album-catalog",
+    "example:e12": "node scripts/check-example.mjs e12-shared-unit-converter",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run example:e01 && npm run example:e12"
   },
   "dependencies": {
     "zod": "4.6.5"

@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.browser.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": ".",
+    "outDir": ".test-dist/browser"
+  },
+  "include": ["src/core/**/*.ts", "test/browser-contract-import.ts"]
+}
