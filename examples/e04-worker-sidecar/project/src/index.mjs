@@ -1,6 +1,7 @@
 import { createHttpHandler } from '@uppercut-labs/agent-native/http';
 import { createMcpHandler } from '@uppercut-labs/agent-native/mcp';
 import { catalogRevision, registry } from './catalog.mjs';
+// docs:start worker-transports
 const http = createHttpHandler(registry, {
   basePath: '/agent-native/v1',
   maxRequestBytes: 8192,
@@ -11,6 +12,7 @@ const mcp = createMcpHandler(registry, {
   maxRequestBytes: 8192,
   deadlineMs: 5000,
 });
+// docs:end worker-transports
 const json = (body, status) =>
   new Response(JSON.stringify(body), {
     status,

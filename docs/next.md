@@ -29,3 +29,16 @@ no proposed edits.
 
 See the [E03 fixture](../examples/e03-next-reading-list/project/README.md) and
 [UAN-014 evidence draft](evidence/UAN-014-next.md).
+
+## Verify the ownership boundary
+
+With Node.js 22 or newer, run `npm ci` and `npm run example:e03` from the package root.
+The fresh export installs Next, tests routes and the official MCP client, builds the production
+app, and scans browser assets for a fake server-only sentinel. A cross-user save is denied
+before mutation by this checked owner guard:
+
+{{source:examples/e03-next-reading-list/project/lib/saved-list.js#saved-list-owner-check}}
+
+If the browser scan finds the sentinel, keep `server-only` modules out of client imports and
+rerun the export. The [E03 project](../examples/e03-next-reading-list/project/README.md)
+lists the expected final smoke lines and fixture limits.

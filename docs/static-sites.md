@@ -78,3 +78,24 @@ remain application/operator responsibilities.
 
 Cloudflare's primary references are the [Wrangler configuration guide](https://developers.cloudflare.com/workers/wrangler/configuration/)
 and [local development command](https://developers.cloudflare.com/workers/wrangler/commands/#dev).
+
+## Tested on-demand and sidecar source
+
+With Node.js 22 or newer and `npm ci` at the package root, `npm run example:e02` installs,
+builds, and tests the pinned Astro on-demand fixture. Its public catalog definition is:
+
+{{source:examples/e02-astro-on-demand-catalog/project/src/catalog.mjs#astro-album-contract}}
+
+The E02 fixture accepts an authenticated HTTP/MCP album lookup and denies anonymous execution;
+check its [standalone instructions](../examples/e02-astro-on-demand-catalog/project/README.md).
+If an on-demand route is inert, verify the application already has a supported server adapter
+and `prerender = false`; init does not install either.
+
+`npm run example:e04` installs the separate Worker fixture and checks its HTTP and MCP
+handlers locally. The sidecar mounts both transports from one registry:
+
+{{source:examples/e04-worker-sidecar/project/src/index.mjs#worker-transports}}
+
+A missing or stale `CATALOG_REVISION` yields a 503 health response; update it from E01's
+ordered public catalog before retrying. The [E04 instructions](../examples/e04-worker-sidecar/project/README.md)
+give the exact Wrangler local commands. Neither example deploys a service.

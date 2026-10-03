@@ -16,6 +16,7 @@ const album = z.object({
   summary: z.string(),
 });
 
+// docs:start astro-album-contract
 export const albumLookup = defineCapability({
   identity: { namespace: 'example.catalog', name: 'album.lookup', majorVersion: 1 },
   description: 'Look up one public sample album by slug.',
@@ -29,6 +30,7 @@ export const albumLookup = defineCapability({
   risk: 'read',
   access: { kind: 'public' },
 });
+// docs:end astro-album-contract
 
 export function lookupAlbum({ slug }) {
   const found = findAlbumBySlug(slug);

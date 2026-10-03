@@ -52,6 +52,7 @@ export class JsonFileGrantStore {
     });
   }
 
+  // docs:start revoke-grant
   async revoke(grantId, revokedAt) {
     return await this.#withWriteLock(async () => {
       const grants = await this.#read();
@@ -62,6 +63,7 @@ export class JsonFileGrantStore {
       return true;
     });
   }
+  // docs:end revoke-grant
 
   async #read() {
     try {

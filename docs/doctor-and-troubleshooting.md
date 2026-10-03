@@ -26,3 +26,14 @@ From the repository root, run `npm run example:e11` for a fresh tarball install 
 A real deployment needs its own check implementations, trusted identity provider, endpoint, and evidence collection. E11 does not certify a browser, commercial MCP host, or production credential.
 
 See [permissions and discovery](permissions-and-discovery.md), [fixture compatibility](compatibility.md), and the [E11 example README](https://github.com/uppercut-labs/agent-native/blob/main/examples/e11-diagnostics-fault-lab/project/README.md).
+
+## Source-backed profile selection
+
+With Node.js 22 or newer, run `npm ci` and `npm run example:e11` from the package root.
+The fixture defines its local and full required-check profiles in source:
+
+{{source:examples/e11-diagnostics-fault-lab/project/src/doctor.mjs#doctor-profiles}}
+
+A repaired fixture under `--profile local` exits 0; the same fixture under the default
+full profile exits 3 until the optional loopback endpoint checks are actually run. An unknown
+scenario fails before creating a sandbox. See [E11 commands and sandbox cleanup](../examples/e11-diagnostics-fault-lab/project/README.md).

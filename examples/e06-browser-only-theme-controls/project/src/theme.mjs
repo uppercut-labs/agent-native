@@ -19,6 +19,7 @@ export function createThemePage(document) {
     risk: 'write',
     access: { kind: 'protected', scopes: ['theme:change'] },
   });
+  // docs:start browser-theme-binding
   const binding = bindCapability(capability, {
     id: 'page-theme',
     targets: ['browser'],
@@ -27,6 +28,7 @@ export function createThemePage(document) {
       return { theme };
     },
   });
+  // docs:end browser-theme-binding
   const registry = createCapabilityRegistry([capability], [binding]);
   const authorization = {
     authorize(request) {

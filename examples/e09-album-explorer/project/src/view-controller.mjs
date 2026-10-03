@@ -48,10 +48,12 @@ export function createAlbumExplorerController({ app, toolName, outputSchema, ren
       }
       show({ kind: 'loading', slug });
       try {
+        // docs:start host-mediated-lookup
         const result = await app.callServerTool({ name: toolName, arguments: { slug } });
         const outcome = decodeResult(result, outputSchema);
         show(outcome);
         return outcome;
+        // docs:end host-mediated-lookup
       } catch {
         const outcome = {
           kind: 'denied',

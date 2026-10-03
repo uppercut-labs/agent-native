@@ -74,3 +74,12 @@ only definitions present in the registry and keep their existing authorization/d
 Run `npm run example:e08` for the independently installed contract-only package. It exports v1 and
 v2 album lookup contracts, keeps a stable v1 alias, uses two consumer bindings, checks old/new output
 fixtures, and exercises migration failures. E12 retains its established canonical unit-converter ID.
+
+## Reproduce coexistence
+
+With Node.js 22 or newer, run `npm ci` and `npm run example:e08` from the
+repository root. The standalone package installs v1 and v2 contracts and each
+consumer selects its intended major; the v1 alias remains pinned. A breaking
+same-ID replacement fails composition. Give the changed contract a new major,
+add a reviewed migration record, and keep the earlier major until its lifecycle
+policy explicitly permits removal. See [E08 setup](../examples/e08-reusable-versioned-pack/project/README.md).

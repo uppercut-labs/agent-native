@@ -32,6 +32,7 @@ const publicReadAuthorization = {
   },
 };
 
+// docs:start local-album-execution
 /** @param {unknown} input */
 export function runAlbumLookup(input) {
   return executeCapability(registry, {
@@ -42,6 +43,7 @@ export function runAlbumLookup(input) {
     authorization: publicReadAuthorization,
   });
 }
+// docs:end local-album-execution
 
 export const albumHttpHandler = createHttpHandler(registry, {
   resolveExecutionContext: () => ({

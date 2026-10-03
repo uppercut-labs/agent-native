@@ -49,3 +49,20 @@ authorization error, invalid output, and handler failure. Each failure includes 
 Run `npm run example:e01` and `npm run example:e12` at the repository root for fresh tarball
 exports, independent installs, tests, and CLI output. These examples do not implement the full E01
 Astro retrofit or claim browser, MCP, HTTP/OpenAPI, or real-host support.
+
+## Tested source and first run
+
+With Node.js 22 or newer, run `npm ci` in the repository root, then
+`npm run example:e01` and `npm run example:e12`. E01 returns a found or missing album through
+the local executor; a malformed slug fails input validation before its handler runs. E12 prints
+a versioned JSON conversion result with `30.48 cm`; an unsupported unit returns
+`invalid-input` before the shared converter runs. See the [E01 project](../examples/e01-album-catalog/project/README.md)
+and [E12 project](../examples/e12-shared-unit-converter/project/README.md) for independent exports.
+
+E01 executes a registered album lookup with an explicit public-read policy:
+
+{{source:examples/e01-album-catalog/project/src/catalog.mjs#local-album-execution}}
+
+E12 binds one conversion function to local and browser runtimes:
+
+{{source:examples/e12-shared-unit-converter/project/src/converter.mjs#shared-converter-bindings}}

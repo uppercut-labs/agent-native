@@ -59,3 +59,12 @@ cooperative cancellation.
 This slice has no framework-specific route installer or authenticated OpenAPI projection,
 rate limiter, or provider deployment integration. A host remains responsible for transport security,
 authentication, rate limiting, and deployment.
+
+## Reproduce the GET override
+
+With Node.js 22 or newer, run `npm ci` and `npm run example:e10` at the root.
+In the exported E10 project, start `npm start`, then request
+`http://127.0.0.1:8788/api/content/search?q=night&limit=1`; the response contains
+the existing first search match. Missing `q` or a fractional `limit` returns
+`invalid_input` without invoking the source function. Supply a valid query and
+integer limit, then retry. See [E10 setup](../examples/e10-existing-functions-retrofit/project/README.md).

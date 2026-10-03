@@ -15,7 +15,14 @@
         "test": "examples/e01-album-catalog/project/test/catalog.test.mjs",
         "probe": "rejects malformed slugs before authorization or handler execution",
         "expected": "Malformed slugs fail before the handler runs."
-      }
+      },
+      "requirements": [
+        "R01",
+        "R02",
+        "R03",
+        "R13",
+        "R15"
+      ]
     },
     {
       "id": "E02",
@@ -30,7 +37,11 @@
         "test": "examples/e02-astro-on-demand-catalog/project/test/catalog.test.mjs",
         "probe": "assert.throws(() => albumLookup.input.parse({ slug: 'not valid' }))",
         "expected": "An invalid album slug fails input parsing."
-      }
+      },
+      "requirements": [
+        "R06",
+        "R16"
+      ]
     },
     {
       "id": "E03",
@@ -45,7 +56,13 @@
         "test": "examples/e03-next-reading-list/project/test/saved-list-authorization.test.js",
         "probe": "a cross-user save is denied before the owner's list is mutated",
         "expected": "A cross-user save is denied before mutation."
-      }
+      },
+      "requirements": [
+        "R06",
+        "R07",
+        "R16",
+        "R19"
+      ]
     },
     {
       "id": "E04",
@@ -60,7 +77,13 @@
         "test": "examples/e04-worker-sidecar/project/test/sidecar.test.mjs",
         "probe": "Host and Origin use configured allowlists and deny unconfigured routes",
         "expected": "Unconfigured hosts, origins and routes are denied."
-      }
+      },
+      "requirements": [
+        "R06",
+        "R15",
+        "R16",
+        "R21"
+      ]
     },
     {
       "id": "E05",
@@ -75,7 +98,12 @@
         "test": "examples/e05-node-cli/project/test/cli.test.mjs",
         "probe": "invalid schema input, malformed stdin, unknown version, and missing profile fail closed",
         "expected": "Invalid input, missing profiles and unknown versions fail closed."
-      }
+      },
+      "requirements": [
+        "R06",
+        "R10",
+        "R16"
+      ]
     },
     {
       "id": "E06",
@@ -90,7 +118,11 @@
         "test": "examples/e06-browser-only-theme-controls/project/test/theme.test.mjs",
         "probe": "assert.equal(serverResult.reason, 'binding-unavailable')",
         "expected": "Server execution fails because the binding is browser-only."
-      }
+      },
+      "requirements": [
+        "R07",
+        "R22"
+      ]
     },
     {
       "id": "E07",
@@ -105,7 +137,12 @@
         "test": "examples/e07-playlist-permissions/project/test/e07.test.mjs",
         "probe": "E07 grant IDs cannot be reused to resurrect a revoked grant",
         "expected": "A revoked grant ID cannot be reused."
-      }
+      },
+      "requirements": [
+        "R11",
+        "R12",
+        "R20"
+      ]
     },
     {
       "id": "E08",
@@ -120,7 +157,12 @@
         "test": "examples/e08-reusable-versioned-pack/project/test/e08.test.mjs",
         "probe": "a v1 identity cannot silently accept a breaking replacement",
         "expected": "A breaking v1 replacement is rejected."
-      }
+      },
+      "requirements": [
+        "R04",
+        "R05",
+        "R24"
+      ]
     },
     {
       "id": "E09",
@@ -135,7 +177,11 @@
         "test": "examples/e09-album-explorer/project/test/e09.test.mjs",
         "probe": "E09 missing, denied, malformed UI data and text-only fallbacks have explicit states",
         "expected": "Missing, denied and malformed results keep explicit UI states."
-      }
+      },
+      "requirements": [
+        "R08",
+        "R22"
+      ]
     },
     {
       "id": "E10",
@@ -150,7 +196,12 @@
         "test": "examples/e10-existing-functions-retrofit/project/test/e10.test.mjs",
         "probe": "generated GET route rejects invalid input and mutation attempts",
         "expected": "Invalid GET inputs and mutations are rejected."
-      }
+      },
+      "requirements": [
+        "R09",
+        "R10",
+        "R18"
+      ]
     },
     {
       "id": "E11",
@@ -165,7 +216,11 @@
         "test": "examples/e11-diagnostics-fault-lab/project/test/fixture.test.mjs",
         "probe": "unknown scenario and invalid variant do not create a sandbox",
         "expected": "Unknown scenarios and invalid variants create no sandbox."
-      }
+      },
+      "requirements": [
+        "R17",
+        "R20"
+      ]
     },
     {
       "id": "E12",
@@ -180,7 +235,13 @@
         "test": "examples/e12-shared-unit-converter/project/test/converter.test.mjs",
         "probe": "fails closed on invalid input before calling a binding",
         "expected": "Invalid units fail before the binding runs."
-      }
+      },
+      "requirements": [
+        "R01",
+        "R02",
+        "R03",
+        "R10"
+      ]
     }
   ]
 }

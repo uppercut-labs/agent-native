@@ -7,8 +7,10 @@ import { httpHandler, mcpHandler } from './catalog.mjs';
 const defaultHostname = '127.0.0.1';
 
 export const app = new Hono();
+// docs:start hono-routes
 app.all('/agent-native/*', (context) => httpHandler(context.req.raw));
 app.all('/mcp', (context) => mcpHandler(context.req.raw));
+// docs:end hono-routes
 app.notFound((context) =>
   context.json({ error: { code: 'not_found', message: 'Not found.' } }, 404),
 );

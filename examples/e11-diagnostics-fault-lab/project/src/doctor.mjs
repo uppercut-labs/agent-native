@@ -26,6 +26,7 @@ const FULL_CHECK_IDS = [
   'UAN-019.endpoint-reachable',
   'UAN-019.health-protocol',
 ];
+// docs:start doctor-profiles
 export const E11_DOCTOR_PROFILES = Object.freeze({
   local: Object.freeze({
     id: 'local',
@@ -38,6 +39,7 @@ export const E11_DOCTOR_PROFILES = Object.freeze({
     requiredCheckIds: Object.freeze([...FULL_CHECK_IDS]),
   }),
 });
+// docs:end doctor-profiles
 
 async function exists(file) {
   try {

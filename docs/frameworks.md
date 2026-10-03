@@ -36,3 +36,16 @@ deployed host.
 Astro references: [integration hooks](https://docs.astro.build/en/reference/integrations-reference/)
 and [ClientRouter lifecycle](https://docs.astro.build/en/guides/view-transitions/).
 Hono reference: [official Node.js adapter guide](https://hono.dev/docs/getting-started/nodejs).
+
+## Verify the Hono mount
+
+With Node.js 22 or newer, run `npm ci` and `npm run example:e05` from the package root.
+The standalone export mounts the package HTTP and MCP handlers into one pinned Hono app:
+
+{{source:examples/e05-node-cli/project/src/server.mjs#hono-routes}}
+
+The harness checks the ordinary HTTP result and an official MCP client call on loopback.
+If the listen address is occupied, stop the other process or choose another `PORT`; the
+fixture reports `server_error=address-in-use`. See the
+[E05 application instructions](../examples/e05-node-cli/project/README.md) for local
+start, stop, and shell-only credential cleanup.

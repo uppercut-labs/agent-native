@@ -70,3 +70,12 @@ surfaceExposure: { mcp: { destructive: ['account:delete@1'] } }
 The adapter filters out definitions without one unique server binding and requires current token scopes plus a matching, unexpired, unrevoked grant before consulting `discoverProtected`; that callback only narrows discovery. The shared executor still checks every call. Exposure is also checked at the call boundary so a stale listing cannot retain destructive access.
 
 For the optional interactive MCP Apps presentation, use the isolated [/mcp-apps](mcp-apps.md) adapter and its E09 SDK conformance fixture. It keeps the regular text/structured tool result for hosts without MCP Apps rendering.
+
+## Reproduce a local protocol call
+
+Use Node.js 22 or newer, `npm ci`, then `npm run example:e04` from the repository
+root. The exported Worker starts locally under Wrangler and the official SDK client
+discovers and calls the public album tool through `/mcp`. A wrong configured
+`SIDECAR_HOST` yields a 421 response; set it to the local request host before
+retesting. The [E04 Worker instructions](../examples/e04-worker-sidecar/project/README.md)
+give the exact local settings and cleanup. This is loopback protocol evidence.

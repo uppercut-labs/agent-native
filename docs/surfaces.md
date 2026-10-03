@@ -14,3 +14,12 @@ All adapters project the same capability definitions and invoke the shared execu
 The MCP Apps adapter is optional. Core and browser consumers should import only their needed subpaths. The adapter pins the tested official peer at 2.0.3 and does not require React or another UI framework. E09 bundles a vanilla JavaScript view and reuses E01's album contract and data.
 
 The local conformance fixture verifies SDK-level result delivery and a host-mediated follow-up, but it does not prove a real iframe, CSP implementation, a commercial host, user confirmation prompts, or deployment. Real host qualification is tracked by UAN-023.
+
+## Choose a tested path
+
+Start with Node.js 22 or newer, `npm ci`, then `npm run example:e12` for a local
+binding or `npm run example:e05` for loopback HTTP/MCP. E12 prints a versioned
+conversion envelope; E05 checks both handlers from one registry. If a browser lacks
+`document.modelContext`, keep the ordinary human UI and use
+[browser-local fallback](browser.md). If a server adapter cannot load its optional
+peer, use [installation](installation.md) before mounting a route.

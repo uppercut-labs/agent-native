@@ -33,3 +33,16 @@ Run the standalone fixture with npm run example:e09. Its conformance fixture pai
 This fixture is SDK-level evidence, not browser iframe or commercial-host acceptance. No real MCP Apps host was exercised. Verify actual host rendering, sandbox/CSP enforcement, host confirmation behavior, and authentication in UAN-023. Core and browser-only imports do not import ext-apps; the adapter requires the optional peer only when its subpath is loaded.
 
 Official API references: [quickstart](https://github.com/modelcontextprotocol/ext-apps/blob/main/docs/quickstart.md) and [overview](https://github.com/modelcontextprotocol/ext-apps/blob/main/docs/overview.md).
+
+## Verify host-mediated follow-up
+
+With Node.js 22 or newer, run `npm ci` and `npm run example:e09` from the package root.
+The E09 controller calls the host bridge for a follow-up lookup:
+
+{{source:examples/e09-album-explorer/project/src/view-controller.mjs#host-mediated-lookup}}
+
+The SDK fixture checks found, missing, denied, malformed, and text-only fallback states.
+If the host supplies malformed input or denies a call, the view shows an explicit
+unavailable or denied state; it never fetches MCP credentials itself. See the
+[E09 project instructions](../examples/e09-album-explorer/project/README.md).
+A rendered browser host remains a separate compatibility check.

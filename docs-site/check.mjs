@@ -3,6 +3,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateCoverage } from './coverage-check.mjs';
+import { currentReference } from './reference.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
 const repositoryRoot = path.resolve(root, '..', '..');
@@ -48,6 +49,10 @@ if (index.length !== htmlFiles.length - 1) {
   failures.push(`Search index has ${index.length} records for ${htmlFiles.length - 1} guide pages`);
 }
 failures.push(...(await validateCoverage(repositoryRoot)));
+const actualReference = await readFile(path.join(repositoryRoot, 'docs', 'reference.md'), 'utf8');
+if (actualReference !== (await currentReference())) {
+  failures.push('docs/reference.md: generated API/CLI reference is stale');
+}
 if (failures.length) throw new Error(failures.join('\n'));
 console.log(
   `Validated ${htmlFiles.length} generated HTML pages, ${index.length} search entries, and 12 example coverage records`,

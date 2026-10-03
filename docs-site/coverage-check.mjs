@@ -59,7 +59,18 @@ export async function validateCoverage(repositoryRoot, suppliedManifest) {
       failures.push('coverage manifest: each example must be an object');
       continue;
     }
-    const { id, project, source, readme, guide, evidence, script, negative, feature } = entry;
+    const {
+      id,
+      project,
+      source,
+      readme,
+      guide,
+      evidence,
+      script,
+      negative,
+      feature,
+      requirements,
+    } = entry;
     if (!expectedIds.includes(id) || seenIds.has(id)) {
       failures.push(`coverage manifest: unexpected or duplicate example ID ${String(id)}`);
       continue;
@@ -72,6 +83,13 @@ export async function validateCoverage(repositoryRoot, suppliedManifest) {
     }
     seenProjects.add(project);
     if (typeof feature !== 'string' || !feature.trim()) failures.push(`${id}: missing feature`);
+    if (
+      !Array.isArray(requirements) ||
+      !requirements.length ||
+      requirements.some((item) => !/^R\d{2}$/.test(item))
+    ) {
+      failures.push(`${id}: invalid requirement coverage`);
+    }
     if (script !== `example:${id.toLowerCase()}`) failures.push(`${id}: invalid example script`);
     const packageScript = scripts[script];
     const exampleSlug = project.split('/')[1];
@@ -94,8 +112,13 @@ export async function validateCoverage(repositoryRoot, suppliedManifest) {
       failures.push(`${id}: invalid public guide`);
     } else {
       const guideText = await checkedFile(guide, `${id} guide`);
-      if (guideText !== null && !guideText.includes(id) && !guideText.includes(exampleSlug)) {
-        failures.push(`${id}: guide does not reference its example`);
+      if (guideText !== null) {
+        if (!guideText.includes(id) && !guideText.includes(exampleSlug)) {
+          failures.push(`${id}: guide does not reference its example`);
+        }
+        if (typeof source === 'string' && !guideText.includes(`{{source:${source}#`)) {
+          failures.push(`${id}: guide has no source-backed snippet from ${source}`);
+        }
       }
     }
     if (

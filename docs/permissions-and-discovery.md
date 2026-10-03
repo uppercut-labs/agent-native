@@ -29,3 +29,15 @@ The shared `evaluateCapabilityDiscovery` decision supports public reads, applica
 Destructive capabilities also require an exact per-app surface allowlist, such as `surfaceExposure: { mcp: { destructive: ['account:delete@1'] } }`. The current authorization check must still pass, and destructive exposure is rechecked at the adapter call boundary. This configuration does not change domain risk metadata. Browser and CLI use `browser` and `cli` keys. HTTP/OpenAPI remains public-read-only and lists only capabilities with a unique server binding.
 
 CLI help filters by usable local bindings or public remote routes. Hidden or unavailable identities receive a generic explanation. Applications should close `canDiscover` over a trusted caller from their authentication boundary, never infer identity from command arguments or user-provided text. Refresh browser sync and remote tool listing after login, grant, scope change and revocation.
+
+## Verify revocation locally
+
+With Node.js 22 or newer, run `npm ci` and `npm run example:e07` from the package root.
+The single-process fixture persists grants and revokes an existing ID in its local JSON store:
+
+{{source:examples/e07-playlist-permissions/project/src/grant-store.mjs#revoke-grant}}
+
+The negative test proves that a revoked ID cannot be saved again and that the next protected
+call is denied. If the fixture refuses to start in production mode, remove
+`NODE_ENV=production` and use the documented local test mode; this JSON store intentionally
+rejects production use. See [E07 setup and cleanup](../examples/e07-playlist-permissions/README.md).

@@ -14,3 +14,13 @@ The root, contracts, composition, registry, executor, browser, HTTP, CLI and ini
 The package does not install optional peers automatically. Application-owned routes, client libraries, framework adapters and deployment hosts remain separate. For example, the Astro on-demand fixture also installs @astrojs/node; the Next fixture installs Next and React. The browser-only E06 fixture installs Zod for its own schema and has no MCP server dependency.
 
 Run npm run check:portability from this repository to build, pack, install in a fresh core/browser consumer, verify that optional adapters are absent, and smoke-test the application-owned CLI adapter. See the [UAN-022 measured evidence](evidence/UAN-022-package-portability.md) for the environment, sizes and Worker fixture result.
+
+## Check a fresh consumer
+
+Use Node.js 22 or newer. From the repository root, run `npm ci` followed by
+`npm run check:portability`. The check packs the current source, installs
+a core/browser consumer without optional peers, verifies imports and the packed
+CLI, and checks every declared export in the tarball. A missing
+`@modelcontextprotocol/server` error from `/mcp` means the application needs
+that peer; install it only for that server integration. The package remains
+unpublished, so use the local tarball examples until an npm version is released.

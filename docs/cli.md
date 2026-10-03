@@ -65,3 +65,15 @@ official client SDK. It remains a local fixture, not a deployment or external cr
 ## Discovery filtering
 
 Help lists public reads by default. Applications may provide an async `canDiscover` callback for protected metadata and `surfaceExposure: { cli: { destructive: ['account:delete@1'] } }` for exact destructive exposure. Local help requires one unique local binding; remote help lists only public reads with one server binding. Direct destructive local invocation requires the explicit CLI exposure entry before input reaches a binding, and the shared executor independently checks authorization. Close `canDiscover` over a trusted caller from the application's auth boundary; do not infer identity from argv.
+
+## Exact runner options
+
+The [generated API and CLI reference](reference.md) lists every package import
+and each argument recognized by the current parser. `npm run docs:check`
+compares that page with the package manifest and CLI source.
+
+With Node.js 22 or newer, run `npm ci` then `npm run example:e10` at the repository
+root. In its exported project, `npm run search -- --query night --limit 1` yields the
+same versioned result envelope as the existing function. An empty query exits 2 with
+`invalid-input`; pass a nonempty query to repair it. See the
+[E10 CLI fixture](../examples/e10-existing-functions-retrofit/project/README.md).

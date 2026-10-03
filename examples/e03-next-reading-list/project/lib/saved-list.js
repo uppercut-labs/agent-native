@@ -37,11 +37,13 @@ export function saveBookForOwner({ identity, ownerUserId, bookId }) {
   return { ownerUserId, bookId, saved: true };
 }
 
+// docs:start saved-list-owner-check
 function authorizeOwner(identity, ownerUserId) {
   assertFixtureIdentity(identity);
   if (identity.userId !== ownerUserId) {
     throw new SavedListAuthorizationError();
   }
+  // docs:end saved-list-owner-check
 }
 
 void SERVER_ONLY_SENTINEL;

@@ -36,3 +36,16 @@ The API shape follows the current WebMCP draft at https://webmachinelearning.git
 That draft exposes Document.modelContext.registerTool() in secure contexts, and the registration
 options accept an AbortSignal. This package does not claim support for a particular browser
 release or agent host.
+
+## Verify the browser-only binding
+
+With Node.js 22 or newer, run `npm ci` and `npm run example:e06` from the package root.
+The exported page binds its theme action only to `browser`:
+
+{{source:examples/e06-browser-only-theme-controls/project/src/theme.mjs#browser-theme-binding}}
+
+The simulated lifecycle test checks registration, protected invocation, disposal, and the
+ordinary button fallback. A server invocation fails with `binding-unavailable`; use a
+separate server binding only if the application actually implements one. See the
+[E06 standalone instructions](../examples/e06-browser-only-theme-controls/project/README.md).
+No native WebMCP host result is implied by this fixture.

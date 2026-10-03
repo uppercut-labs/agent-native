@@ -24,6 +24,7 @@ const guideOrder = [
   'mcp-apps',
   'http',
   'cli',
+  'reference',
   'permissions-and-discovery',
   'composition-and-versioning',
   'doctor-and-troubleshooting',

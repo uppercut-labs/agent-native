@@ -1,24 +1,27 @@
-# Compatibility
+# Compatibility and evidence
 
-## Fixture-tested
+Agent Native remains a private `0.0.0` source preview. The table describes the exact local
+fixtures; it is not a claim for all releases of a runtime or every client.
 
-| Target | Evidence | Claim |
+| Surface | Runnable check | Verified boundary |
 | --- | --- | --- |
-| Node.js 25.9.0 local HTTP socket | Official client and server SDKs 2.3.0; client reports negotiated protocol 2025-11-25 | Fixture-tested |
-| WebMCP draft API shape | Simulated Document.modelContext fixture; lifecycle, executor and import-boundary checks | Simulated only; no native host claim |
+| Static Astro | `npm run example:e01` | Astro 7.3.5 static build and simulated WebMCP lifecycle |
+| Astro on-demand | `npm run example:e02` | Astro 7.3.5 with its existing Node adapter, HTTP route and official MCP SDK client |
+| Next App Router | `npm run example:e03` | Next 16.3.8 on Node, production route smoke and browser artifact scan |
+| Cloudflare Worker | `npm run example:e04` | Wrangler 4.147.0 local workerd, HTTP/OpenAPI and official MCP SDK client |
+| Node/Hono | `npm run example:e05` | Hono 4.13.12 and Node adapter 2.1.3 on loopback |
+| Browser-only WebMCP | `npm run example:e06` | Simulated `document.modelContext`; ordinary button fallback |
+| MCP Apps | `npm run example:e09` | Official ext-apps App/AppBridge fixture and local MCP client; no commercial host claim |
 
-The MCP fixture exercises tools/list and tools/call through the official Streamable HTTP client and
-server APIs. It also sends malformed transport input and an oversized request through the SDK
-handler, then uses an official client for invalid arguments and direct hidden-tool calls. Hidden
-bindings remain uncalled. The exact commands and outcomes are recorded in evidence/UAN-005.md.
+Use Node.js 22 or newer and `npm ci` at the repository root before a listed command.
+Each command packs the package into an independent exported project; the root
+`npm run check` runs all twelve examples on Node 22 and 24 in CI.
+The [example coverage manifest](../docs-site/coverage.json) maps all E01-E12 scripts, source,
+guides, negative probes, requirements and the CI gate. A malformed input or denied request
+is part of each example's test, not a successful operation to copy into an application.
 
-The WebMCP fixture exercises registration, invocation, auth resync, pagehide cleanup, unsupported
-browser fallback and the browser package import graph using a simulated API. It is not evidence of
-native browser-agent interoperability; see evidence/UAN-006.md.
-
-## Unverified
-
-No native WebMCP browser/agent, named commercial client, framework-specific mount, Cloudflare
-Workerd runtime, production deployment, OAuth authorization server, or physical host was tested. The protocol fixture is not a
-claim of universal MCP client or provider compatibility. Node versions other than the local test
-host remain unverified for this adapter.
+For a missing optional peer, install the exact adapter dependency in
+[installation](installation.md). For an inert route, check the application's adapter, runtime
+and route mapping in [frameworks](frameworks.md). Browser support still requires a native
+host result; a simulated `modelContext` cannot prove it. See
+[support and limitations](support-and-limitations.md) for the release boundary.

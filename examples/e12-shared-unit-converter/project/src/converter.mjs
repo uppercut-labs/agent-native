@@ -39,11 +39,13 @@ async function convertDistance(input) {
   return { value, unit: input.to };
 }
 
+// docs:start shared-converter-bindings
 export const localConversionBinding = bindCapability(convertDistanceCapability, {
   id: 'local-converter',
   targets: ['local'],
   execute: convertDistance,
 });
+// docs:end shared-converter-bindings
 
 export const browserConversionBinding = bindCapability(convertDistanceCapability, {
   id: 'browser-converter',

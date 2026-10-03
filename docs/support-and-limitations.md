@@ -10,7 +10,7 @@ The local MCP checks use official SDK client/server packages. The browser draft 
 
 ## Still open before release
 
-- All twelve independent example exports and broader source-backed documentation coverage remain later ticket work. E10 has a local after-state fixture, and E11 has a local fault/repair diagnostic fixture. Neither supplies real-host evidence.
+- All twelve independent example exports and their source-backed guide snippets are wired into the root CI command. A green local export or CI run does not supply real-host evidence.
 - Provider deployment, real commercial MCP Apps hosts, native browser agents, physical devices, and outsider installation are not yet certified.
 - OAuth issuance, durable production grant storage, application record policy, deployment ownership, and hosting remain application responsibilities.
 - The package is not published to npm. No installation command in these docs claims that it is.
