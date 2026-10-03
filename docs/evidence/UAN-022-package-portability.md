@@ -43,6 +43,12 @@ The check reported about 128 KB of tarball data and 555 KB of installed files fo
 
 This is a direct-package inventory, not a license review of every transitive dependency. The core/browser consumer installs no optional peer, so its runtime license set is the Agent Native tarball. Applications selecting framework/MCP/Zod integrations must inventory their actual resolved dependency tree.
 
+## Windows packed CLI smoke (2026-10-03)
+
+A tarball packed from canonical `72dab23` on research was copied to a fresh temporary Windows project whose path contains spaces (`Agent Native Windows CLI Smoke`). The project had its own `package.json` and npm used an explicit `--prefix` with `--omit=optional --ignore-scripts`. On Windows Node 24.18.0/npm 12.1.0, the 129,299-byte tarball installed 125 package files totaling 557,803 bytes. MCP, Astro and Zod optional peers were absent. Module resolution pointed inside that temporary project's `node_modules`.
+
+The application-owned packed CLI printed help and version, returned a successful `smoke:greet@1` local invocation (`Hello, Windows!`, exit 0), and returned a structured `invalid-input` envelope with exit 2 for a missing required argument. This is a Windows packed-library CLI adapter check, not a global `bin` command or a hosted remote CLI claim. The first attempted installation lacked a local manifest and npm selected the home project; the added dependency was uninstalled, its manifest and lockfile were verified free of Agent Native, and the prior `graceful-fs` package was present again. The reported result is from the subsequent explicitly isolated project.
+
 ## Remaining qualification
 
-Windows packed CLI remains unverified. Linux packed CLI will run in the Node 22/24 CI matrix once this change is integrated; the result must be checked there. Cold doctor timing, independent client bundle budgets, transitive dependency license review and outside-repository npm release installation remain open. One macOS timing sample is insufficient to set cross-platform performance thresholds. No npm publication or commercial host support is claimed.
+Windows packed CLI help/version/local invocation/invalid-input passed in an isolated path with spaces. Linux packed CLI will run in the Node 22/24 CI matrix once this change is integrated; the result must be checked there. Cold doctor timing, independent client bundle budgets, transitive dependency license review and outside-repository npm release installation remain open. One macOS timing sample is insufficient to set cross-platform performance thresholds. No npm publication or commercial host support is claimed.

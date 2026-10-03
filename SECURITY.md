@@ -1,6 +1,6 @@
 # Security model
 
-This package is an experimental source release at version `0.0.0`; no npm release or security support window is active yet. A maintainer-approved private reporting contact and disclosure process remain release gates. Please do not post credentials or exploit details in public issues.
+This package is an experimental source release at version `0.0.0`; no npm release or security support window is active yet. To report a vulnerability privately, use the **Report a vulnerability** button on the [repository Security Advisories page](https://github.com/uppercut-labs/agent-native/security/advisories). GitHub private vulnerability reporting was enabled and verified on 2026-10-03. Maintainers will triage reports privately before any coordinated disclosure; no response-time promise is made. Please do not post credentials or exploit details in public issues.
 
 ## Identity and permission boundaries
 

@@ -27,7 +27,8 @@ For protected capabilities, the application must provide token verification, iss
 
 ## Open acceptance gates
 
-- [ ] UAN-020 security/failure-safety review and approved private vulnerability reporting contact are complete.
+- [x] GitHub private vulnerability reporting is enabled for the public repository; the [Security Advisories page](https://github.com/uppercut-labs/agent-native/security/advisories) is the private report channel.
+- [ ] Finish UAN-020 security/failure-safety review and document its production support limits.
 - [ ] UAN-021 guides and every E01-E12 example have checked prerequisites, expected output, a negative path, and source-backed evidence.
 - [ ] UAN-022 Windows and Linux representative install/CLI behavior, dependency license inventory, and overhead measurements have a recorded decision.
 - [ ] UAN-023 named MCP Apps rendered-host and clean-context Astro adoption evidence is complete. Native WebMCP remains unsupported until a suitable host is actually tested.
