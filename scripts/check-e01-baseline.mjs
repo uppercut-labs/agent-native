@@ -83,9 +83,6 @@ runNpm(['run', 'build'], repositoryRoot);
 const retrofitRoot = await mkdtemp(path.join(os.tmpdir(), 'uan-init-retrofit with spaces-'));
 try {
   await cp(beforeRoot, retrofitRoot, { recursive: true });
-  const originalLock = JSON.parse(
-    await readFile(path.join(retrofitRoot, 'package-lock.json'), 'utf8'),
-  );
   await writeFile(
     path.join(retrofitRoot, 'src/private-unselected.mjs'),
     "throw new Error('app module must not be imported during detection');\n",
@@ -106,6 +103,7 @@ try {
     ],
     retrofitRoot,
   );
+  const installedLock = await readFile(path.join(retrofitRoot, 'package-lock.json'));
 
   const { createInitPlan, applyInitPlan } = await import('../dist/init.js');
   const choices = {
@@ -143,13 +141,11 @@ try {
   assert.match(javascript, /agent-native:ready/);
   assert.match(javascript, /albums\.example\.workers\.dev/);
 
-  const updatedLock = JSON.parse(
-    await readFile(path.join(retrofitRoot, 'package-lock.json'), 'utf8'),
+  assert.deepEqual(
+    await readFile(path.join(retrofitRoot, 'package-lock.json')),
+    installedLock,
+    'init changed the installed project lockfile',
   );
-  for (const [name, value] of Object.entries(originalLock.packages)) {
-    if (name !== '')
-      assert.deepEqual(updatedLock.packages[name], value, `unrelated lock entry changed: ${name}`);
-  }
 } finally {
   await rm(retrofitRoot, { recursive: true, force: true });
 }
