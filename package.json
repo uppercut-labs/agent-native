@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "license": "MIT",
-  "description": "Early implementation of typed capability contracts and local execution.",
+  "description": "Experimental typed capability contracts with local, HTTP, CLI, and MCP adapters.",
   "repository": {
     "type": "git",
     "url": "https://github.com/uppercut-labs/agent-native.git"
@@ -58,6 +58,10 @@
     "./diagnostics": {
       "types": "./dist/core/diagnostics.d.ts",
       "import": "./dist/core/diagnostics.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp.d.ts",
+      "import": "./dist/mcp.js"
     }
   },
   "scripts": {
@@ -75,11 +79,12 @@
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run example:e01 && npm run example:e12 && npm run example:e05"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.3.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
-    "@modelcontextprotocol/server": "2.3.0",
+    "@modelcontextprotocol/client": "2.3.0",
     "ajv": "8.20.0",
     "typescript": "7.0.2"
   }
