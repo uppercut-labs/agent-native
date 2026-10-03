@@ -45,9 +45,10 @@ effective target and redacted failure diagnostics. Exit codes are 0 for success,
 The CLI runner itself never spawns a shell. Applications that launch it should pass argv as an array
 and disable shell interpretation.
 
-See the installed E05 and E12 application examples for real local and loopback HTTP fixtures, positive output, timeout,
-credential, malformed-input, and handler-failure paths. E05 uses Node's built-in HTTP server and
-does not claim a Hono/MCP integration, deployment, or external credential provider.
+See the installed E05 and E12 application examples for local and loopback HTTP fixtures, positive
+output, timeout, credential, malformed-input, and handler-failure paths. E05 mounts the generated
+HTTP and MCP handlers into one pinned Node/Hono application and checks the MCP surface with the
+official client SDK. It remains a local fixture, not a deployment or external credential provider.
 
 ## Discovery filtering
 

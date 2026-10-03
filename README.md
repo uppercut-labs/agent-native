@@ -1,7 +1,7 @@
 # Uppercut Agent Native
 
 Uppercut Agent Native is an experimental package for typed capability contracts with local,
-HTTP, CLI, MCP, browser, and Astro static-site surfaces. The package working name is
+HTTP, CLI, MCP, Node/Hono, browser, and Astro static-site surfaces. The package working name is
 `@uppercut-labs/agent-native`; its manifest remains `private: true` at version `0.0.0`, so it
 cannot be published accidentally.
 
@@ -26,7 +26,8 @@ separate delete permission, restart persistence and revocation. See
 test-only and refuse production mode.
 
 Run `npm run example:e01`, `npm run example:e12`, or `npm run example:e05` to build and pack the
-package, install it independently into each example, and run its tests and runnable surface. E01
+package, install it independently into each example, and run its tests and runnable surface. E05
+uses one registry in a pinned Node/Hono host for generated HTTP and MCP plus local/remote CLI. E01
 also verifies a pre-existing multi-page static Astro fixture before and after integration. E04 checks a local workerd HTTP/OpenAPI roundtrip and official MCP client exchange; it does not deploy or configure DNS.
 
 The root, `./contracts`, `./registry`, and `./executor` entrypoints use only portable core modules.
