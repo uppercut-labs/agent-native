@@ -39,6 +39,14 @@ function createFixtureRegistry() {
     risk: 'destructive',
     access: { kind: 'protected', scopes: ['account:delete'] },
   });
+  const unbound = defineCapability({
+    identity: { namespace: 'example.catalog', name: 'unbound', majorVersion: 1 },
+    description: 'NO_SERVER_BINDING_SENTINEL',
+    input: fromZod(z.object({})),
+    output: fromZod(z.object({ ok: z.boolean() })),
+    risk: 'read',
+    access: { kind: 'public' },
+  });
   const lookupBinding = bindCapability(lookup, {
     id: 'public-catalog',
     targets: ['server'],
@@ -58,7 +66,7 @@ function createFixtureRegistry() {
     },
   });
   return {
-    registry: createCapabilityRegistry([lookup, hidden], [lookupBinding, hiddenBinding]),
+    registry: createCapabilityRegistry([lookup, hidden, unbound], [lookupBinding, hiddenBinding]),
     counts: () => ({ publicCalls, hiddenCalls }),
     hidden,
   };
@@ -131,6 +139,7 @@ test('official SDK client discovers and calls a public capability over real HTTP
     assert.equal(discovery.tools[0].inputSchema.properties.slug.type, 'string');
     assert.equal(discovery.tools[0].annotations.readOnlyHint, true);
     assert.equal(JSON.stringify(discovery).includes('PRIVATE_TOOL_SENTINEL'), false);
+    assert.equal(JSON.stringify(discovery).includes('NO_SERVER_BINDING_SENTINEL'), false);
 
     const result = await client.callTool({
       name: tool,
@@ -290,6 +299,159 @@ test('legacy canDiscover callback cannot opt protected definitions into discover
       }),
     );
     assert.deepEqual(fixture.counts(), { publicCalls: 0, hiddenCalls: 0 });
+  } finally {
+    await client.close();
+    await server.close();
+  }
+});
+
+test('permissive protected discovery cannot bypass current token scopes or durable grants', async () => {
+  const fixture = createFixtureRegistry();
+  const resource = new URL('https://mcp.example.test/resource');
+  const handler = createMcpHandler(fixture.registry, {
+    bearerAuth: {
+      verifier: {
+        async verifyAccessToken(token) {
+          return {
+            token,
+            clientId: 'mcp-fixture-client',
+            scopes: ['mcp'],
+            expiresAt: Math.floor(Date.now() / 1000) + 3600,
+            resource,
+          };
+        },
+      },
+      expectedResource: resource,
+    },
+    resolveTrustedPrincipal(authInfo) {
+      return {
+        issuer: 'https://issuer.example.test',
+        subject: 'caller-a',
+        clientId: authInfo.clientId,
+        tenantId: 'tenant-a',
+        audience: resource.toString(),
+        scopes: [...authInfo.scopes],
+        expiresAt: authInfo.expiresAt,
+      };
+    },
+    grantAuthorization: {
+      applicationId: 'mcp-discovery-test',
+      audience: resource.toString(),
+      policyRevision: 'v1',
+      store: { find: async () => [], save: async () => {}, revoke: async () => false },
+    },
+    discoverProtected: () => true,
+  });
+  const server = await listen(handler);
+  const client = new Client({ name: 'uan-011-no-grant-client', version: '1.0.0' });
+  const transport = new StreamableHTTPClientTransport(new URL(server.origin + '/mcp'), {
+    requestInit: { headers: { authorization: 'Bearer fixture-token' } },
+  });
+
+  try {
+    await client.connect(transport);
+    const tools = (await client.listTools()).tools;
+    assert.deepEqual(
+      tools.map((tool) => tool.name),
+      [mcpToolName(lookupIdentity)],
+    );
+    assert.equal(JSON.stringify(tools).includes('PRIVATE_TOOL_SENTINEL'), false);
+    await assert.rejects(
+      client.callTool({
+        name: mcpToolName(fixture.hidden.identity),
+        arguments: { accountId: 'account-a' },
+      }),
+    );
+    assert.deepEqual(fixture.counts(), { publicCalls: 0, hiddenCalls: 0 });
+  } finally {
+    await client.close();
+    await server.close();
+  }
+});
+
+test('MCP stale destructive calls recheck the live surface exposure before the binding', async () => {
+  const fixture = createFixtureRegistry();
+  const resource = new URL('https://mcp.example.test/resource');
+  const exposure = { mcp: { destructive: ['account:delete@1'] } };
+  const handler = createMcpHandler(fixture.registry, {
+    surfaceExposure: exposure,
+    bearerAuth: {
+      verifier: {
+        async verifyAccessToken(token) {
+          return {
+            token,
+            clientId: 'mcp-fixture-client',
+            scopes: ['mcp', 'account:delete'],
+            expiresAt: Math.floor(Date.now() / 1000) + 3600,
+            resource,
+          };
+        },
+      },
+      expectedResource: resource,
+    },
+    resolveTrustedPrincipal(authInfo) {
+      return {
+        issuer: 'https://issuer.example.test',
+        subject: 'caller-a',
+        clientId: authInfo.clientId,
+        tenantId: 'tenant-a',
+        audience: resource.toString(),
+        scopes: [...authInfo.scopes],
+        expiresAt: authInfo.expiresAt,
+      };
+    },
+    grantAuthorization: {
+      applicationId: 'mcp-discovery-test',
+      audience: resource.toString(),
+      policyRevision: 'v1',
+      store: {
+        async find() {
+          return [
+            {
+              issuer: 'https://issuer.example.test',
+              subject: 'caller-a',
+              clientId: 'mcp-fixture-client',
+              tenantId: 'tenant-a',
+              applicationId: 'mcp-discovery-test',
+              audience: resource.toString(),
+              policyRevision: 'v1',
+              grantId: 'delete-grant',
+              scopes: ['account:delete'],
+              issuedAt: Math.floor(Date.now() / 1000) - 1,
+              expiresAt: Math.floor(Date.now() / 1000) + 3600,
+              revokedAt: null,
+            },
+          ];
+        },
+        async save() {},
+        async revoke() {
+          return false;
+        },
+      },
+    },
+    discoverProtected: () => true,
+  });
+  const server = await listen(handler);
+  const client = new Client({ name: 'uan-011-stale-destructive-client', version: '1.0.0' });
+  const transport = new StreamableHTTPClientTransport(new URL(server.origin + '/mcp'), {
+    requestInit: { headers: { authorization: 'Bearer fixture-token' } },
+  });
+
+  try {
+    await client.connect(transport);
+    assert.ok(
+      (await client.listTools()).tools.some(
+        (tool) => tool.name === mcpToolName(fixture.hidden.identity),
+      ),
+    );
+    exposure.mcp.destructive.length = 0;
+    await assert.rejects(
+      client.callTool({
+        name: mcpToolName(fixture.hidden.identity),
+        arguments: { accountId: 'account-a' },
+      }),
+    );
+    assert.equal(fixture.counts().hiddenCalls, 0);
   } finally {
     await client.close();
     await server.close();

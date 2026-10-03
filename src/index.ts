@@ -59,3 +59,12 @@ export type {
   PersistedGrant,
   TrustedPrincipal,
 } from './auth.js';
+
+export { evaluateCapabilityDiscovery, isDestructiveCapabilityExposed } from './discovery.js';
+export type {
+  CapabilityDiscoveryAuthorizer,
+  CapabilitySurface,
+  CapabilitySurfaceExposure,
+  DiscoveryDecision,
+  DiscoveryDenialReason,
+} from './discovery.js';

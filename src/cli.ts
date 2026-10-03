@@ -3,6 +3,11 @@ import type { AuthorizationPort, ExecutionCaller, ExecutionResult } from './core
 import { executeCapability } from './core/executor.js';
 import type { CapabilityRegistry } from './core/registry.js';
 import { httpInvocationPath } from './http.js';
+import {
+  evaluateCapabilityDiscovery,
+  isDestructiveCapabilityExposed,
+  type CapabilitySurfaceExposure,
+} from './discovery.js';
 
 export const CLI_RESULT_SCHEMA_VERSION = 'uan.cli-result/v1';
 
@@ -66,6 +71,10 @@ export type CapabilityCliOptions = {
   readonly credentialProfiles?: Readonly<Record<string, CliCredentialProfile>>;
   readonly packageVersion?: string;
   readonly fetcher?: typeof fetch;
+  readonly surfaceExposure?: CapabilitySurfaceExposure;
+  readonly canDiscover?: (
+    definition: CapabilityDefinition<unknown, unknown>,
+  ) => boolean | Promise<boolean>;
 };
 
 type ParsedArguments = {
@@ -254,10 +263,34 @@ async function createInput(
   return input;
 }
 
+function hasCliBinding(
+  registry: CapabilityRegistry,
+  definition: CapabilityDefinition<unknown, unknown>,
+  mode?: 'local' | 'remote',
+  bindingId?: string,
+): boolean {
+  const id = canonicalCapabilityId(definition.identity);
+  const local = registry.bindings.filter(
+    (binding) =>
+      binding.capabilityId === id &&
+      binding.targets.includes('local') &&
+      (bindingId === undefined || binding.id === bindingId),
+  );
+  const server = registry.bindings.filter(
+    (binding) => binding.capabilityId === id && binding.targets.includes('server'),
+  );
+  const publicRead = definition.risk === 'read' && definition.access.kind === 'public';
+
+  if (mode === 'local' || bindingId !== undefined) return local.length === 1;
+  if (mode === 'remote') return publicRead && server.length === 1;
+  return local.length === 1 || (publicRead && server.length === 1);
+}
+
 function helpText(
   registry: CapabilityRegistry,
   packageVersion: string,
   selected?: CapabilityDefinition<unknown, unknown>,
+  visibleDefinitions: readonly CapabilityDefinition<unknown, unknown>[] = registry.definitions,
 ): string {
   const lines = [
     `@uppercut-labs/agent-native ${packageVersion} | CLI result ${CLI_RESULT_SCHEMA_VERSION}`,
@@ -269,7 +302,7 @@ function helpText(
     '',
     'Capabilities:',
   ];
-  for (const definition of selected === undefined ? registry.definitions : [selected]) {
+  for (const definition of selected === undefined ? visibleDefinitions : [selected]) {
     lines.push(`  ${canonicalCapabilityId(definition.identity)}  ${definition.description}`);
     for (const [key, schemaValue] of Object.entries(fieldProperties(definition))) {
       const schema =
@@ -400,7 +433,34 @@ export async function runCapabilityCli(
   if (parsed.help) {
     const selected =
       parsed.identity === undefined ? undefined : findDefinition(options.registry, parsed.identity);
-    streams.writeStdout(helpText(options.registry, packageVersion, selected));
+    if (parsed.identity !== undefined && selected === undefined) {
+      streams.writeStdout('Capability is unavailable or not visible.\n');
+      return 0;
+    }
+    const candidates = selected === undefined ? options.registry.definitions : [selected];
+    const visible: CapabilityDefinition<unknown, unknown>[] = [];
+    for (const definition of candidates) {
+      if (!hasCliBinding(options.registry, definition, parsed.mode, parsed.bindingId)) continue;
+      const decision = await evaluateCapabilityDiscovery(
+        definition,
+        'cli',
+        options.surfaceExposure,
+        options.canDiscover,
+      );
+      if (decision.visible) visible.push(definition);
+    }
+    if (parsed.identity !== undefined && visible.length === 0) {
+      streams.writeStdout('Capability is unavailable or not visible.\n');
+      return 0;
+    }
+    streams.writeStdout(
+      helpText(
+        options.registry,
+        packageVersion,
+        parsed.identity === undefined ? undefined : visible[0],
+        visible,
+      ),
+    );
     return 0;
   }
   if (parsed.identity === undefined) return writeFailure(streams, 'capability-identity-required');
@@ -418,6 +478,12 @@ export async function runCapabilityCli(
     return writeFailure(streams, 'invalid-capability-identity');
   }
   if (definition === undefined) return writeFailure(streams, 'capability-missing');
+  if (!hasCliBinding(options.registry, definition, parsed.mode, parsed.bindingId)) {
+    return writeFailure(streams, 'capability-unavailable', parsed.mode);
+  }
+  if (!isDestructiveCapabilityExposed(definition, 'cli', options.surfaceExposure)) {
+    return writeFailure(streams, 'capability-unavailable', parsed.mode);
+  }
 
   let input: unknown;
   try {

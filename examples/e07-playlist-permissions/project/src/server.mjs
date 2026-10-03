@@ -6,6 +6,7 @@ import {
   bindCapability,
   createCapabilityRegistry,
   defineCapability,
+  evaluateCapabilityDiscovery,
   hasGrantForScopes,
 } from '@uppercut-labs/agent-native';
 import { JsonFileGrantStore } from './grant-store.mjs';
@@ -15,7 +16,7 @@ import { createTestVerifier, E07_RESOURCE, resolveTestPrincipal } from './test-a
 const APPLICATION_ID = 'e07-playlist-permissions';
 const POLICY_REVISION = 'playlist-policy-v1';
 
-export async function createE07Service({ grantPath, playlistPath }) {
+export async function createE07Service({ grantPath, playlistPath, surfaceExposure = {} }) {
   if (process.env.NODE_ENV === 'production' || process.env.UAN_E07_TEST_MODE !== '1') {
     throw new Error('E07 is a disposable local fixture and refuses production mode.');
   }
@@ -82,6 +83,7 @@ export async function createE07Service({ grantPath, playlistPath }) {
       expectedResource: new URL(E07_RESOURCE),
     },
     resolveTrustedPrincipal: resolveTestPrincipal,
+    surfaceExposure,
     grantAuthorization: {
       applicationId: APPLICATION_ID,
       audience: E07_RESOURCE,
@@ -94,15 +96,23 @@ export async function createE07Service({ grantPath, playlistPath }) {
     },
     discoverProtected: async (definition, _request, authInfo) => {
       const principal = resolveTestPrincipal(authInfo);
-      if (principal === null || definition.access.kind !== 'protected') return false;
-      return await hasGrantForScopes({
-        principal,
-        applicationId: APPLICATION_ID,
-        audience: E07_RESOURCE,
-        policyRevision: POLICY_REVISION,
-        store: grants,
-        requiredScopes: definition.access.scopes,
-      });
+      const decision = await evaluateCapabilityDiscovery(
+        definition,
+        'mcp',
+        surfaceExposure,
+        async (candidate) =>
+          principal !== null &&
+          candidate.access.kind === 'protected' &&
+          (await hasGrantForScopes({
+            principal,
+            applicationId: APPLICATION_ID,
+            audience: E07_RESOURCE,
+            policyRevision: POLICY_REVISION,
+            store: grants,
+            requiredScopes: candidate.access.scopes,
+          })),
+      );
+      return decision.visible;
     },
   });
 
@@ -153,7 +163,11 @@ if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
   const grantPath = process.env.E07_GRANTS_PATH;
   const playlistPath = process.env.E07_PLAYLISTS_PATH;
   const port = Number(process.env.PORT ?? 0);
-  const { handler } = await createE07Service({ grantPath, playlistPath });
+  const surfaceExposure =
+    process.env.E07_EXPOSE_DELETE === '1'
+      ? { mcp: { destructive: ['e07.playlists:delete@1'] } }
+      : {};
+  const { handler } = await createE07Service({ grantPath, playlistPath, surfaceExposure });
   const server = await listenE07(handler, port);
   process.stdout.write('READY ' + server.origin + '\n');
   const stop = async () => {

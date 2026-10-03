@@ -18,13 +18,14 @@ const issuer = 'https://e07.test-issuer.invalid';
 const audience = 'https://e07.test-resource.invalid/mcp';
 const app = 'e07-playlist-permissions';
 
-async function startFixture(grantPath, playlistPath) {
+async function startFixture(grantPath, playlistPath, { exposeDelete = false } = {}) {
   const child = spawn(process.execPath, ['src/server.mjs'], {
     cwd: projectRoot,
     env: {
       ...process.env,
       NODE_ENV: 'test',
       UAN_E07_TEST_MODE: '1',
+      E07_EXPOSE_DELETE: exposeDelete ? '1' : '0',
       E07_GRANTS_PATH: grantPath,
       E07_PLAYLISTS_PATH: playlistPath,
       PORT: '0',
@@ -224,6 +225,13 @@ test('E07 uses scoped durable grants, official bearer auth, distinct tenants and
       (await alice.listTools()).tools.map((tool) => tool.name).sort(),
       [mcpToolName(editIdentity), mcpToolName(listIdentity)].sort(),
     );
+    const bobTools = (await bob.listTools()).tools.map((tool) => tool.name);
+    assert.equal(bobTools.includes(mcpToolName(deleteIdentity)), false);
+    assert.equal(
+      (await alice.listTools()).tools.some((tool) => tool.name === mcpToolName(deleteIdentity)),
+      false,
+    );
+
     const editOnce = await alice.callTool({
       name: mcpToolName(editIdentity),
       arguments: { playlistId: 'playlist-a', title: 'First title' },
@@ -299,12 +307,37 @@ test('E07 uses scoped durable grants, official bearer auth, distinct tenants and
     assert.equal(resumed.structuredContent.result.title, 'After restart');
 
     await grantStore.save(grant('alice', 'tenant-a', 'playlist:delete', 'alice-delete'));
+    const unexposedDeleteClient = await connect(server.origin, 'alice-token');
+    clients.push(unexposedDeleteClient);
+    assert.equal(
+      (await unexposedDeleteClient.listTools()).tools.some(
+        (tool) => tool.name === mcpToolName(deleteIdentity),
+      ),
+      false,
+    );
+    await assert.rejects(
+      unexposedDeleteClient.callTool({
+        name: mcpToolName(deleteIdentity),
+        arguments: { playlistId: 'playlist-a-delete' },
+      }),
+    );
+
+    await server.stop();
+    server = await startFixture(grantPath, playlistPath, { exposeDelete: true });
     const deleteClient = await connect(server.origin, 'alice-token');
     clients.push(deleteClient);
     assert.ok(
       (await deleteClient.listTools()).tools.some(
         (tool) => tool.name === mcpToolName(deleteIdentity),
       ),
+    );
+    const bobAfterExposure = await connect(server.origin, 'bob-token');
+    clients.push(bobAfterExposure);
+    assert.equal(
+      (await bobAfterExposure.listTools()).tools.some(
+        (tool) => tool.name === mcpToolName(deleteIdentity),
+      ),
+      false,
     );
     const deleted = await deleteClient.callTool({
       name: mcpToolName(deleteIdentity),
@@ -313,6 +346,12 @@ test('E07 uses scoped durable grants, official bearer auth, distinct tenants and
     assert.equal(deleted.isError, undefined);
     assert.equal(deleted.structuredContent.result.deleted, true);
     assert.equal(await grantStore.revoke('alice-delete', Math.floor(Date.now() / 1000)), true);
+    assert.equal(
+      (await deleteClient.listTools()).tools.some(
+        (tool) => tool.name === mcpToolName(deleteIdentity),
+      ),
+      false,
+    );
 
     await assert.rejects(
       deleteClient.callTool({

@@ -5,6 +5,11 @@ import {
   type ExecutionCaller,
 } from './core/executor.js';
 import type { CapabilityRegistry } from './core/registry.js';
+import {
+  evaluateCapabilityDiscovery,
+  isDestructiveCapabilityExposed,
+  type CapabilitySurfaceExposure,
+} from './discovery.js';
 
 export type WebMcpTool = {
   readonly name: string;
@@ -32,6 +37,7 @@ export type BrowserExecutionContext = {
 };
 
 export type BrowserAdapterOptions = {
+  readonly surfaceExposure?: CapabilitySurfaceExposure;
   readonly canExpose?: (
     definition: CapabilityDefinition<unknown, unknown>,
   ) => boolean | Promise<boolean>;
@@ -186,13 +192,13 @@ class BrowserAdapter implements BrowserCapabilityAdapter {
           continue;
         }
 
-        let exposed: boolean;
-        try {
-          exposed = await (options.canExpose?.(definition) ??
-            (definition.access.kind === 'public' && definition.risk === 'read'));
-        } catch {
-          exposed = false;
-        }
+        const discovery = await evaluateCapabilityDiscovery(
+          definition,
+          'browser',
+          options.surfaceExposure,
+          options.canExpose,
+        );
+        const exposed = discovery.visible;
         if (!exposed) {
           skipped.push({ capabilityId, reason: 'policy-denied' });
           continue;
@@ -206,11 +212,19 @@ class BrowserAdapter implements BrowserCapabilityAdapter {
               title: capabilityId,
               description: definition.description,
               inputSchema,
-              annotations: { readOnlyHint: definition.risk === 'read' },
+              annotations: {
+                readOnlyHint: definition.risk === 'read',
+                destructiveHint: definition.risk === 'destructive',
+              },
               execute: async (input, execution) => {
                 const linked = linkAbortSignals([controller.signal, execution.signal]);
                 try {
                   if (linked.signal.aborted) return safeError('deadline-exceeded');
+                  if (
+                    !isDestructiveCapabilityExposed(definition, 'browser', options.surfaceExposure)
+                  ) {
+                    return safeError('unauthorized');
+                  }
                   let context: BrowserExecutionContext;
                   try {
                     context = (await options.resolveExecutionContext?.()) ?? defaultContext();

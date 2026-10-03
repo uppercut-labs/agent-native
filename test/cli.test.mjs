@@ -138,3 +138,147 @@ test('stdin port errors become a machine-readable CLI failure without handler ca
   assert.equal(result.stderr.includes('stdin transport detail'), false);
   assert.equal(calls, 0);
 });
+
+test('CLI help hides protected metadata by default and applies surface policy for explicit listings', async () => {
+  const input = fromZod(z.object({ accountId: z.string() }));
+  const output = fromZod(z.object({ ok: z.boolean() }));
+  const publicDefinition = defineCapability({
+    identity: { namespace: 'cli.policy', name: 'status', majorVersion: 1 },
+    description: 'Public status.',
+    input: fromZod(z.object({})),
+    output,
+    risk: 'read',
+    access: { kind: 'public' },
+  });
+  const protectedDefinition = defineCapability({
+    identity: { namespace: 'cli.policy', name: 'account.read', majorVersion: 1 },
+    description: 'PRIVATE_ACCOUNT_READ_SENTINEL',
+    input,
+    output,
+    risk: 'read',
+    access: { kind: 'protected', scopes: ['account:read'] },
+  });
+  const destructiveDefinition = defineCapability({
+    identity: { namespace: 'cli.policy', name: 'account.delete', majorVersion: 1 },
+    description: 'PRIVATE_ACCOUNT_DELETE_SENTINEL',
+    input,
+    output,
+    risk: 'destructive',
+    access: { kind: 'protected', scopes: ['account:delete'] },
+  });
+  const unboundDefinition = defineCapability({
+    identity: { namespace: 'cli.policy', name: 'unbound.read', majorVersion: 1 },
+    description: 'PRIVATE_UNBOUND_SENTINEL',
+    input,
+    output,
+    risk: 'read',
+    access: { kind: 'protected', scopes: ['account:read'] },
+  });
+  let destructiveCalls = 0;
+  const definitions = [
+    publicDefinition,
+    protectedDefinition,
+    destructiveDefinition,
+    unboundDefinition,
+  ];
+  const bindings = definitions
+    .filter((definition) => definition !== unboundDefinition)
+    .map((definition) =>
+      bindCapability(definition, {
+        id: 'binding-' + definition.identity.name,
+        targets: ['local'],
+        execute: async () => {
+          if (definition === destructiveDefinition) destructiveCalls += 1;
+          return { ok: true };
+        },
+      }),
+    );
+  const registry = createCapabilityRegistry(definitions, bindings);
+
+  const defaultHelp = await invoke(registry, ['--help']);
+  assert.match(defaultHelp.stdout, /Public status\./);
+  assert.equal(defaultHelp.stdout.includes('PRIVATE_ACCOUNT_READ_SENTINEL'), false);
+  assert.equal(defaultHelp.stdout.includes('PRIVATE_ACCOUNT_DELETE_SENTINEL'), false);
+  assert.equal(defaultHelp.stdout.includes('PRIVATE_UNBOUND_SENTINEL'), false);
+
+  const hiddenSpecific = await invoke(registry, ['cli.policy:account.read@1', '--help']);
+  assert.equal(hiddenSpecific.stdout, 'Capability is unavailable or not visible.\n');
+
+  const scopedHelp = await runCapabilityCliForHelp(registry, ['--help'], {
+    canDiscover: (definition) => definition.identity.name === 'account.read',
+  });
+  assert.equal(scopedHelp.includes('PRIVATE_ACCOUNT_READ_SENTINEL'), true);
+  assert.equal(scopedHelp.includes('PRIVATE_ACCOUNT_DELETE_SENTINEL'), false);
+  assert.equal(scopedHelp.includes('PRIVATE_UNBOUND_SENTINEL'), false);
+
+  const destructiveHelp = await runCapabilityCliForHelp(registry, ['--help'], {
+    canDiscover: () => true,
+    surfaceExposure: { cli: { destructive: ['cli.policy:account.delete@1'] } },
+  });
+  assert.equal(destructiveHelp.includes('PRIVATE_ACCOUNT_DELETE_SENTINEL'), true);
+
+  let stdout = '';
+  let stderr = '';
+  const deniedCode = await runCapabilityCli(
+    ['--mode', 'local', 'cli.policy:account.delete@1', '--account-id', 'account-a'],
+    {
+      registry,
+      caller: { kind: 'authenticated', subject: 'caller', scopes: ['account:delete'] },
+      authorization: { authorize: () => true },
+    },
+    {
+      writeStdout: (value) => {
+        stdout += value;
+      },
+      writeStderr: (value) => {
+        stderr += value;
+      },
+    },
+  );
+  assert.equal(deniedCode, 1);
+  assert.equal(JSON.parse(stdout).result.reason, 'capability-unavailable');
+  assert.equal(destructiveCalls, 0);
+
+  stdout = '';
+  const allowedCode = await runCapabilityCli(
+    ['--mode', 'local', 'cli.policy:account.delete@1', '--account-id', 'account-a'],
+    {
+      registry,
+      caller: { kind: 'authenticated', subject: 'caller', scopes: ['account:delete'] },
+      authorization: { authorize: () => true },
+      surfaceExposure: { cli: { destructive: ['cli.policy:account.delete@1'] } },
+    },
+    {
+      writeStdout: (value) => {
+        stdout += value;
+      },
+      writeStderr() {},
+    },
+  );
+  assert.equal(allowedCode, 0);
+  assert.equal(destructiveCalls, 1);
+
+  const unboundHelp = await invoke(registry, ['cli.policy:unbound.read@1', '--help']);
+  assert.equal(unboundHelp.stdout, 'Capability is unavailable or not visible.\n');
+});
+
+async function runCapabilityCliForHelp(registry, argv, policy) {
+  let stdout = '';
+  const code = await runCapabilityCli(
+    argv,
+    {
+      registry,
+      authorization: { authorize: () => false },
+      caller: { kind: 'anonymous' },
+      ...policy,
+    },
+    {
+      writeStdout(value) {
+        stdout += value;
+      },
+      writeStderr() {},
+    },
+  );
+  assert.equal(code, 0);
+  return stdout;
+}

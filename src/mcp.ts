@@ -11,6 +11,7 @@ import {
 import {
   createGrantAuthorization,
   executionCallerForPrincipal,
+  hasGrantForScopes,
   type GrantAuthorizationOptions,
   type TrustedPrincipal,
 } from './auth.js';
@@ -18,6 +19,11 @@ import type { AuthorizationPort, ExecutionCaller } from './core/executor.js';
 import { executeCapability } from './core/executor.js';
 import { canonicalCapabilityId, type CapabilityDefinition } from './core/contracts.js';
 import type { CapabilityRegistry } from './core/registry.js';
+import {
+  evaluateCapabilityDiscovery,
+  isDestructiveCapabilityExposed,
+  type CapabilitySurfaceExposure,
+} from './discovery.js';
 
 const DEFAULT_ENDPOINT = '/mcp';
 const DEFAULT_MAX_REQUEST_BYTES = 32 * 1024;
@@ -33,6 +39,7 @@ export type McpExecutionContext = {
 
 export type McpAdapterOptions = {
   readonly endpoint?: string;
+  readonly surfaceExposure?: CapabilitySurfaceExposure;
   readonly maxRequestBytes?: number;
   readonly deadlineMs?: number;
   readonly canDiscover?: (
@@ -208,20 +215,47 @@ async function defineServer(
   if (requestInfo === undefined) return server;
 
   for (const definition of registry.definitions) {
+    const serverBindings = registry.bindings.filter(
+      (binding) =>
+        binding.capabilityId === canonicalCapabilityId(definition.identity) &&
+        binding.targets.includes('server'),
+    );
+    if (serverBindings.length !== 1) continue;
     const publicRead = isPublicRead(definition);
-    if (!publicRead && (options.discoverProtected === undefined || authInfo === undefined))
-      continue;
-    let visible = publicRead;
-    try {
-      visible = publicRead
-        ? ((await options.canDiscover?.(definition, requestInfo)) ?? true)
-        : options.discoverProtected === undefined
-          ? false
-          : await options.discoverProtected(definition, requestInfo, authInfo!);
-    } catch {
-      visible = false;
-    }
-    if (!visible) continue;
+    const discovery = await evaluateCapabilityDiscovery(
+      definition,
+      'mcp',
+      options.surfaceExposure,
+      publicRead
+        ? async (candidate) => (await options.canDiscover?.(candidate, requestInfo)) ?? true
+        : async (candidate) => {
+            const auth = options.grantAuthorization;
+            const principal =
+              authInfo === undefined || options.resolveTrustedPrincipal === undefined
+                ? null
+                : await options.resolveTrustedPrincipal(authInfo);
+            if (
+              principal === null ||
+              authInfo === undefined ||
+              auth === undefined ||
+              auth.store === undefined ||
+              candidate.access.kind !== 'protected'
+            )
+              return false;
+            const hasGrant = await hasGrantForScopes({
+              principal,
+              applicationId: auth.applicationId,
+              audience: auth.audience,
+              policyRevision: auth.policyRevision,
+              store: auth.store,
+              requiredScopes: candidate.access.scopes,
+              ...(auth.now === undefined ? {} : { now: auth.now }),
+            });
+            if (!hasGrant || options.discoverProtected === undefined) return false;
+            return await options.discoverProtected(candidate, requestInfo, authInfo);
+          },
+    );
+    if (!discovery.visible) continue;
     const name = mcpToolName(definition.identity);
     const inputSchema = sdkSchema(definition.input.toJSONSchema());
     const outputSchema = sdkSchema(resultSchema(definition.output.toJSONSchema()));
@@ -239,6 +273,9 @@ async function defineServer(
         },
       },
       async (input) => {
+        if (!isDestructiveCapabilityExposed(definition, 'mcp', options.surfaceExposure)) {
+          return toolError('Capability not found.');
+        }
         const controller = new AbortController();
         let timer: ReturnType<typeof setTimeout> | undefined;
         const timeout = new Promise<{ readonly kind: 'timeout' }>((resolve) => {

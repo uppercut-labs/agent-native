@@ -260,3 +260,49 @@ test('browser entry import graph excludes server adapters, MCP SDKs and secret f
   }
   assert.equal(sources.join('\n').includes('SERVER_ONLY_SECRET_SENTINEL'), false);
 });
+
+test('browser destructive discovery needs app surface exposure even when caller grants visibility', async () => {
+  const definition = defineCapability({
+    identity: { namespace: 'example.browser', name: 'account.delete', majorVersion: 1 },
+    description: 'Delete an account.',
+    input: fromZod(z.object({ accountId: z.string() })),
+    output: fromZod(z.object({ deleted: z.boolean() })),
+    risk: 'destructive',
+    access: { kind: 'protected', scopes: ['account:delete'] },
+  });
+  let calls = 0;
+  const countedBinding = bindCapability(definition, {
+    id: 'delete-account',
+    targets: ['browser'],
+    execute: async () => {
+      calls += 1;
+      return { deleted: true };
+    },
+  });
+  const registry = createCapabilityRegistry([definition], [countedBinding]);
+  const doc = fakeDocument();
+  const adapter = createBrowserCapabilityAdapter(doc);
+
+  const hidden = await adapter.sync(registry, { canExpose: () => true });
+  assert.deepEqual(hidden.registered, []);
+  assert.ok(hidden.skipped.some((item) => item.reason === 'policy-denied'));
+
+  const exposure = {
+    browser: { destructive: ['example.browser:account.delete@1'] },
+  };
+  const explicitlyExposed = await adapter.sync(registry, {
+    canExpose: () => true,
+    surfaceExposure: exposure,
+  });
+  assert.equal(explicitlyExposed.registered.length, 1);
+  const tool = doc.modelContext.tools.get(explicitlyExposed.registered[0]);
+  assert.equal(tool.annotations.destructiveHint, true);
+  exposure.browser.destructive.length = 0;
+  const staleCall = await tool.execute(
+    { accountId: 'account-a' },
+    { signal: new AbortController().signal },
+  );
+  assert.deepEqual(staleCall, { ok: false, error: 'Capability is not authorized.' });
+  assert.equal(calls, 0);
+  adapter.dispose();
+});

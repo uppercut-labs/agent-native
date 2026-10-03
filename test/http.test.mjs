@@ -207,6 +207,32 @@ test('OpenAPI uses contract schemas and hides protected identity and schema meta
   });
 });
 
+test('OpenAPI and route lookup omit public definitions without one server binding', async () => {
+  const { definition, registry } = publicRegistry(async () => ({ kind: 'missing' }));
+  const orphan = defineCapability({
+    identity: { namespace: 'catalog', name: 'orphan.read', majorVersion: 1 },
+    description: 'NO_HTTP_BINDING_SENTINEL',
+    input: fromZod(z.object({})),
+    output: fromZod(z.object({ ok: z.boolean() })),
+    risk: 'read',
+    access: { kind: 'public' },
+  });
+  const combined = createCapabilityRegistry([...registry.definitions, orphan], registry.bindings);
+  const doc = createOpenApiDocument(combined);
+  assert.ok(doc.paths[httpInvocationPath(definition.identity)]);
+  assert.equal(doc.paths[httpInvocationPath(orphan.identity)], undefined);
+  assert.equal(JSON.stringify(doc).includes('NO_HTTP_BINDING_SENTINEL'), false);
+
+  const handler = createHttpHandler(combined, options());
+  const response = await handler(
+    new Request('http://localhost' + httpInvocationPath(orphan.identity), post('{}')),
+  );
+  assert.equal(response.status, 404);
+  assert.deepEqual(await response.json(), {
+    error: { code: 'not_found', message: 'Capability not found.' },
+  });
+});
+
 test('OpenAPI operation identifiers remain unique for punctuation variants', () => {
   const first = defineCapability({
     identity: { namespace: 'catalog', name: 'album.lookup', majorVersion: 1 },
@@ -220,7 +246,19 @@ test('OpenAPI operation identifiers remain unique for punctuation variants', () 
     ...first,
     identity: { namespace: 'catalog', name: 'album-lookup', majorVersion: 1 },
   });
-  const document = createOpenApiDocument(createCapabilityRegistry([first, second], []));
+  const firstBinding = bindCapability(first, {
+    id: 'first-server',
+    targets: ['server'],
+    execute: async () => ({ kind: 'missing' }),
+  });
+  const secondBinding = bindCapability(second, {
+    id: 'second-server',
+    targets: ['server'],
+    execute: async () => ({ kind: 'missing' }),
+  });
+  const document = createOpenApiDocument(
+    createCapabilityRegistry([first, second], [firstBinding, secondBinding]),
+  );
   const operations = Object.values(document.paths).map((path) => path.post.operationId);
   assert.equal(new Set(operations).size, 2);
 });

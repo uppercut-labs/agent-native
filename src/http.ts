@@ -111,6 +111,18 @@ function isPublicRead(definition: CapabilityDefinition<unknown, unknown>): boole
   return definition.risk === 'read' && definition.access.kind === 'public';
 }
 
+function hasUniqueServerBinding(
+  registry: CapabilityRegistry,
+  definition: CapabilityDefinition<unknown, unknown>,
+): boolean {
+  const id = canonicalCapabilityId(definition.identity);
+  return (
+    registry.bindings.filter(
+      (binding) => binding.capabilityId === id && binding.targets.includes('server'),
+    ).length === 1
+  );
+}
+
 function copySchema(schema: Readonly<Record<string, unknown>>): Record<string, unknown> {
   let serialized: string | undefined;
   try {
@@ -138,7 +150,9 @@ export function createOpenApiDocument(
 ): Readonly<Record<string, unknown>> {
   const root = basePath(options.basePath);
   const paths: Record<string, unknown> = {};
-  for (const definition of registry.definitions.filter(isPublicRead)) {
+  for (const definition of registry.definitions.filter(
+    (candidate) => isPublicRead(candidate) && hasUniqueServerBinding(registry, candidate),
+  )) {
     const id = canonicalCapabilityId(definition.identity);
     const operationId =
       'invoke_' +
@@ -315,7 +329,9 @@ export function createHttpHandler(
   const openApiPath = config.root + '/openapi.json';
   const healthPath = config.root + '/health';
   const routeMap = new Map<string, CapabilityDefinition<unknown, unknown>>();
-  for (const definition of registry.definitions.filter(isPublicRead)) {
+  for (const definition of registry.definitions.filter(
+    (candidate) => isPublicRead(candidate) && hasUniqueServerBinding(registry, candidate),
+  )) {
     routeMap.set(httpInvocationPath(definition.identity, config.root), definition);
   }
   const resolveContext =
