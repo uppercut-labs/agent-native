@@ -11,3 +11,16 @@ if (match === null || match[1] !== packageManifest.version) {
     `src/package-version.ts must match package.json version ${packageManifest.version}`,
   );
 }
+
+const e08ContractManifest = JSON.parse(
+  await readFile(
+    new URL(
+      '../examples/e08-reusable-versioned-pack/project/contracts/package.json',
+      import.meta.url,
+    ),
+    'utf8',
+  ),
+);
+if (e08ContractManifest.peerDependencies?.[packageManifest.name] !== packageManifest.version) {
+  throw new Error('E08 contract peer must match package.json version');
+}
