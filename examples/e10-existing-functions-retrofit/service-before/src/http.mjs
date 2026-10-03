@@ -32,13 +32,15 @@ export function createContentServer() {
 
     if (isSearch) {
       try {
-        const limit = url.searchParams.has('limit')
-          ? Number(url.searchParams.get('limit'))
-          : 5;
-        sendJson(response, 200, searchContent({
-          query: url.searchParams.get('q'),
-          limit,
-        }));
+        const limit = url.searchParams.has('limit') ? Number(url.searchParams.get('limit')) : 5;
+        sendJson(
+          response,
+          200,
+          searchContent({
+            query: url.searchParams.get('q'),
+            limit,
+          }),
+        );
       } catch (error) {
         if (error instanceof TypeError || error instanceof RangeError) {
           sendJson(response, 400, { error: 'invalid_search', message: error.message });
