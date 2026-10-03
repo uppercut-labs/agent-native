@@ -43,6 +43,10 @@
       "types": "./dist/core/executor.d.ts",
       "import": "./dist/core/executor.js"
     },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    },
     "./http": {
       "types": "./dist/http.d.ts",
       "import": "./dist/http.js"
@@ -67,7 +71,8 @@
     "build:browser-proof": "tsc -p tsconfig.browser-proof.json",
     "example:e01": "node scripts/check-example.mjs e01-album-catalog",
     "example:e12": "node scripts/check-example.mjs e12-shared-unit-converter",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run example:e01 && npm run example:e12"
+    "example:e05": "node scripts/check-example.mjs e05-node-cli",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run example:e01 && npm run example:e12 && npm run example:e05"
   },
   "dependencies": {
     "zod": "4.6.5"

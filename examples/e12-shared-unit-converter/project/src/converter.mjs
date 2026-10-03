@@ -45,10 +45,13 @@ export const localConversionBinding = bindCapability(convertDistanceCapability, 
   execute: convertDistance,
 });
 
-const registry = createCapabilityRegistry([convertDistanceCapability], [localConversionBinding]);
+export const registry = createCapabilityRegistry(
+  [convertDistanceCapability],
+  [localConversionBinding],
+);
 
 /** @type {import('@uppercut-labs/agent-native').AuthorizationPort} */
-const publicReadAuthorization = {
+export const publicReadAuthorization = {
   authorize(request) {
     return request.access.kind === 'public' && request.risk === 'read';
   },

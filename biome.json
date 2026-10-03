@@ -1,7 +1,14 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "files": {
-    "includes": ["**", "!dist", "!.test-dist", "!examples/e12-shared-unit-converter/.exported"]
+    "includes": [
+      "**",
+      "!dist",
+      "!.test-dist",
+      "!examples/e01-album-catalog/.exported",
+      "!examples/e12-shared-unit-converter/.exported",
+      "!examples/e05-node-cli/.exported"
+    ]
   },
   "formatter": {
     "enabled": true,

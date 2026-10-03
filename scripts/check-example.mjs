@@ -5,9 +5,15 @@ import { fileURLToPath } from 'node:url';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const exampleId = process.argv[2];
-const supportedExamples = new Set(['e01-album-catalog', 'e12-shared-unit-converter']);
+const supportedExamples = new Set([
+  'e01-album-catalog',
+  'e12-shared-unit-converter',
+  'e05-node-cli',
+]);
 if (exampleId === undefined || !supportedExamples.has(exampleId)) {
-  throw new Error('Choose a supported example id: e01-album-catalog or e12-shared-unit-converter.');
+  throw new Error(
+    'Choose a supported example id: e01-album-catalog, e12-shared-unit-converter, or e05-node-cli.',
+  );
 }
 
 const projectSource = path.join(repositoryRoot, 'examples', exampleId, 'project');

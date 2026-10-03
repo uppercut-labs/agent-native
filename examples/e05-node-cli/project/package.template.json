@@ -1,13 +1,12 @@
 {
-  "name": "e12-shared-unit-converter",
+  "name": "e05-node-cli",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
+  "engines": { "node": ">=22" },
   "scripts": {
-    "start": "node src/cli.mjs --mode local example:distance.convert@1 --value 12 --from in --to cm",
+    "start": "node src/cli.mjs --mode local example.catalog:album.lookup@1 --slug first-light",
+    "server": "node src/server.mjs",
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {

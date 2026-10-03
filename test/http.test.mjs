@@ -284,13 +284,19 @@ test('schema-valid non-JSON output returns a redacted 500', async () => {
 
 test('deadline is signaled to a cooperative binding and returns 504', async () => {
   let observed = false;
+  let resolveObserved = () => {};
+  let observer;
+  const observedSignal = new Promise((resolve) => {
+    resolveObserved = resolve;
+  });
   const { registry } = publicRegistry(
     async (_input, context) =>
       await new Promise((resolve) => {
-        const timer = setInterval(() => {
+        observer = setInterval(() => {
           if (context.signal?.aborted) {
             observed = true;
-            clearInterval(timer);
+            if (observer !== undefined) clearInterval(observer);
+            resolveObserved();
             resolve({ kind: 'missing' });
           }
         }, 2);
@@ -303,7 +309,16 @@ test('deadline is signaled to a cooperative binding and returns 504', async () =
       assert.equal(response.status, 504);
     },
   );
-  assert.equal(observed, true);
+  let observationTimeout;
+  const settled = await Promise.race([
+    observedSignal.then(() => true),
+    new Promise((resolve) => {
+      observationTimeout = setTimeout(() => resolve(false), 250);
+    }),
+  ]);
+  if (observationTimeout !== undefined) clearTimeout(observationTimeout);
+  if (!observed && observer !== undefined) clearInterval(observer);
+  assert.equal(settled, true);
 });
 
 test('OpenAPI endpoint is reachable and base path rejects traversal', async () => {
