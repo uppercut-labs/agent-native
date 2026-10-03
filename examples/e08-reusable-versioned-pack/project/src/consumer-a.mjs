@@ -1,16 +1,12 @@
+import { albumLookupV1 } from '@example/e08-album-contracts';
 import { bindCapability } from '@uppercut-labs/agent-native';
-import { distanceConversion } from '@example/e08-distance-contracts';
+import { lookupAlbum } from './catalog-data.mjs';
 
-const centimeters = Object.freeze({ cm: 1, in: 2.54 });
-
-export const preciseBinding = bindCapability(distanceConversion, {
-  id: 'precise-consumer',
+export const legacyBinding = bindCapability(albumLookupV1, {
+  id: 'legacy-consumer',
   targets: ['local'],
   execute(input) {
-    return {
-      value: (input.value * centimeters[input.from]) / centimeters[input.to],
-      unit: input.to,
-      provider: 'precise-consumer',
-    };
+    const album = lookupAlbum(input.slug);
+    return { slug: album.slug, title: album.titles['en-US'] };
   },
 });

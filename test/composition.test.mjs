@@ -4,13 +4,19 @@ import * as z from 'zod';
 import { fromZod } from '../dist/adapters/zod.js';
 import {
   bindCapability,
+  CapabilityMigrationError,
+  assertCompatibleCapabilityReplacement,
   CapabilityCompositionError,
   capabilitySurfaceNames,
   composeCapabilityPacks,
   createCapabilityRegistry,
+  compareCapabilityDefinitions,
   defineCapability,
+  defineCapabilityLifecyclePolicy,
+  defineCapabilityMigration,
   defineCapabilityPack,
   executeCapability,
+  validateCapabilityPackMigration,
 } from '../dist/index.js';
 
 const input = fromZod(z.object({ value: z.number() }));
@@ -60,6 +66,245 @@ test('packs retain authority identity and require explicit, unambiguous aliases'
   assert.equal(composition.resolve('north-convert'), north.definition);
   assert.equal(composition.resolve('south.example.units:value.convert@1'), south.definition);
   assert.equal(composition.aliases.set, undefined);
+});
+
+test('coexisting majors use exact selection and same-ID replacements are checked', () => {
+  const first = pack('versions.example', '@versions/contracts');
+  const secondDefinition = defineCapability({
+    identity: { ...first.definition.identity, majorVersion: 2 },
+    description: 'Convert a value with the v2 contract.',
+    input: fromZod(z.object({ value: z.number(), locale: z.string() })),
+    output,
+    risk: 'read',
+    access: { kind: 'protected', scopes: ['units:convert'] },
+  });
+  const migration = defineCapabilityMigration({
+    previous: first.definition,
+    next: secondDefinition,
+    semanticReview: {
+      note: 'V2 requires an explicit locale before the conversion implementation runs.',
+      reviewedBy: 'units-contract-owner',
+    },
+  });
+  assert.throws(
+    () =>
+      defineCapabilityPack({
+        identity: { authority: 'versions.example', namespace: 'units' },
+        source: '@versions/unreviewed-contracts',
+        definitions: [first.definition, secondDefinition],
+      }),
+    (error) =>
+      error instanceof CapabilityMigrationError && error.kind === 'missing-semantic-review',
+  );
+  const versionedPack = defineCapabilityPack({
+    identity: { authority: 'versions.example', namespace: 'units' },
+    source: '@versions/contracts',
+    definitions: [first.definition, secondDefinition],
+    migrations: [migration],
+    lifecycle: defineCapabilityLifecyclePolicy([
+      { capabilityId: 'versions.example.units:value.convert@1', state: 'supported' },
+      { capabilityId: 'versions.example.units:value.convert@2', state: 'supported' },
+    ]),
+  });
+  const forgedLifecycle = {
+    entries: [],
+    get: (capabilityId) => ({ capabilityId, state: 'supported' }),
+  };
+  assert.throws(
+    () =>
+      defineCapabilityPack({
+        identity: versionedPack.identity,
+        source: '@versions/forged-lifecycle',
+        definitions: versionedPack.definitions,
+        migrations: [migration],
+        lifecycle: forgedLifecycle,
+      }),
+    (error) => error instanceof CapabilityMigrationError && error.kind === 'invalid-lifecycle',
+  );
+  const composition = composeCapabilityPacks([
+    {
+      pack: versionedPack,
+      source: 'versions.ts:1',
+      aliasPolicy: {
+        kind: 'explicit',
+        aliases: [{ name: 'convert-v1', capabilityId: 'versions.example.units:value.convert@1' }],
+      },
+    },
+  ]);
+
+  assert.equal(composition.resolve('convert-v1'), first.definition);
+  assert.equal(composition.select(secondDefinition.identity), secondDefinition);
+  const report = compareCapabilityDefinitions(first.definition, secondDefinition);
+  assert.ok(report.changes.some((change) => change.kind === 'required-added'));
+  assert.throws(
+    () => assertCompatibleCapabilityReplacement(first.definition, secondDefinition),
+    (error) => error instanceof CapabilityMigrationError && error.kind === 'invalid-migration',
+  );
+});
+
+test('migration reports include risk and access metadata changes', () => {
+  const previous = pack('metadata.example', '@metadata/contracts').definition;
+  const next = defineCapability({
+    identity: { ...previous.identity, majorVersion: 2 },
+    description: 'Convert a value with protected write semantics.',
+    input,
+    output,
+    risk: 'write',
+    access: { kind: 'protected', scopes: ['units:write'] },
+  });
+  const report = compareCapabilityDefinitions(previous, next);
+
+  assert.equal(report.schemaEquivalent, true);
+  assert.ok(report.changes.some((change) => change.area === 'risk'));
+  assert.ok(report.changes.some((change) => change.area === 'access'));
+});
+
+test('migration records are revalidated instead of trusting structural lookalikes', () => {
+  const previous = pack('review.example', '@review/contracts');
+  const nextDefinition = defineCapability({
+    identity: { ...previous.definition.identity, majorVersion: 2 },
+    description: 'Convert with a required locale.',
+    input: fromZod(z.object({ value: z.number(), locale: z.string() })),
+    output,
+    risk: 'read',
+    access: { kind: 'protected', scopes: ['units:convert'] },
+  });
+  const migration = defineCapabilityMigration({
+    previous: previous.definition,
+    next: nextDefinition,
+    semanticReview: {
+      note: 'V2 requires locale and preserves the unit conversion meaning.',
+      reviewedBy: 'contract-owner',
+    },
+  });
+  const lifecycle = defineCapabilityLifecyclePolicy([
+    { capabilityId: 'review.example.units:value.convert@1', state: 'supported' },
+    { capabilityId: 'review.example.units:value.convert@2', state: 'supported' },
+  ]);
+  assert.throws(
+    () =>
+      defineCapabilityPack({
+        identity: previous.pack.identity,
+        source: '@review/forged',
+        definitions: [previous.definition, nextDefinition],
+        migrations: [{ ...migration, semanticReview: { note: 'same', reviewedBy: 'qa' } }],
+        lifecycle,
+      }),
+    (error) =>
+      error instanceof CapabilityMigrationError && error.kind === 'missing-semantic-review',
+  );
+  assert.throws(
+    () =>
+      defineCapabilityPack({
+        identity: previous.pack.identity,
+        source: '@review/forged-report',
+        definitions: [previous.definition, nextDefinition],
+        migrations: [
+          { ...migration, contract: { ...migration.contract, changes: [], breaking: false } },
+        ],
+        lifecycle,
+      }),
+    (error) => error instanceof CapabilityMigrationError && error.kind === 'invalid-migration',
+  );
+  const next = defineCapabilityPack({
+    identity: previous.pack.identity,
+    source: '@review/contracts-v2',
+    definitions: [previous.definition, nextDefinition],
+    migrations: [migration],
+    lifecycle,
+  });
+  assert.notEqual(next.migrations[0], migration);
+  assert.equal(next.migrations[0].contract.breaking, true);
+  const report = validateCapabilityPackMigration({
+    previous: previous.pack,
+    next,
+    migrations: [
+      { ...migration, contract: { ...migration.contract, changes: [], breaking: false } },
+    ],
+    previousLifecycle: defineCapabilityLifecyclePolicy([
+      { capabilityId: 'review.example.units:value.convert@1', state: 'supported' },
+    ]),
+    nextLifecycle: lifecycle,
+  });
+  assert.equal(report.contractChanges.at(-1).breaking, true);
+});
+
+test('adding an output property breaks a closed same-major response schema', () => {
+  const schemaPort = (schema) => ({ parse: (value) => value, toJSONSchema: () => schema });
+  const identity = { namespace: 'schema.example.units', name: 'value.convert', majorVersion: 1 };
+  const priorOutput = {
+    type: 'object',
+    properties: { value: { type: 'number' } },
+    required: ['value'],
+    additionalProperties: false,
+  };
+  const nextOutput = {
+    ...priorOutput,
+    properties: { ...priorOutput.properties, provider: { type: 'string' } },
+  };
+  const definition = (outputSchema) =>
+    defineCapability({
+      identity,
+      description: 'Convert a value.',
+      input,
+      output: schemaPort(outputSchema),
+      risk: 'read',
+      access: { kind: 'protected', scopes: ['units:convert'] },
+    });
+  const before = definition(priorOutput);
+  const after = definition(nextOutput);
+  const report = compareCapabilityDefinitions(before, after);
+  assert.ok(
+    report.changes.some(
+      (change) => change.area === 'output' && change.kind === 'property-added' && change.breaking,
+    ),
+  );
+  assert.throws(
+    () => assertCompatibleCapabilityReplacement(before, after),
+    (error) => error instanceof CapabilityMigrationError && error.kind === 'breaking-replacement',
+  );
+  assert.doesNotThrow(() =>
+    assertCompatibleCapabilityReplacement(
+      definition({ ...priorOutput, additionalProperties: true }),
+      definition({ ...nextOutput, additionalProperties: true }),
+    ),
+  );
+});
+
+test('a forged lifecycle getter cannot claim reviewed removal without an entry', () => {
+  const previous = pack('retirement.example', '@retirement/contracts');
+  const next = defineCapabilityPack({
+    identity: previous.pack.identity,
+    source: '@retirement/empty',
+    definitions: [],
+  });
+  const priorPolicy = defineCapabilityLifecyclePolicy([
+    {
+      capabilityId: 'retirement.example.units:value.convert@1',
+      state: 'deprecated',
+      note: 'Consumers have been notified and are migrating to the new contract.',
+    },
+  ]);
+  const forgedNextPolicy = {
+    entries: [],
+    get: (capabilityId) => ({
+      capabilityId,
+      state: 'removed',
+      note: 'Pretend this retirement was reviewed and approved.',
+      reviewedBy: 'contract-owner',
+    }),
+  };
+  assert.throws(
+    () =>
+      validateCapabilityPackMigration({
+        previous: previous.pack,
+        next,
+        migrations: [],
+        previousLifecycle: priorPolicy,
+        nextLifecycle: forgedNextPolicy,
+      }),
+    (error) => error instanceof CapabilityMigrationError && error.kind === 'implicit-removal',
+  );
 });
 
 test('full identity and alias conflicts report both source locations', () => {
@@ -128,6 +373,27 @@ test('composition rechecks ownership of structural pack imports', () => {
       error.kind === 'invalid-pack' &&
       /app\.mjs:7/.test(error.message) &&
       /attacker\.example\.units/.test(error.message),
+  );
+});
+
+test('composition rejects structural multi-major packs without reviewed migration policy', () => {
+  const original = pack('versioned.example', '@versioned/contracts');
+  const secondDefinition = defineCapability({
+    identity: { ...original.definition.identity, majorVersion: 2 },
+    description: 'Second version of conversion.',
+    input,
+    output,
+    risk: 'read',
+    access: { kind: 'protected', scopes: ['units:convert'] },
+  });
+  const unreviewed = { ...original.pack, definitions: [original.definition, secondDefinition] };
+  assert.throws(
+    () =>
+      composeCapabilityPacks([
+        { pack: unreviewed, source: 'app.mjs:8', aliasPolicy: { kind: 'none' } },
+      ]),
+    (error) =>
+      error instanceof CapabilityMigrationError && error.kind === 'missing-semantic-review',
   );
 });
 

@@ -95,8 +95,8 @@ const packageTemplate = JSON.parse(
 packageTemplate.dependencies['@uppercut-labs/agent-native'] = `file:./vendor/${archiveName}`;
 if (exampleId === 'e08-reusable-versioned-pack') {
   runNpm(['pack', '--pack-destination', vendorRoot], path.join(projectSource, 'contracts'));
-  packageTemplate.dependencies['@example/e08-distance-contracts'] =
-    'file:./vendor/example-e08-distance-contracts-1.0.0.tgz';
+  packageTemplate.dependencies['@example/e08-album-contracts'] =
+    'file:./vendor/example-e08-album-contracts-2.0.0.tgz';
 }
 await writeFile(
   path.join(exportRoot, 'package.json'),

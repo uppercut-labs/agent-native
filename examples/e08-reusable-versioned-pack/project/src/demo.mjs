@@ -3,36 +3,28 @@ import {
   createCapabilityRegistry,
   executeCapability,
 } from '@uppercut-labs/agent-native';
-import { distanceConversion, measurementPack } from '@example/e08-distance-contracts';
-import { preciseBinding } from './consumer-a.mjs';
+import { catalogPack } from '@example/e08-album-contracts';
+import { legacyBinding } from './consumer-a.mjs';
 
 const composition = composeCapabilityPacks([
   {
-    pack: measurementPack,
+    pack: catalogPack,
     source: 'src/demo.mjs:consumer-import',
     aliasPolicy: {
       kind: 'explicit',
-      aliases: [
-        {
-          name: 'distance',
-          capabilityId: 'example.org.measurement:distance.convert@1',
-        },
-      ],
+      aliases: [{ name: 'album-v1', capabilityId: 'example.org.catalog:album.lookup@1' }],
     },
   },
 ]);
-const registry = createCapabilityRegistry(composition.definitions, [preciseBinding]);
+const selected = composition.resolve('album-v1');
+if (selected === undefined) throw new Error('v1 alias is not configured');
+const registry = createCapabilityRegistry(composition.definitions, [legacyBinding]);
 const result = await executeCapability(registry, {
-  identity: distanceConversion.identity,
+  identity: selected.identity,
   runtime: 'local',
-  input: { value: 12, from: 'in', to: 'cm' },
-  caller: { kind: 'authenticated', subject: 'demo-user', scopes: ['distance:convert'] },
-  authorization: {
-    authorize: (request) =>
-      request.caller.kind === 'authenticated' &&
-      request.access.kind === 'protected' &&
-      request.access.scopes.every((scope) => request.caller.scopes.includes(scope)),
-  },
+  input: { slug: 'kind-of-blue' },
+  caller: { kind: 'anonymous' },
+  authorization: { authorize: () => true },
 });
 
 process.stdout.write(`${JSON.stringify(result)}\n`);

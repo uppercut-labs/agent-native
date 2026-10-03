@@ -1,6 +1,6 @@
 {
-  "name": "@example/e08-distance-contracts",
-  "version": "1.0.0",
+  "name": "@example/e08-album-contracts",
+  "version": "2.0.0",
   "type": "module",
   "exports": "./src/index.mjs",
   "files": [

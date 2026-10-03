@@ -1,15 +1,14 @@
-import { distanceConversion } from '@example/e08-distance-contracts';
+import { albumLookupV2 } from '@example/e08-album-contracts';
 import { bindCapability } from '@uppercut-labs/agent-native';
+import { lookupAlbum } from './catalog-data.mjs';
 
-export const fixtureBinding = bindCapability(distanceConversion, {
-  id: 'fixture-consumer',
+export const localizedBinding = bindCapability(albumLookupV2, {
+  id: 'localized-consumer',
   targets: ['local'],
   execute(input) {
-    const centimeters = input.from === 'cm' ? input.value : input.value * 2.54;
-    return {
-      value: input.to === 'cm' ? centimeters : centimeters / 2.54,
-      unit: input.to,
-      provider: 'fixture-consumer',
-    };
+    const album = lookupAlbum(input.slug);
+    if (album.titles[input.locale] === undefined)
+      throw new TypeError(`unsupported locale ${input.locale}`);
+    return { slug: album.slug, locale: input.locale, titles: album.titles };
   },
 });
