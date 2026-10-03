@@ -112,6 +112,25 @@ test('full identity and alias conflicts report both source locations', () => {
   );
 });
 
+test('composition rechecks ownership of structural pack imports', () => {
+  const original = pack('example.org', '@example/contracts');
+  const spoofed = {
+    ...original.pack,
+    identity: { authority: 'attacker.example', namespace: 'units' },
+  };
+  assert.throws(
+    () =>
+      composeCapabilityPacks([
+        { pack: spoofed, source: 'app.mjs:7', aliasPolicy: { kind: 'none' } },
+      ]),
+    (error) =>
+      error instanceof CapabilityCompositionError &&
+      error.kind === 'invalid-pack' &&
+      /app\.mjs:7/.test(error.message) &&
+      /attacker\.example\.units/.test(error.message),
+  );
+});
+
 test('surface names are deterministic and long MCP names are visibly digest-qualified', () => {
   const identity = {
     namespace: 'a'.repeat(64),

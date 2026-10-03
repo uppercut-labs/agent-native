@@ -75,17 +75,25 @@ function packNamespace(identity: CapabilityPackIdentity): string {
   return `${identity.authority}.${identity.namespace}`;
 }
 
-export function defineCapabilityPack(options: CapabilityPackOptions): CapabilityPack {
-  const namespace = packNamespace(options.identity);
-  assertSource(options.source, 'pack source');
-  for (const definition of options.definitions) {
+function assertPackOwnership(
+  identity: CapabilityPackIdentity,
+  definitions: readonly CapabilityDefinition<unknown, unknown>[],
+  source: string,
+): void {
+  const namespace = packNamespace(identity);
+  for (const definition of definitions) {
     if (definition.identity.namespace !== namespace) {
       throw new CapabilityCompositionError(
         'invalid-pack',
-        `pack ${options.source} owns namespace ${namespace}, but ${canonicalCapabilityId(definition.identity)} uses ${definition.identity.namespace}`,
+        `pack ${source} owns namespace ${namespace}, but ${canonicalCapabilityId(definition.identity)} uses ${definition.identity.namespace}`,
       );
     }
   }
+}
+
+export function defineCapabilityPack(options: CapabilityPackOptions): CapabilityPack {
+  assertSource(options.source, 'pack source');
+  assertPackOwnership(options.identity, options.definitions, options.source);
   return Object.freeze({
     identity: Object.freeze({ ...options.identity }),
     source: options.source.trim(),
@@ -198,6 +206,7 @@ export function composeCapabilityPacks(
 
   for (const imported of imports) {
     assertSource(imported.source, 'import source');
+    assertPackOwnership(imported.pack.identity, imported.pack.definitions, imported.source);
     if (imported.aliasPolicy?.kind !== 'none' && imported.aliasPolicy?.kind !== 'explicit') {
       throw new CapabilityCompositionError(
         'invalid-pack',
