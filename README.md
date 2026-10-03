@@ -11,11 +11,11 @@ UAN-001 established the strict TypeScript baseline, Zod adapter, JSON Schema pro
 and stable diagnostic observations. UAN-002 adds immutable capability definitions, explicit
 runtime bindings, a checked registry, per-invocation authorization, and shared input/output
 validation. E01 exercises shared album lookup and a static Astro site integration; E12 is a
-shared unit-converter example; E05 covers local and HTTP execution through the CLI.
+shared unit-converter example; E05 covers local and HTTP execution through the CLI. UAN-008 adds E04, a locally verified Worker sidecar for the same E01 contract while the Astro site remains static.
 
 Run `npm run example:e01`, `npm run example:e12`, or `npm run example:e05` to build and pack the
 package, install it independently into each example, and run its tests and runnable surface. E01
-also verifies a pre-existing multi-page static Astro fixture before and after integration.
+also verifies a pre-existing multi-page static Astro fixture before and after integration. E04 checks a local workerd HTTP/OpenAPI roundtrip and official MCP client exchange; it does not deploy or configure DNS.
 
 The root, `./contracts`, `./registry`, and `./executor` entrypoints use only portable core modules.
 They do not import Zod, Node, DOM, framework, provider, or server modules. `npm run check` compiles
@@ -89,7 +89,7 @@ The schema spike checks album lookup and unit conversion input/output shapes wit
 validates exported draft-2020-12 schemas independently with Ajv. JSON Schema projection throws for
 transforms that cannot be represented faithfully. The official MCP server SDK is a runtime
 dependency of the isolated MCP adapter; the official MCP client SDK is pinned for the local protocol
-fixture only.
+fixture only. See [UAN-008 sidecar evidence](docs/evidence/UAN-008-worker-sidecar.md) for host/origin controls, revision matching, and local-only limits.
 
 ## Status
 
