@@ -70,6 +70,10 @@
     "./astro": {
       "types": "./dist/astro.d.ts",
       "import": "./dist/astro.js"
+    },
+    "./init": {
+      "types": "./dist/init.d.ts",
+      "import": "./dist/init.js"
     }
   },
   "scripts": {

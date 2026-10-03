@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { cp, mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -78,3 +78,78 @@ try {
 process.stdout.write(
   'UAN-007 pre-integration baseline passed: static home, albums, about, navigation, data, CSS, and SVG verified.\n',
 );
+runNpm(['run', 'build'], repositoryRoot);
+
+const retrofitRoot = await mkdtemp(path.join(os.tmpdir(), 'uan-init-retrofit with spaces-'));
+try {
+  await cp(beforeRoot, retrofitRoot, { recursive: true });
+  const originalLock = JSON.parse(
+    await readFile(path.join(retrofitRoot, 'package-lock.json'), 'utf8'),
+  );
+  await writeFile(
+    path.join(retrofitRoot, 'src/private-unselected.mjs'),
+    "throw new Error('app module must not be imported during detection');\n",
+  );
+  const vendor = path.join(retrofitRoot, 'vendor');
+  await mkdir(vendor);
+  runNpm(['pack', '--silent', '--pack-destination', vendor], repositoryRoot);
+  const archive = (await readdir(vendor)).find((name) => name.endsWith('.tgz'));
+  assert.ok(archive, 'local tarball was created');
+  runNpm(
+    [
+      'install',
+      '--save-exact',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      path.join(vendor, archive),
+    ],
+    retrofitRoot,
+  );
+
+  const { createInitPlan, applyInitPlan } = await import('../dist/init.js');
+  const choices = {
+    hosting: 'cloudflare',
+    sidecarOrigin: 'https://albums.example.workers.dev',
+    routeMode: 'sidecar',
+  };
+  const plan = await createInitPlan(retrofitRoot, {}, choices);
+  assert.equal(plan.detection.applicationRoot, '');
+  assert.equal(plan.detection.framework, 'astro');
+  assert.equal(plan.detection.rendering, 'static');
+  assert.match(plan.manualIntegration, /recognized literal static template/);
+  assert.ok(plan.proposedFiles.includes('astro.config.mjs'));
+  assert.ok(plan.proposedFiles.includes('.agent-native/browser-entry.mjs'));
+  const result = await applyInitPlan(retrofitRoot, plan, choices, { approved: true });
+  assert.equal(result.status, 'applied');
+  runNpm(['run', 'build'], retrofitRoot);
+
+  const outputRoot = path.join(retrofitRoot, 'dist');
+  const pages = await Promise.all(
+    ['index.html', 'albums/index.html', 'about/index.html'].map((page) =>
+      readFile(path.join(outputRoot, page), 'utf8'),
+    ),
+  );
+  assert.match(pages[1], /First Light/);
+  assert.match(pages[1], /href="\/about\//);
+  await assert.rejects(readdir(path.join(outputRoot, 'server')));
+  const chunks = (await readdir(path.join(outputRoot, '_astro'))).filter((name) =>
+    name.endsWith('.js'),
+  );
+  assert.ok(chunks.length > 0, 'Astro emitted a browser JavaScript entry');
+  const javascript = (
+    await Promise.all(chunks.map((name) => readFile(path.join(outputRoot, '_astro', name), 'utf8')))
+  ).join('\\n');
+  assert.match(javascript, /agent-native:ready/);
+  assert.match(javascript, /albums\.example\.workers\.dev/);
+
+  const updatedLock = JSON.parse(
+    await readFile(path.join(retrofitRoot, 'package-lock.json'), 'utf8'),
+  );
+  for (const [name, value] of Object.entries(originalLock.packages)) {
+    if (name !== '')
+      assert.deepEqual(updatedLock.packages[name], value, `unrelated lock entry changed: ${name}`);
+  }
+} finally {
+  await rm(retrofitRoot, { recursive: true, force: true });
+}
