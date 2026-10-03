@@ -30,11 +30,9 @@ different version or binding.
 
 Definitions may replace that invocation name with an established command and explicit aliases:
 
-```ts
-surfaces: {
-  cli: { command: 'content-search', aliases: ['search'] },
-}
-```
+E10 binds its existing command names in the same tested definition:
+
+{{source:examples/e10-existing-functions-retrofit/project/src/capability.mjs#cli-command-override}}
 
 Commands and aliases are lowercase slugs and must be unique across the registry. They resolve to
 the same canonical capability identity used for execution and result envelopes; an override does

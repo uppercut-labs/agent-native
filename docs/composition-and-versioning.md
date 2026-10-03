@@ -8,15 +8,9 @@ Composition does not wrap handlers, grant scopes, or create a privileged executi
 ## Exact major selection and aliases
 
 `majorVersion` is part of the canonical identity. A pack can therefore export v1 and v2 together,
-and `composeCapabilityPacks()` keeps both definitions. Select a major with its full identity:
+and `composeCapabilityPacks()` keeps both definitions. The E08 v2 consumer selects one exact major:
 
-```js
-const v2 = composition.select({
-  namespace: 'example.org.catalog',
-  name: 'album.lookup',
-  majorVersion: 2,
-});
-```
+{{source:examples/e08-reusable-versioned-pack/project/src/demo-b.mjs#select-v2-major}}
 
 `composition.resolve()` accepts either a canonical ID or an explicitly configured alias. Every
 import must choose `{ kind: 'none' }` or `{ kind: 'explicit', aliases: [...] }`. An alias stores one
@@ -24,6 +18,10 @@ full canonical ID; it never means "latest" and never falls forward. Thus an `alb
 targets `example.org.catalog:album.lookup@1` continues to select v1 when v2 is installed. Missing
 targets, duplicate aliases, and duplicate canonical identities fail composition with source
 locations.
+
+The E08 v1 consumer pins an alias explicitly instead of inferring a latest version:
+
+{{source:examples/e08-reusable-versioned-pack/project/src/demo.mjs#compose-v1-alias}}
 
 ## Contract migration reports
 

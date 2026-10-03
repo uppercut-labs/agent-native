@@ -9,4 +9,6 @@ npm run docs:check
 
 Serve `docs-site/dist/` with any static file server. Search reads the generated local JSON index. Each rendered page links to raw Markdown and its GitHub source. `docs:check` builds the site, rejects missing local Markdown targets/headings, and verifies generated navigation, assets, and search entries. Links into `examples/` open the source file on GitHub. External URLs are not fetched or validated.
 
-This is an independent UAN-021 infrastructure slice. It does not replace code sketches with extracted tested source regions, export all twelve examples, or certify host support. Those acceptance steps remain in the parent ticket.
+Use `{{source:examples/<example>/project/<file>#<region>}}` on its own line in a guide to render a region from a runnable example. The source file must contain exactly one `// docs:start <region>` and `// docs:end <region>` pair. `docs:check` fails for invalid paths, missing or duplicate markers, and empty regions. It embeds the code in both HTML and generated raw Markdown, with a link to the exact source line. Source files must remain within their example's `project/` directory.
+
+This remains a UAN-021 slice. It does not export all twelve examples or certify host support. Those acceptance steps remain in the parent ticket.

@@ -17,15 +17,9 @@ invocation route; a GET to a visible invocation path receives `405` with `Allow:
 
 A definition may preserve an established read route with a contract-level override:
 
-```ts
-surfaces: {
-  http: {
-    path: '/api/content/search',
-    method: 'GET',
-    query: { query: 'q' },
-  },
-}
-```
+E10 keeps its existing search route with this override in the tested capability definition:
+
+{{source:examples/e10-existing-functions-retrofit/project/src/capability.mjs#http-get-override}}
 
 The `query` map runs from input property to query parameter. GET conversion supports string,
 number, integer, boolean, string enum, and arrays of those scalar values; nested objects and other
@@ -62,6 +56,6 @@ cooperative cancellation.
 | Binding/auth context unavailable | 503 |
 | Execution deadline reached | 504 |
 
-This slice has no framework-specific route installer, authenticated OpenAPI projection, GET override,
+This slice has no framework-specific route installer or authenticated OpenAPI projection,
 rate limiter, or provider deployment integration. A host remains responsible for transport security,
 authentication, rate limiting, and deployment.
