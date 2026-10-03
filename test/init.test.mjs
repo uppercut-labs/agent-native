@@ -375,3 +375,22 @@ test('restore rechecks tool-owned files immediately before removal', async () =>
     await clean(parent);
   }
 });
+
+test('default detection and plan do not create files or invoke a provisioning canary', async () => {
+  const { parent, root } = await fixture();
+  try {
+    const sentinel = path.join(root, 'PROVISIONING_CANARY_DO_NOT_RUN');
+    const before = await readdir(root);
+    const configBefore = await readFile(path.join(root, 'astro.config.mjs'));
+    const lockBefore = await readFile(path.join(root, 'package-lock.json'));
+    await detectExistingProject(root);
+    const plan = await createInitPlan(root, {}, choices);
+    assert.equal(plan.alreadyInitialized, false);
+    assert.deepEqual(await readdir(root), before);
+    assert.deepEqual(await readFile(path.join(root, 'astro.config.mjs')), configBefore);
+    assert.deepEqual(await readFile(path.join(root, 'package-lock.json')), lockBefore);
+    await assert.rejects(readFile(sentinel), { code: 'ENOENT' });
+  } finally {
+    await clean(parent);
+  }
+});

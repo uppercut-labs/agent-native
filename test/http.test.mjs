@@ -521,3 +521,43 @@ test('GET query decoding preserves own reserved property names', async () => {
   assert.deepEqual(await response.json(), { ok: true });
   assert.equal({}.polluted, undefined);
 });
+
+test('generated HTTP refuses protected writes before binding effects', async () => {
+  const write = defineCapability({
+    identity: { namespace: 'http.test', name: 'write-once', majorVersion: 1 },
+    description: 'Hidden write fixture.',
+    input: fromZod(z.object({ value: z.string() })),
+    output: fromZod(z.object({ saved: z.boolean() })),
+    risk: 'write',
+    access: { kind: 'protected', scopes: ['fixture:write'] },
+  });
+  let calls = 0;
+  const registry = createCapabilityRegistry(
+    [write],
+    [
+      bindCapability(write, {
+        id: 'hidden-write',
+        targets: ['server'],
+        execute: async () => {
+          calls += 1;
+          return { saved: true };
+        },
+      }),
+    ],
+  );
+  const handler = createHttpHandler(registry, {
+    resolveExecutionContext: () => ({
+      caller: { kind: 'authenticated', subject: 'fixture', scopes: ['fixture:write'] },
+      authorization: { authorize: () => true },
+    }),
+  });
+  const response = await handler(
+    new Request('http://localhost' + httpInvocationPath(write.identity), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ value: 'only-once' }),
+    }),
+  );
+  assert.equal(response.status, 404);
+  assert.equal(calls, 0);
+});

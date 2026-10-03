@@ -49,8 +49,10 @@ handler exceptions and output values.
 The default request body limit is 32 KiB and can be configured from 1 byte through 1 MiB with
 maxRequestBytes. Tool execution defaults to a 10-second deadline, configurable up to 300 seconds.
 A timed-out call receives an MCP tool error and its binding receives an aborted signal; bindings
-must observe that signal to stop their work. Host code remains responsible for identity-provider
-configuration, transport security, grant persistence and rate limiting.
+must observe that signal to stop their work. For a write or destructive capability, the error says
+that the write may have completed. The adapter does not retry; callers must check state before any
+retry unless the application defines an idempotency contract. Host code remains responsible for
+identity-provider configuration, transport security, grant persistence and rate limiting.
 
 A real local HTTP socket fixture uses the official client and server packages, both pinned to
 version 2.3.0. The observed client session negotiated protocol version 2025-11-25. It discovers

@@ -46,8 +46,10 @@ loopback addresses for local fixtures. The CLI rejects URL userinfo and does not
 Remote mode rejects `--binding-id`; runtime binding selection belongs to the remote host.
 
 A remote `--timeout-ms` races the request against a deadline and also signals abort to cooperative
-fetchers. A fetcher that ignores abort cannot hold the CLI past that timeout. Remote JSON is checked
-against the selected capability output schema before it can be reported as success.
+fetchers. A fetcher that ignores abort cannot hold the CLI past that timeout. The generated remote
+HTTP surface exposes public reads only; protected writes are rejected before any network request.
+Local mode does not apply `--timeout-ms` to a binding. Remote JSON is checked against the selected
+capability output schema before it can be reported as success.
 
 For invocations, stdout contains exactly one JSON envelope using `uan.cli-result/v1`; stderr carries
 effective target and redacted failure diagnostics. Exit codes are 0 for success, 2 for invalid input,

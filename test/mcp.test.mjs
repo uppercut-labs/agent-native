@@ -725,3 +725,114 @@ test('non-MCP paths and invalid adapter options fail closed', async () => {
   assert.throws(() => createMcpHandler(fixture.registry, { maxRequestBytes: 0 }), RangeError);
   assert.throws(() => createMcpHandler(fixture.registry, { deadlineMs: 300_001 }), RangeError);
 });
+
+test('timed-out protected MCP write reports uncertain completion and is never retried', async () => {
+  const identity = { namespace: 'mcp.test', name: 'write-once', majorVersion: 1 };
+  const definition = defineCapability({
+    identity,
+    description: 'Delayed write fixture.',
+    input: fromZod(z.object({ value: z.string() })),
+    output: fromZod(z.object({ saved: z.boolean() })),
+    risk: 'write',
+    access: { kind: 'protected', scopes: ['fixture:write'] },
+  });
+  let calls = 0;
+  let committed = 0;
+  let sawAbort = false;
+  const binding = bindCapability(definition, {
+    id: 'delayed-write',
+    targets: ['server'],
+    execute: async (_input, context) => {
+      calls += 1;
+      context.signal?.addEventListener('abort', () => {
+        sawAbort = true;
+      });
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      committed += 1;
+      return { saved: true };
+    },
+  });
+  const registry = createCapabilityRegistry([definition], [binding]);
+  const resource = new URL('https://mcp.example.test/write');
+  const now = Math.floor(Date.now() / 1000);
+  const handler = createMcpHandler(registry, {
+    deadlineMs: 20,
+    bearerAuth: {
+      verifier: {
+        async verifyAccessToken(token) {
+          return {
+            token,
+            clientId: 'timeout-client',
+            scopes: ['mcp', 'fixture:write'],
+            expiresAt: now + 3600,
+            resource,
+          };
+        },
+      },
+      expectedResource: resource,
+    },
+    resolveTrustedPrincipal(authInfo) {
+      return {
+        issuer: 'https://issuer.example.test',
+        subject: 'caller-a',
+        clientId: authInfo.clientId,
+        tenantId: 'tenant-a',
+        audience: resource.toString(),
+        scopes: [...authInfo.scopes],
+        expiresAt: authInfo.expiresAt,
+      };
+    },
+    grantAuthorization: {
+      applicationId: 'timeout-test',
+      audience: resource.toString(),
+      policyRevision: 'v1',
+      store: {
+        async find() {
+          return [
+            {
+              issuer: 'https://issuer.example.test',
+              subject: 'caller-a',
+              clientId: 'timeout-client',
+              tenantId: 'tenant-a',
+              applicationId: 'timeout-test',
+              audience: resource.toString(),
+              policyRevision: 'v1',
+              grantId: 'write-grant',
+              scopes: ['fixture:write'],
+              issuedAt: now - 1,
+              expiresAt: now + 3600,
+              revokedAt: null,
+            },
+          ];
+        },
+        async save() {},
+        async revoke() {
+          return false;
+        },
+      },
+      authorizeResource: () => true,
+    },
+    discoverProtected: () => true,
+  });
+  const server = await listen(handler);
+  const client = new Client({ name: 'uan-020-timeout-client', version: '1.0.0' });
+  const transport = new StreamableHTTPClientTransport(new URL(`${server.origin}/mcp`), {
+    requestInit: { headers: { authorization: 'Bearer fixture-token' } },
+  });
+  try {
+    await client.connect(transport);
+    const result = await client.callTool({
+      name: mcpToolName(identity),
+      arguments: { value: 'only-once' },
+    });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /write may have completed.*Do not retry/);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    assert.equal(calls, 1);
+    assert.equal(committed, 1);
+    assert.equal(sawAbort, true);
+  } finally {
+    await client.close();
+    await server.close();
+  }
+});

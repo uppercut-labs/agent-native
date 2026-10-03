@@ -436,3 +436,61 @@ test('remote CLI follows GET override and retains canonical invocation', async (
   assert.equal(invalidCode, 2);
   assert.equal(JSON.parse(invalidOutput).result.reason, 'invalid-input');
 });
+
+test('remote CLI refuses protected writes before network effects', async () => {
+  const definition = defineCapability({
+    identity: { namespace: 'cli.test', name: 'write-once', majorVersion: 1 },
+    description: 'Write exposure fixture.',
+    input: fromZod(z.object({ value: z.string() })),
+    output: fromZod(z.object({ saved: z.boolean() })),
+    risk: 'write',
+    access: { kind: 'protected', scopes: ['fixture:write'] },
+  });
+  let bindingCalls = 0;
+  const registry = createCapabilityRegistry(
+    [definition],
+    [
+      bindCapability(definition, {
+        id: 'remote-write',
+        targets: ['server'],
+        execute: async () => {
+          bindingCalls += 1;
+          return { saved: true };
+        },
+      }),
+    ],
+  );
+  let fetchCalls = 0;
+  let stdout = '';
+  const code = await runCapabilityCli(
+    [
+      '--mode',
+      'remote',
+      '--profile',
+      'fixture',
+      'cli.test:write-once@1',
+      '--input-json',
+      '{"value":"only-once"}',
+    ],
+    {
+      registry,
+      authorization: { authorize: () => true },
+      caller: { kind: 'authenticated', subject: 'fixture', scopes: ['fixture:write'] },
+      credentialProfiles: { fixture: { baseUrl: 'https://fixture.test', token: 'fake-token' } },
+      fetcher: async () => {
+        fetchCalls += 1;
+        throw new Error('must not be called');
+      },
+    },
+    {
+      writeStdout: (value) => {
+        stdout += value;
+      },
+      writeStderr: () => {},
+    },
+  );
+  assert.equal(code, 1);
+  assert.equal(JSON.parse(stdout).result.reason, 'capability-unavailable');
+  assert.equal(fetchCalls, 0);
+  assert.equal(bindingCalls, 0);
+});

@@ -18,7 +18,11 @@ import {
   type TrustedPrincipal,
 } from './auth.js';
 import { capabilitySurfaceNames, createCapabilitySurfaceMap } from './core/composition.js';
-import { type CapabilityDefinition, canonicalCapabilityId } from './core/contracts.js';
+import {
+  type CapabilityDefinition,
+  type CapabilityRisk,
+  canonicalCapabilityId,
+} from './core/contracts.js';
 import type { AuthorizationPort, ExecutionCaller } from './core/executor.js';
 import { executeCapability } from './core/executor.js';
 import type { CapabilityRegistry } from './core/registry.js';
@@ -196,6 +200,14 @@ function toolError(message: string) {
   };
 }
 
+function deadlineToolError(risk: CapabilityRisk) {
+  return toolError(
+    risk === 'read'
+      ? 'Capability execution exceeded its deadline.'
+      : 'Capability execution exceeded its deadline; the write may have completed. Do not retry without checking its state.',
+  );
+}
+
 function executorError(reason: string): string {
   switch (reason) {
     case 'capability-missing':
@@ -339,12 +351,13 @@ async function defineServer(
 
       try {
         const outcome = await Promise.race([operation, timeout]);
-        if (outcome.kind === 'timeout')
-          return toolError('Capability execution exceeded its deadline.');
+        if (outcome.kind === 'timeout') return deadlineToolError(definition.risk);
         if (outcome.kind === 'unavailable')
           return toolError('Capability execution is unavailable.');
         if (outcome.result.kind === 'failure')
-          return toolError(executorError(outcome.result.reason));
+          return outcome.result.reason === 'deadline-exceeded'
+            ? deadlineToolError(definition.risk)
+            : toolError(executorError(outcome.result.reason));
         const value = outcome.result.value;
         let valueJson: string | undefined;
         try {
