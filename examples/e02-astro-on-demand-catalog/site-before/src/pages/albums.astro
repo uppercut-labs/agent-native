@@ -1,0 +1,26 @@
+---
+import { albums } from '../data/albums.mjs';
+import SiteLayout from '../layouts/SiteLayout.astro';
+---
+
+<SiteLayout title="Catalog" description="Three public sample records in the Needle and Number catalog.">
+  <header class="page-heading">
+    <p class="kicker">Catalog / A-Z</p>
+    <h1>On the shelf</h1>
+    <p>Select a catalog number to use the site's ordinary JSON lookup route.</p>
+  </header>
+  <ol class="album-index">
+    {albums.map((album, index) => (
+      <li id={album.slug}>
+        <span class="catalog-number">NN-{String(index + 1).padStart(3, '0')}</span>
+        <div class="album-title">
+          <h2>{album.title}</h2>
+          <p>{album.artist}</p>
+        </div>
+        <p class="album-note">{album.summary}</p>
+        <span class="album-meta">{album.year} / {album.format}</span>
+        <a href={`/api/albums/${album.slug}.json`}>JSON <span class="visually-hidden">for {album.title}</span></a>
+      </li>
+    ))}
+  </ol>
+</SiteLayout>

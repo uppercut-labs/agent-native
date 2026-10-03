@@ -1,0 +1,38 @@
+---
+const { title, description = 'A small independent album catalog.' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" href="/catalog-mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/site.css" />
+    <title>{title} | Needle &amp; Number</title>
+  </head>
+  <body>
+    <div class="catalog-shell">
+      <header class="site-header">
+        <a class="brand" href="/" aria-label="Needle and Number home">
+          <img src="/catalog-mark.svg" width="42" height="42" alt="" />
+          <span>Needle <i>&amp;</i> Number</span>
+        </a>
+        <p class="issue">Listening notes / Vol. 02</p>
+        <nav aria-label="Main navigation">
+          <a href="/">Index</a>
+          <a href="/albums/">Catalog</a>
+          <a href="/about/">About</a>
+        </nav>
+      </header>
+      <main>
+        <slot />
+      </main>
+      <footer>
+        <span>Public sample records</span>
+        <span>Filed locally</span>
+      </footer>
+    </div>
+  </body>
+</html>
