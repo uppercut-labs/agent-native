@@ -13,4 +13,4 @@ The root, contracts, composition, registry, executor, browser, HTTP, CLI and ini
 
 The package does not install optional peers automatically. Application-owned routes, client libraries, framework adapters and deployment hosts remain separate. For example, the Astro on-demand fixture also installs @astrojs/node; the Next fixture installs Next and React. The browser-only E06 fixture installs Zod for its own schema and has no MCP server dependency.
 
-Run npm run check:portability from this repository to build, pack, install in a fresh core/browser consumer and verify that optional adapters are absent. See the [UAN-022 measured evidence](evidence/UAN-022-package-portability.md) for the environment, sizes and current Worker limitation.
+Run npm run check:portability from this repository to build, pack, install in a fresh core/browser consumer and verify that optional adapters are absent. See the [UAN-022 measured evidence](evidence/UAN-022-package-portability.md) for the environment, sizes and Worker fixture result.

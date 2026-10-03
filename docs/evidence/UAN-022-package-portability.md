@@ -20,7 +20,7 @@ The new npm run check:portability builds and packs the package, checks all expor
 - E01 static Astro: 12 tests and static build passed; installed Zod for its schema and no MCP server.
 - E02 on-demand Astro: standalone live HTTP/MCP verification passed with an explicit MCP server.
 - E03 Next 16.3.8: two tests, official MCP route smoke, production build and browser secret boundary passed after declaring the MCP server directly.
-- E04 Worker sidecar: nine fixture tests and Wrangler dry-run bundle scan passed. The live official MCP client call returned HTTP 500 with JSON-RPC code -32603 and message "Internal server error". The same command on an untouched cf499a8 clone returned the identical failure on this host, so the optional-peer change did not introduce that observed failure. The combined Node 22/24 CI remains the integration gate.
+- E04 Worker sidecar: nine fixture tests, Wrangler dry-run bundle scan, and live official MCP client roundtrip passed after `sdkSchema()` began giving the Worker validator a mutable JSON copy. The first integrated CI run and the untouched cf499a8 research clone had returned HTTP 500 because the validator tried to annotate a frozen schema. Node 22/24 CI after this repair remains the integration gate.
 - E05 Node/Hono CLI: 12 tests, local/remote parity and CLI start passed with an explicit MCP server.
 - E06 browser-only: one test and Vite build passed; the emitted JS asset measured 86.17 kB / 25.78 kB gzip and the installed tree contained Zod but no MCP server.
 - E08 contract pack: nine tests and the independent demo passed; no MCP server or Zod installed.
@@ -29,4 +29,4 @@ Node 24 typecheck and build, scoped Biome format, git diff check and production 
 
 ## Remaining qualification
 
-The Worker live failure needs separate diagnosis or a passing combined CI comparison. Windows and Linux CLI runs, cold doctor/invocation timing, independent client bundle budgets, dependency license inventory and outside-repository npm release installation remain open. One macOS snapshot is insufficient to set cross-platform performance thresholds. No npm publication or commercial host support is claimed.
+Windows and Linux CLI runs, cold doctor/invocation timing, independent client bundle budgets, dependency license inventory and outside-repository npm release installation remain open. One macOS snapshot is insufficient to set cross-platform performance thresholds. No npm publication or commercial host support is claimed.
