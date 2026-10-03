@@ -11,10 +11,11 @@ const supportedExamples = new Set([
   'e05-node-cli',
   'e06-browser-only-theme-controls',
   'e04-worker-sidecar',
+  'e07-playlist-permissions',
 ]);
 if (exampleId === undefined || !supportedExamples.has(exampleId)) {
   throw new Error(
-    'Choose a supported example id: e01-album-catalog, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls or e04-worker-sidecar.',
+    'Choose a supported example id: e01-album-catalog, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls, e04-worker-sidecar or e07-playlist-permissions.',
   );
 }
 

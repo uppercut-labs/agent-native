@@ -233,6 +233,69 @@ test('configured discovery policy hides a public tool and its direct name call',
   }
 });
 
+test('protected discovery and grant authorization cannot be partially or ambiguously configured', () => {
+  const fixture = createFixtureRegistry();
+  assert.throws(
+    () => createMcpHandler(fixture.registry, { discoverProtected: () => true }),
+    /protected discovery requires verified principals and grant authorization/,
+  );
+
+  const trustedOptions = {
+    bearerAuth: {
+      verifier: {
+        verifyAccessToken: async () => {
+          throw new Error('unused');
+        },
+      },
+      expectedResource: new URL('https://mcp.example.test/resource'),
+    },
+    resolveTrustedPrincipal: () => null,
+    grantAuthorization: {
+      applicationId: 'fixture',
+      audience: 'https://mcp.example.test/resource',
+      policyRevision: 'v1',
+      store: { find: async () => [], save: async () => {}, revoke: async () => false },
+    },
+  };
+  assert.throws(
+    () =>
+      createMcpHandler(fixture.registry, {
+        ...trustedOptions,
+        resolveExecutionContext: () => ({
+          caller: { kind: 'anonymous' },
+          authorization: { authorize: () => true },
+        }),
+      }),
+    /custom execution context cannot be combined with grant authorization/,
+  );
+});
+
+test('legacy canDiscover callback cannot opt protected definitions into discovery', async () => {
+  const fixture = createFixtureRegistry();
+  const handler = createMcpHandler(fixture.registry, { canDiscover: () => true });
+  const server = await listen(handler);
+  const client = new Client({ name: 'uan-010-legacy-discovery-client', version: '1.0.0' });
+  const transport = new StreamableHTTPClientTransport(new URL(server.origin + '/mcp'));
+
+  try {
+    await client.connect(transport);
+    const tools = (await client.listTools()).tools;
+    assert.equal(tools.length, 1);
+    assert.equal(tools[0].name, mcpToolName(lookupIdentity));
+    assert.equal(JSON.stringify(tools).includes('PRIVATE_TOOL_SENTINEL'), false);
+    await assert.rejects(
+      client.callTool({
+        name: mcpToolName(fixture.hidden.identity),
+        arguments: { accountId: 'account-a' },
+      }),
+    );
+    assert.deepEqual(fixture.counts(), { publicCalls: 0, hiddenCalls: 0 });
+  } finally {
+    await client.close();
+    await server.close();
+  }
+});
+
 test('per-request authorization is enforced by the shared executor', async () => {
   const fixture = createFixtureRegistry();
   const handler = createMcpHandler(fixture.registry, {

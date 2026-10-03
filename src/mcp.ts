@@ -4,7 +4,16 @@ import {
   McpServer,
   type JsonSchemaType,
   type McpRequestContext,
+  type AuthInfo,
+  type OAuthTokenVerifier,
+  requireBearerAuth,
 } from '@modelcontextprotocol/server';
+import {
+  createGrantAuthorization,
+  executionCallerForPrincipal,
+  type GrantAuthorizationOptions,
+  type TrustedPrincipal,
+} from './auth.js';
 import type { AuthorizationPort, ExecutionCaller } from './core/executor.js';
 import { executeCapability } from './core/executor.js';
 import { canonicalCapabilityId, type CapabilityDefinition } from './core/contracts.js';
@@ -30,8 +39,26 @@ export type McpAdapterOptions = {
     definition: CapabilityDefinition<unknown, unknown>,
     request: Request,
   ) => boolean | Promise<boolean>;
+  readonly discoverProtected?: (
+    definition: CapabilityDefinition<unknown, unknown>,
+    request: Request,
+    authInfo: AuthInfo,
+  ) => boolean | Promise<boolean>;
+  readonly bearerAuth?: {
+    readonly verifier: OAuthTokenVerifier;
+    readonly expectedResource: URL;
+    readonly requiredScopes?: readonly string[];
+    readonly resourceMetadataUrl?: string;
+  };
+  // AuthInfo comes from the SDK verifier; issuer/subject/tenant must be supplied by that
+  // verifier's trusted metadata, never inferred from request headers or MCP clientInfo.
+  readonly resolveTrustedPrincipal?: (
+    authInfo: AuthInfo,
+  ) => TrustedPrincipal | null | Promise<TrustedPrincipal | null>;
+  readonly grantAuthorization?: Omit<GrantAuthorizationOptions, 'principal'>;
   readonly resolveExecutionContext?: (
     request: Request,
+    authInfo?: AuthInfo,
   ) => McpExecutionContext | Promise<McpExecutionContext>;
 };
 
@@ -71,6 +98,34 @@ function validateOptions(options: McpAdapterOptions) {
   }
   if (!Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > MAX_DEADLINE_MS) {
     throw new RangeError('deadlineMs must be between 1 and 300000');
+  }
+  if (
+    (options.resolveTrustedPrincipal !== undefined || options.grantAuthorization !== undefined) &&
+    options.bearerAuth === undefined
+  ) {
+    throw new TypeError('trusted principal resolution requires the official bearer auth gate');
+  }
+  if (
+    (options.resolveTrustedPrincipal === undefined) !==
+    (options.grantAuthorization === undefined)
+  ) {
+    throw new TypeError(
+      'trusted principal resolution and grant authorization must be configured together',
+    );
+  }
+  if (
+    options.discoverProtected !== undefined &&
+    (options.bearerAuth === undefined ||
+      options.resolveTrustedPrincipal === undefined ||
+      options.grantAuthorization === undefined)
+  ) {
+    throw new TypeError('protected discovery requires verified principals and grant authorization');
+  }
+  if (
+    options.resolveExecutionContext !== undefined &&
+    (options.resolveTrustedPrincipal !== undefined || options.grantAuthorization !== undefined)
+  ) {
+    throw new TypeError('custom execution context cannot be combined with grant authorization');
   }
   return { endpoint, maxRequestBytes, deadlineMs };
 }
@@ -145,6 +200,7 @@ function defaultContext(): McpExecutionContext {
 async function defineServer(
   registry: CapabilityRegistry,
   requestInfo: Request | undefined,
+  authInfo: AuthInfo | undefined,
   options: McpAdapterOptions,
   deadlineMs: number,
 ): Promise<McpServer> {
@@ -152,10 +208,16 @@ async function defineServer(
   if (requestInfo === undefined) return server;
 
   for (const definition of registry.definitions) {
-    if (!isPublicRead(definition)) continue;
-    let visible = true;
+    const publicRead = isPublicRead(definition);
+    if (!publicRead && (options.discoverProtected === undefined || authInfo === undefined))
+      continue;
+    let visible = publicRead;
     try {
-      visible = (await options.canDiscover?.(definition, requestInfo)) ?? true;
+      visible = publicRead
+        ? ((await options.canDiscover?.(definition, requestInfo)) ?? true)
+        : options.discoverProtected === undefined
+          ? false
+          : await options.discoverProtected(definition, requestInfo, authInfo!);
     } catch {
       visible = false;
     }
@@ -170,7 +232,11 @@ async function defineServer(
           definition.description + ' Returns the contract value under structuredContent.result.',
         inputSchema,
         outputSchema,
-        annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+        annotations: {
+          readOnlyHint: definition.risk === 'read',
+          destructiveHint: definition.risk === 'destructive',
+          ...(definition.risk === 'read' ? { idempotentHint: true } : {}),
+        },
       },
       async (input) => {
         const controller = new AbortController();
@@ -184,7 +250,27 @@ async function defineServer(
         const operation = (async () => {
           let context: McpExecutionContext;
           try {
-            context = (await options.resolveExecutionContext?.(requestInfo)) ?? defaultContext();
+            if (options.resolveExecutionContext !== undefined) {
+              context = await options.resolveExecutionContext(requestInfo, authInfo);
+            } else {
+              const principal =
+                authInfo === undefined || options.resolveTrustedPrincipal === undefined
+                  ? null
+                  : await options.resolveTrustedPrincipal(authInfo);
+              context = {
+                caller:
+                  principal === null
+                    ? { kind: 'anonymous' }
+                    : executionCallerForPrincipal(principal),
+                authorization:
+                  options.grantAuthorization === undefined
+                    ? defaultContext().authorization
+                    : createGrantAuthorization({
+                        ...options.grantAuthorization,
+                        principal,
+                      }),
+              };
+            }
           } catch {
             return { kind: 'unavailable' as const };
           }
@@ -243,12 +329,32 @@ export function createMcpHandler(
   const config = validateOptions(options);
   const officialHandler = createOfficialMcpHandler(
     async (context: McpRequestContext) =>
-      await defineServer(registry, context.requestInfo, options, config.deadlineMs),
+      await defineServer(
+        registry,
+        context.requestInfo,
+        context.authInfo,
+        options,
+        config.deadlineMs,
+      ),
     {
       legacy: 'stateless',
       maxRequestBodySize: config.maxRequestBytes,
     },
   );
+
+  const bearerGate =
+    options.bearerAuth === undefined
+      ? undefined
+      : requireBearerAuth({
+          verifier: options.bearerAuth.verifier,
+          expectedResource: options.bearerAuth.expectedResource,
+          ...(options.bearerAuth.requiredScopes === undefined
+            ? {}
+            : { requiredScopes: [...options.bearerAuth.requiredScopes] }),
+          ...(options.bearerAuth.resourceMetadataUrl === undefined
+            ? {}
+            : { resourceMetadataUrl: options.bearerAuth.resourceMetadataUrl }),
+        });
 
   return async (request: Request): Promise<Response> => {
     if (new URL(request.url).pathname !== config.endpoint) {
@@ -257,6 +363,12 @@ export function createMcpHandler(
         headers: { 'content-type': 'application/json; charset=utf-8' },
       });
     }
-    return officialHandler.fetch(request);
+    let authInfo: AuthInfo | undefined;
+    if (bearerGate !== undefined && request.headers.has('authorization')) {
+      const gated = await bearerGate(request);
+      if (gated instanceof Response) return gated;
+      authInfo = gated;
+    }
+    return officialHandler.fetch(request, authInfo === undefined ? {} : { authInfo });
   };
 }

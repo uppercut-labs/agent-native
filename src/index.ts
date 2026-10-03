@@ -46,3 +46,16 @@ export type {
   DiagnosticStatus,
 } from './core/diagnostics.js';
 export type { SchemaPort } from './core/schema.js';
+
+export {
+  createGrantAuthorization,
+  executionCallerForPrincipal,
+  hasGrantForScopes,
+} from './auth.js';
+export type {
+  GrantAuthorizationOptions,
+  GrantQuery,
+  GrantStorePort,
+  PersistedGrant,
+  TrustedPrincipal,
+} from './auth.js';
