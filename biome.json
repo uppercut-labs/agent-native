@@ -4,6 +4,7 @@
     "includes": [
       "**",
       "!dist",
+      "!docs-site/dist",
       "!.test-dist",
       "!examples/e01-album-catalog/.exported",
       "!examples/e02-astro-on-demand-catalog/.exported",
