@@ -1,0 +1,44 @@
+{
+  "scenarios": [
+    {
+      "id": "missing-binding",
+      "fault": "The read capability has no runtime binding.",
+      "repair": "Restore the example:catalog.read@1 binding in project.json."
+    },
+    {
+      "id": "stale-artifact",
+      "fault": "The generated manifest revision differs from the expected revision.",
+      "repair": "Regenerate artifacts/catalog.generated.json for the current revision."
+    },
+    {
+      "id": "ambiguous-root",
+      "fault": "Two candidate project roots contain a project marker.",
+      "repair": "Select the intended root and remove the legacy candidate."
+    },
+    {
+      "id": "insufficient-scope",
+      "fault": "The fixture identity lacks catalog:read.",
+      "repair": "Grant catalog:read to the fixture identity."
+    },
+    {
+      "id": "unsupported-browser",
+      "fault": "The fixture browser lacks the required WebMCP feature.",
+      "repair": "Use a browser with WebMCP support, or select a non-browser adapter."
+    },
+    {
+      "id": "missing-credentials",
+      "fault": "The configured fixture-only credential file is absent.",
+      "repair": "Create credentials/test-auth.json using the fake local fixture value."
+    },
+    {
+      "id": "unreachable-endpoint",
+      "fault": "The configured loopback endpoint is not serving health checks.",
+      "repair": "Run npm run health, then select the repaired fixture on port 8787."
+    },
+    {
+      "id": "no-endpoint",
+      "fault": "No network endpoint is configured, so network evidence is unavailable.",
+      "repair": "Configure a reachable endpoint before requiring a network check."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "e11-diagnostics-fault-lab",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/cli.mjs --list",
+    "test": "node --test test/*.test.mjs",
+    "health": "node src/health.mjs"
+  },
+  "dependencies": { "@uppercut-labs/agent-native": "0.0.0" }
+}
