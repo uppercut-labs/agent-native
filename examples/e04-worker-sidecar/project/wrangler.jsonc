@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agent-native-e04-sidecar",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-08-04",
+  "vars": {
+    "CATALOG_REVISION": "sha256:9748f47e7e0eca26acd3e5b0fe30c6227242ea7abeb4f62beab76b68b064d7c6",
+    "SIDECAR_HOST": "127.0.0.1",
+    "ALLOWED_ORIGIN": "http://localhost:4321"
+  },
+  "dev": { "ip": "127.0.0.1" }
+}

@@ -85,7 +85,8 @@
     "example:e12": "node scripts/check-example.mjs e12-shared-unit-converter",
     "example:e05": "node scripts/check-example.mjs e05-node-cli",
     "example:e06": "node scripts/check-example.mjs e06-browser-only-theme-controls",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run example:e01 && npm run example:e12 && npm run example:e05 && npm run example:e06"
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run example:e01 && npm run example:e12 && npm run example:e05 && npm run example:e06 && npm run example:e04",
+    "example:e04": "node scripts/check-example.mjs e04-worker-sidecar"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.3.0",

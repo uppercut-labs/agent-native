@@ -10,10 +10,11 @@ const supportedExamples = new Set([
   'e12-shared-unit-converter',
   'e05-node-cli',
   'e06-browser-only-theme-controls',
+  'e04-worker-sidecar',
 ]);
 if (exampleId === undefined || !supportedExamples.has(exampleId)) {
   throw new Error(
-    'Choose a supported example id: e01-album-catalog, e12-shared-unit-converter, e05-node-cli, or e06-browser-only-theme-controls.',
+    'Choose a supported example id: e01-album-catalog, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls or e04-worker-sidecar.',
   );
 }
 
@@ -65,6 +66,23 @@ await rm(exportRoot, { recursive: true, force: true });
 await mkdir(vendorRoot, { recursive: true });
 runNpm(['pack', '--pack-destination', vendorRoot], repositoryRoot);
 await copyProjectFiles(projectSource, exportRoot);
+const sharedManifestPath = path.join(projectSource, 'shared-files.json');
+try {
+  const sharedFiles = JSON.parse(await readFile(sharedManifestPath, 'utf8'));
+  for (const [target, source] of Object.entries(sharedFiles)) {
+    const sourcePath = path.resolve(repositoryRoot, source);
+    const targetPath = path.resolve(exportRoot, target);
+    if (
+      !sourcePath.startsWith(repositoryRoot + path.sep) ||
+      !targetPath.startsWith(exportRoot + path.sep)
+    )
+      throw new Error('Shared example file escapes its root.');
+    await mkdir(path.dirname(targetPath), { recursive: true });
+    await copyFile(sourcePath, targetPath);
+  }
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error;
+}
 
 const packageTemplate = JSON.parse(
   await readFile(path.join(projectSource, 'package.template.json'), 'utf8'),
@@ -78,5 +96,6 @@ await writeFile(
 runNpm(['install', '--package-lock-only', '--ignore-scripts'], exportRoot);
 runNpm(['ci'], exportRoot);
 runNpm(['test'], exportRoot);
-runNpm(['start'], exportRoot);
+if (exampleId === 'e04-worker-sidecar') runNpm(['run', 'verify'], exportRoot);
+else runNpm(['start'], exportRoot);
 process.stdout.write(`Standalone ${exampleId} installed and tested at ${exportRoot}\n`);

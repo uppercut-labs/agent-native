@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { createBrowserCapabilityAdapter } from '@uppercut-labs/agent-native/browser';
 import { agentNativeAstro } from '@uppercut-labs/agent-native/astro';
 import {
+  CATALOG_REVISION,
+  publicAlbums,
   browserCatalogRegistry,
   getAlbumCapability,
   runBrowserAlbumLookup,
 } from '../src/catalog-shared.mjs';
 import { installAstroCatalog } from '../src/astro-catalog.mjs';
+import { diagnoseSidecar, installSidecarDiagnostics } from '../src/sidecar-diagnostics.mjs';
 
 class Events {
   listeners = new Map();
@@ -216,4 +220,95 @@ test('Astro integration injects a bundled page entry and rejects server output',
 test('Astro integration requires an absolute browser entry path', () => {
   assert.throws(() => agentNativeAstro({ browserEntry: './src/entry.mjs' }), /absolute/);
   assert.equal(getAlbumCapability.identity.name, 'album.lookup');
+});
+
+test('sidecar diagnostics distinguish origin, route, binding, and revision failures', () => {
+  const base = {
+    pageOrigin: 'https://catalog.example.test',
+    sidecarOrigin: 'https://api.example.test',
+    browserRevision: 'sha256:9748f47e7e0eca26acd3e5b0fe30c6227242ea7abeb4f62beab76b68b064d7c6',
+  };
+  assert.equal(
+    diagnoseSidecar({
+      ...base,
+      sidecarHealth: { status: 'ok', catalogRevision: base.browserRevision },
+    }).kind,
+    'sidecar-origin-differs',
+  );
+  assert.equal(
+    diagnoseSidecar({
+      ...base,
+      sameOriginMcpStatus: 404,
+      expectedRouteMode: 'same-origin',
+      sidecarHealth: { status: 'ok', catalogRevision: base.browserRevision },
+    }).kind,
+    'same-origin-route-missing',
+  );
+  assert.equal(
+    diagnoseSidecar({
+      ...base,
+      sidecarHealth: { status: 'unavailable', code: 'missing_catalog_binding' },
+    }).kind,
+    'missing-catalog-binding',
+  );
+  assert.equal(
+    diagnoseSidecar({ ...base, sidecarHealth: { status: 'ok', catalogRevision: 'other' } }).kind,
+    'catalog-revision-mismatch',
+  );
+});
+
+test('sidecar status refreshes on Astro navigation and pageshow without probing /mcp in direct mode', async () => {
+  const documentEvents = new Events();
+  const windowEvents = new Events();
+  const section = {
+    getAttribute(name) {
+      return name === 'data-sidecar-origin' ? 'https://api.example.test' : 'sidecar';
+    },
+  };
+  const status = { textContent: '' };
+  const document = {
+    defaultView: windowEvents,
+    addEventListener: documentEvents.addEventListener.bind(documentEvents),
+    removeEventListener: documentEvents.removeEventListener.bind(documentEvents),
+    querySelector(selector) {
+      if (selector === '[data-album-catalog]') return section;
+      if (selector === '[data-sidecar-status]') return status;
+      return null;
+    },
+    dispatch: documentEvents.dispatch.bind(documentEvents),
+  };
+  const calls = [];
+  const fetcher = async (url) => {
+    calls.push(String(url));
+    return {
+      status: 200,
+      json: async () => ({
+        status: 'ok',
+        catalogRevision: 'sha256:9748f47e7e0eca26acd3e5b0fe30c6227242ea7abeb4f62beab76b68b064d7c6',
+      }),
+    };
+  };
+  const installation = installSidecarDiagnostics(document, {
+    pageOrigin: 'https://catalog.example.test',
+    browserRevision: 'sha256:9748f47e7e0eca26acd3e5b0fe30c6227242ea7abeb4f62beab76b68b064d7c6',
+    fetcher,
+  });
+  await installation.whenReady();
+  assert.equal(calls.length, 1);
+  assert.match(status.textContent, /separate sidecar URL/);
+  document.dispatch('astro:page-load');
+  await installation.whenReady();
+  windowEvents.dispatch('pageshow');
+  await installation.whenReady();
+  assert.equal(calls.length, 3);
+  assert.equal(documentEvents.listenerCount('astro:page-load'), 1);
+  assert.equal(windowEvents.listenerCount('pageshow'), 1);
+  installation.dispose();
+  assert.equal(documentEvents.listenerCount('astro:page-load'), 0);
+  assert.equal(windowEvents.listenerCount('pageshow'), 0);
+});
+
+test('shared catalog revision is the SHA-256 of canonical public album data', () => {
+  const digest = createHash('sha256').update(JSON.stringify(publicAlbums)).digest('hex');
+  assert.equal(CATALOG_REVISION, 'sha256:' + digest);
 });

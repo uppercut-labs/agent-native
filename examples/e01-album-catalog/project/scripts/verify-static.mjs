@@ -18,6 +18,8 @@ assert.match(home, /Records for the in-between hours/);
 assert.match(albums, /Find an album by slug/);
 assert.match(albums, /First Light/);
 assert.match(albums, /Blue Hour/);
+assert.match(albums, /data-catalog-revision/);
+assert.match(albums, /data-sidecar-status/);
 assert.match(about, /Existing pages stay in place/);
 assert.match(css, /site-header/);
 assert.match(icon, /<svg/);

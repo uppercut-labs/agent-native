@@ -8,7 +8,8 @@
       "!examples/e01-album-catalog/.exported",
       "!examples/e12-shared-unit-converter/.exported",
       "!examples/e05-node-cli/.exported",
-      "!examples/e06-browser-only-theme-controls/.exported"
+      "!examples/e06-browser-only-theme-controls/.exported",
+      "!examples/e04-worker-sidecar/.exported"
     ]
   },
   "formatter": {

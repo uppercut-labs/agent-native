@@ -1,0 +1,5 @@
+{
+  "src/diagnostics.mjs": "examples/e01-album-catalog/project/src/sidecar-diagnostics.mjs",
+  "src/data/albums.mjs": "examples/e01-album-catalog/project/src/data/albums.mjs",
+  "src/catalog-contract.mjs": "examples/e01-album-catalog/project/src/catalog-contract.mjs"
+}

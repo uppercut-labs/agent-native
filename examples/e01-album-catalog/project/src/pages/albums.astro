@@ -1,11 +1,12 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { publicAlbums } from '../data/albums.mjs';
+import { CATALOG_REVISION, publicAlbums } from '../catalog-contract.mjs';
 ---
 <SiteLayout title="Albums">
-  <section data-album-catalog>
+  <section data-album-catalog data-catalog-revision={CATALOG_REVISION} data-sidecar-origin={import.meta.env.PUBLIC_AGENT_NATIVE_SIDECAR_ORIGIN ?? ''} data-route-mode={import.meta.env.PUBLIC_AGENT_NATIVE_ROUTE_MODE ?? 'sidecar'}>
     <p class="eyebrow">Catalog</p>
     <h1>Albums</h1>
+    <p data-sidecar-status aria-live="polite">Static catalog revision: {CATALOG_REVISION}. Sidecar is not configured.</p>
     <p data-agent-status aria-live="polite">The catalog works with or without browser agent support.</p>
     <form data-album-lookup>
       <label for="album-slug">Find an album by slug</label>

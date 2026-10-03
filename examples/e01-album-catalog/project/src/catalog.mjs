@@ -4,9 +4,9 @@ import {
   executeCapability,
 } from '@uppercut-labs/agent-native';
 import { createHttpHandler } from '@uppercut-labs/agent-native/http';
-import { getAlbumCapability, lookupAlbum } from './catalog-shared.mjs';
+import { getAlbumCapability, lookupAlbum } from './catalog-contract.mjs';
 
-export { getAlbumCapability } from './catalog-shared.mjs';
+export { getAlbumCapability } from './catalog-contract.mjs';
 
 const localAlbumBinding = bindCapability(getAlbumCapability, {
   id: 'local-sample-catalog',
