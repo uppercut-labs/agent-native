@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Album explorer</title>
+    <style>
+      :root { color-scheme: light dark; font-family: ui-sans-serif, system-ui, sans-serif; }
+      body { margin: 0; padding: 1rem; color: var(--color-text-primary, #17252b); background: var(--color-background-primary, #f3f0e8); }
+      main { max-width: 38rem; margin: auto; }
+      form { display: flex; gap: .5rem; }
+      input, button { font: inherit; padding: .65rem .8rem; border-radius: .55rem; }
+      input { min-width: 0; flex: 1; border: 1px solid #899; background: transparent; color: inherit; }
+      button { border: 0; background: #145b53; color: white; cursor: pointer; }
+      #status { min-height: 3rem; margin-top: 1rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Sample album explorer</h1>
+      <p>Search the shared public album catalog through the host.</p>
+      <form id="lookup-form">
+        <label for="slug">Album slug</label>
+        <input id="slug" name="slug" value="first-light" required>
+        <button type="submit">Look up</button>
+      </form>
+      <p id="status" role="status" aria-live="polite">Loading the album view…</p>
+    </main>
+    <script type="module" src="./view.js"></script>
+  </body>
+</html>

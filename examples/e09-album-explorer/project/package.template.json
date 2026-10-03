@@ -1,0 +1,20 @@
+{
+  "name": "e09-album-explorer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-view.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "start": "node src/demo.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "2.3.0",
+    "@modelcontextprotocol/ext-apps": "2.0.3",
+    "@modelcontextprotocol/server": "2.3.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}

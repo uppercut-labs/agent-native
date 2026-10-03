@@ -1,0 +1,4 @@
+{
+  "src/catalog-contract.mjs": "examples/e01-album-catalog/project/src/catalog-contract.mjs",
+  "src/data/albums.mjs": "examples/e01-album-catalog/project/src/data/albums.mjs"
+}

@@ -7,6 +7,8 @@ import {
   type AuthInfo,
   type OAuthTokenVerifier,
   requireBearerAuth,
+  type ToolAnnotations,
+  type CallToolResult,
 } from '@modelcontextprotocol/server';
 import {
   createGrantAuthorization,
@@ -67,6 +69,33 @@ export type McpAdapterOptions = {
     request: Request,
     authInfo?: AuthInfo,
   ) => McpExecutionContext | Promise<McpExecutionContext>;
+};
+
+export type McpAppResourceDefinition = {
+  readonly capabilityId: string;
+  readonly uri: string;
+  readonly name: string;
+  readonly html: string;
+};
+
+export type McpAppRegistration = {
+  readonly resources: readonly McpAppResourceDefinition[];
+  readonly registerTool: (
+    server: McpServer,
+    name: string,
+    config: {
+      readonly description: string;
+      readonly inputSchema: ReturnType<typeof sdkSchema>;
+      readonly outputSchema: ReturnType<typeof sdkSchema>;
+      readonly annotations: ToolAnnotations;
+    },
+    handler: (input: unknown) => Promise<CallToolResult>,
+    resourceUri: string,
+  ) => void;
+  readonly registerResources: (
+    server: McpServer,
+    resources: readonly McpAppResourceDefinition[],
+  ) => void;
 };
 
 function validateEndpoint(value = DEFAULT_ENDPOINT): string {
@@ -210,9 +239,11 @@ async function defineServer(
   authInfo: AuthInfo | undefined,
   options: McpAdapterOptions,
   deadlineMs: number,
+  appRegistration?: McpAppRegistration,
 ): Promise<McpServer> {
   const server = new McpServer({ name: 'uppercut-agent-native', version: SERVER_VERSION });
   if (requestInfo === undefined) return server;
+  const visibleAppResources = new Map<string, McpAppResourceDefinition>();
 
   for (const definition of registry.definitions) {
     const serverBindings = registry.bindings.filter(
@@ -259,102 +290,107 @@ async function defineServer(
     const name = mcpToolName(definition.identity);
     const inputSchema = sdkSchema(definition.input.toJSONSchema());
     const outputSchema = sdkSchema(resultSchema(definition.output.toJSONSchema()));
-    server.registerTool(
-      name,
-      {
-        description:
-          definition.description + ' Returns the contract value under structuredContent.result.',
-        inputSchema,
-        outputSchema,
-        annotations: {
-          readOnlyHint: definition.risk === 'read',
-          destructiveHint: definition.risk === 'destructive',
-          ...(definition.risk === 'read' ? { idempotentHint: true } : {}),
-        },
+    const toolConfig = {
+      description: `${definition.description} Returns the contract value under structuredContent.result.`,
+      inputSchema,
+      outputSchema,
+      annotations: {
+        readOnlyHint: definition.risk === 'read',
+        destructiveHint: definition.risk === 'destructive',
+        ...(definition.risk === 'read' ? { idempotentHint: true } : {}),
       },
-      async (input) => {
-        if (!isDestructiveCapabilityExposed(definition, 'mcp', options.surfaceExposure)) {
-          return toolError('Capability not found.');
-        }
-        const controller = new AbortController();
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const timeout = new Promise<{ readonly kind: 'timeout' }>((resolve) => {
-          timer = setTimeout(() => {
-            controller.abort();
-            resolve({ kind: 'timeout' });
-          }, deadlineMs);
-        });
-        const operation = (async () => {
-          let context: McpExecutionContext;
-          try {
-            if (options.resolveExecutionContext !== undefined) {
-              context = await options.resolveExecutionContext(requestInfo, authInfo);
-            } else {
-              const principal =
-                authInfo === undefined || options.resolveTrustedPrincipal === undefined
-                  ? null
-                  : await options.resolveTrustedPrincipal(authInfo);
-              context = {
-                caller:
-                  principal === null
-                    ? { kind: 'anonymous' }
-                    : executionCallerForPrincipal(principal),
-                authorization:
-                  options.grantAuthorization === undefined
-                    ? defaultContext().authorization
-                    : createGrantAuthorization({
-                        ...options.grantAuthorization,
-                        principal,
-                      }),
-              };
-            }
-          } catch {
-            return { kind: 'unavailable' as const };
-          }
-          const result = await executeCapability(registry, {
-            identity: definition.identity,
-            runtime: 'server',
-            input,
-            caller: context.caller,
-            authorization: context.authorization,
-            signal: controller.signal,
-          });
-          return { kind: 'complete' as const, result };
-        })();
-
-        try {
-          const outcome = await Promise.race([operation, timeout]);
-          if (outcome.kind === 'timeout')
-            return toolError('Capability execution exceeded its deadline.');
-          if (outcome.kind === 'unavailable')
-            return toolError('Capability execution is unavailable.');
-          if (outcome.result.kind === 'failure')
-            return toolError(executorError(outcome.result.reason));
-          const value = outcome.result.value;
-          let valueJson: string | undefined;
-          try {
-            if (typeof value === 'number' && !Number.isFinite(value))
-              return toolError('Capability result could not be serialized.');
-            valueJson = JSON.stringify(value);
-          } catch {
-            return toolError('Capability result could not be serialized.');
-          }
-          if (valueJson === undefined)
-            return toolError('Capability result could not be serialized.');
-
-          const structuredContent = { result: JSON.parse(valueJson) as unknown };
-          const text = JSON.stringify(structuredContent);
-          return {
-            content: [{ type: 'text' as const, text }],
-            structuredContent,
-          };
-        } catch {
-          return toolError('Capability execution is unavailable.');
-        } finally {
-          if (timer !== undefined) clearTimeout(timer);
-        }
-      },
+    };
+    const appResource = appRegistration?.resources.find(
+      (resource) => resource.capabilityId === canonicalCapabilityId(definition.identity),
     );
+    if (appResource !== undefined) visibleAppResources.set(appResource.uri, appResource);
+    const toolHandler = async (input: unknown) => {
+      if (!isDestructiveCapabilityExposed(definition, 'mcp', options.surfaceExposure)) {
+        return toolError('Capability not found.');
+      }
+      const controller = new AbortController();
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<{ readonly kind: 'timeout' }>((resolve) => {
+        timer = setTimeout(() => {
+          controller.abort();
+          resolve({ kind: 'timeout' });
+        }, deadlineMs);
+      });
+      const operation = (async () => {
+        let context: McpExecutionContext;
+        try {
+          if (options.resolveExecutionContext !== undefined) {
+            context = await options.resolveExecutionContext(requestInfo, authInfo);
+          } else {
+            const principal =
+              authInfo === undefined || options.resolveTrustedPrincipal === undefined
+                ? null
+                : await options.resolveTrustedPrincipal(authInfo);
+            context = {
+              caller:
+                principal === null ? { kind: 'anonymous' } : executionCallerForPrincipal(principal),
+              authorization:
+                options.grantAuthorization === undefined
+                  ? defaultContext().authorization
+                  : createGrantAuthorization({
+                      ...options.grantAuthorization,
+                      principal,
+                    }),
+            };
+          }
+        } catch {
+          return { kind: 'unavailable' as const };
+        }
+        const result = await executeCapability(registry, {
+          identity: definition.identity,
+          runtime: 'server',
+          input,
+          caller: context.caller,
+          authorization: context.authorization,
+          signal: controller.signal,
+        });
+        return { kind: 'complete' as const, result };
+      })();
+
+      try {
+        const outcome = await Promise.race([operation, timeout]);
+        if (outcome.kind === 'timeout')
+          return toolError('Capability execution exceeded its deadline.');
+        if (outcome.kind === 'unavailable')
+          return toolError('Capability execution is unavailable.');
+        if (outcome.result.kind === 'failure')
+          return toolError(executorError(outcome.result.reason));
+        const value = outcome.result.value;
+        let valueJson: string | undefined;
+        try {
+          if (typeof value === 'number' && !Number.isFinite(value))
+            return toolError('Capability result could not be serialized.');
+          valueJson = JSON.stringify(value);
+        } catch {
+          return toolError('Capability result could not be serialized.');
+        }
+        if (valueJson === undefined) return toolError('Capability result could not be serialized.');
+
+        const structuredContent = { result: JSON.parse(valueJson) as unknown };
+        const text = JSON.stringify(structuredContent);
+        return {
+          content: [{ type: 'text' as const, text }],
+          structuredContent,
+        };
+      } catch {
+        return toolError('Capability execution is unavailable.');
+      } finally {
+        if (timer !== undefined) clearTimeout(timer);
+      }
+    };
+    if (appResource === undefined || appRegistration === undefined) {
+      server.registerTool(name, toolConfig, toolHandler);
+    } else {
+      appRegistration.registerTool(server, name, toolConfig, toolHandler, appResource.uri);
+    }
+  }
+  if (visibleAppResources.size > 0 && appRegistration !== undefined) {
+    appRegistration.registerResources(server, [...visibleAppResources.values()]);
   }
   return server;
 }
@@ -362,6 +398,14 @@ async function defineServer(
 export function createMcpHandler(
   registry: CapabilityRegistry,
   options: McpAdapterOptions = {},
+): (request: Request) => Promise<Response> {
+  return createMcpHandlerWithAppRegistration(registry, options);
+}
+
+export function createMcpHandlerWithAppRegistration(
+  registry: CapabilityRegistry,
+  options: McpAdapterOptions = {},
+  appRegistration?: McpAppRegistration,
 ): (request: Request) => Promise<Response> {
   const config = validateOptions(options);
   const officialHandler = createOfficialMcpHandler(
@@ -372,6 +416,7 @@ export function createMcpHandler(
         context.authInfo,
         options,
         config.deadlineMs,
+        appRegistration,
       ),
     {
       legacy: 'stateless',
