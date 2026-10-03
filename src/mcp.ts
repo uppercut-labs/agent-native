@@ -176,8 +176,8 @@ export function mcpToolName(identity: CapabilityDefinition<unknown, unknown>['id
 }
 
 function sdkSchema(schema: Readonly<Record<string, unknown>>) {
-  // SchemaPort emits JSON Schema; this is the single conversion boundary into the official SDK.
-  return fromJsonSchema(schema as JsonSchemaType);
+  // The Workerd validator annotates nested schemas, so give the SDK its own mutable JSON copy.
+  return fromJsonSchema(JSON.parse(JSON.stringify(schema)) as JsonSchemaType);
 }
 
 function resultSchema(schema: Readonly<Record<string, unknown>>): Record<string, unknown> {
