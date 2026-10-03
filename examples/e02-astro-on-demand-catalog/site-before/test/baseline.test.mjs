@@ -140,7 +140,8 @@ test('E02 remains a conventional mixed Astro site before integration', async (co
       const staticPayload = await staticGet.json();
       assert.deepEqual(staticPayload, {
         kind: 'static-negative-case',
-        message: 'This file is inert sample content. It is not a protocol endpoint or an MCP server.',
+        message:
+          'This file is inert sample content. It is not a protocol endpoint or an MCP server.',
       });
 
       const staticPost = await fetch(`${baseUrl}/protocol-post-negative.json`, {

@@ -20,7 +20,12 @@
 body {
   margin: 0;
   background:
-    linear-gradient(90deg, transparent 0 4.5rem, rgba(232, 77, 51, 0.12) 4.5rem 4.6rem, transparent 4.6rem),
+    linear-gradient(
+      90deg,
+      transparent 0 4.5rem,
+      rgba(232, 77, 51, 0.12) 4.5rem 4.6rem,
+      transparent 4.6rem
+    ),
     var(--paper);
 }
 
@@ -349,7 +354,9 @@ footer {
 
 @media (prefers-reduced-motion: no-preference) {
   .brand img {
-    transition: transform 180ms ease, box-shadow 180ms ease;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease;
   }
 
   .brand:hover img {
