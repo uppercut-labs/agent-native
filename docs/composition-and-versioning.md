@@ -1,71 +1,78 @@
 # Composition and versioning
 
 Reusable capability packs distribute contracts, not providers. A pack owns an authority and a
-namespace; its definitions use the combined namespace `<authority>.<namespace>`. For example,
-authority `example.org` plus namespace `measurement` owns
-`example.org.measurement:distance.convert@1`. This keeps the identity stable when consumers choose
-different package names or bindings, and lets two authorities use the same local capability name.
+namespace; its definitions use the combined namespace `<authority>.<namespace>`. Definitions remain
+ordinary `CapabilityDefinition` values, and a consumer binds the exact definition it implements.
+Composition does not wrap handlers, grant scopes, or create a privileged execution path.
+
+## Exact major selection and aliases
+
+`majorVersion` is part of the canonical identity. A pack can therefore export v1 and v2 together,
+and `composeCapabilityPacks()` keeps both definitions. Select a major with its full identity:
 
 ```js
-export const measurementPack = defineCapabilityPack({
-  identity: { authority: 'example.org', namespace: 'measurement' },
-  source: '@example/distance-contracts@1.0.0',
-  definitions: [distanceConversion],
+const v2 = composition.select({
+  namespace: 'example.org.catalog',
+  name: 'album.lookup',
+  majorVersion: 2,
 });
 ```
 
-Definitions remain ordinary `CapabilityDefinition` values. A consumer imports the same object,
-passes it to `bindCapability`, composes packs, and creates a normal registry. Composition does not
-wrap handlers or create a privileged execution path. Call `executeCapability` with the caller,
-authorization port, runtime, and optional signal received by the application. Authorization is
-evaluated for every call; composition does not grant scopes or claim a transaction boundary.
-
-## Imports and aliases
-
-Every pack import names a source location and chooses an alias policy. `{ kind: 'none' }` is the
-default behavior expressed explicitly. `{ kind: 'explicit', aliases: [...] }` maps a local alias to
-one full canonical capability ID. There is no inferred remapping. Missing targets, duplicate aliases,
-and duplicate canonical identities fail composition, and conflict errors include both import source
+`composition.resolve()` accepts either a canonical ID or an explicitly configured alias. Every
+import must choose `{ kind: 'none' }` or `{ kind: 'explicit', aliases: [...] }`. An alias stores one
+full canonical ID; it never means "latest" and never falls forward. Thus an `album-v1` alias that
+targets `example.org.catalog:album.lookup@1` continues to select v1 when v2 is installed. Missing
+targets, duplicate aliases, and duplicate canonical identities fail composition with source
 locations.
 
-```js
-const composition = composeCapabilityPacks([
-  {
-    pack: measurementPack,
-    source: 'src/bootstrap.mjs:12',
-    aliasPolicy: {
-      kind: 'explicit',
-      aliases: [
-        {
-          name: 'distance',
-          capabilityId: 'example.org.measurement:distance.convert@1',
-        },
-      ],
-    },
-  },
-]);
-```
+## Contract migration reports
 
-`composition.resolve()` accepts a canonical ID or an explicitly declared alias. Registry creation
-uses `composition.definitions`; aliases never alter the canonical identity.
+`compareCapabilityDefinitions(previous, next)` returns a structural report over input and output
+JSON Schema plus risk and access metadata. Reports identify paths and before/after values for
+property additions/removals, likely one-to-one property renames, required-field changes, defaults,
+unit annotations such as `x-unit`, and other represented schema values. Rename detection is a
+structural aid, not proof of author intent.
 
-## Surface names
+`assertCompatibleCapabilityReplacement(previous, next)` is for an unchanged canonical identity. It
+allows an implementation or description change when input/output schemas and risk/access metadata
+remain compatible. It rejects a breaking definition replacement, so a v1 ID cannot silently acquire
+v2 requirements or output shape.
 
-`capabilitySurfaceNames(identity)` deterministically maps one identity to its CLI ID, HTTP suffix,
-MCP tool name, and OpenAPI operation ID. HTTP segments are encoded separately and MCP/OpenAPI names
-use length-prefixed components, so punctuation boundaries cannot collapse. MCP names over its
-128-character budget receive a visible `_fnv1a64_<digest>` qualifier instead of silent truncation.
-`createCapabilitySurfaceMap()` and composition reject any mapping collision.
+For a new major, use `defineCapabilityMigration({ previous, next, semanticReview })`. The semantic
+note and named reviewer are mandatory even when the two schemas are identical. JSON Schema can show
+represented structural changes; it cannot prove behavioral equivalence, units outside the schema,
+side effects, ordering, freshness, or other semantics. A pack that contains multiple majors of one
+capability family must attach the reviewed adjacent-major migrations and lifecycle policy; pack
+definition fails when either is missing.
 
-The CLI ID is always the canonical `<namespace>:<name>@<major>` form. Existing uncomposed definitions
-and adapters remain valid.
+## Deprecation and removal
 
-## Version boundary
+Lifecycle is application policy, not npm semver inference. `defineCapabilityLifecyclePolicy()`
+records each canonical major as `supported`, `deprecated`, or `removed`. Deprecation needs an
+operator-facing note. Removal needs a note and reviewer.
 
-`majorVersion` remains part of the canonical identity, so different majors may coexist as distinct
-definitions. This release provides pack composition and identity/name stability only. It does not
-perform schema migration, select a compatible major, generate v2 contracts, or promise wire
-compatibility between majors. Those migration mechanics belong to UAN-017.
+`validateCapabilityPackMigration()` compares an earlier pack to a later pack. It checks unchanged
+IDs with the replacement guard, requires reviewed migration records for added majors of an existing
+capability family, and reports additions/removals. A supported major cannot disappear implicitly. A
+major may be removed only when the previous policy already marked it deprecated and the new policy
+records an explicit reviewed removal. Package version changes do not alter these states.
 
-Run `npm run example:e08` for the independently installed contract-package fixture. E12 retains
-its established canonical ID and demonstrates the existing converter through the normal executor.
+## Generated surfaces
+
+`capabilitySurfaceNames(identity)` maps each exact major identity deterministically:
+
+| Surface | Mapping |
+| --- | --- |
+| CLI | `<namespace>:<name>@<major>` |
+| HTTP | `/capabilities/<namespace>/<name>/v<major>/invoke` |
+| MCP | length-encoded `cap_..._v<major>` tool name |
+| OpenAPI | length-encoded `invoke_..._v<major>` operation ID |
+
+HTTP segments are encoded separately. MCP names over 128 characters receive a visible
+`_fnv1a64_<digest>` qualifier rather than silent truncation. Aliases are composition lookup names;
+they do not replace canonical CLI IDs, HTTP paths, MCP names, or OpenAPI operations. Adapters expose
+only definitions present in the registry and keep their existing authorization/discovery policies.
+
+Run `npm run example:e08` for the independently installed contract-only package. It exports v1 and
+v2 album lookup contracts, keeps a stable v1 alias, uses two consumer bindings, checks old/new output
+fixtures, and exercises migration failures. E12 retains its established canonical unit-converter ID.

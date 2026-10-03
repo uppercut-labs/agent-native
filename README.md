@@ -25,7 +25,12 @@ separate delete permission, restart persistence and revocation. See
 [permissions and discovery](docs/permissions-and-discovery.md). The E07 identities and store are
 test-only and refuse production mode.
 
-Run `npm run example:e01`, `npm run example:e12`, or `npm run example:e05` to build and pack the
+UAN-017 adds independent major-version composition and reviewed migration policy. V1 and v2 can
+coexist and be selected by exact identity; aliases always target one canonical major. Structural
+reports cover represented schema/risk/access changes, while semantic review and lifecycle state are
+explicit. See [composition and versioning](docs/composition-and-versioning.md) and the E08 fixture.
+
+Run `npm run example:e01`, `npm run example:e08`, `npm run example:e12`, or `npm run example:e05` to build and pack the
 package, install it independently into each example, and run its tests and runnable surface. E05
 uses one registry in a pinned Node/Hono host for generated HTTP and MCP plus local/remote CLI. E01
 also verifies a pre-existing multi-page static Astro fixture before and after integration. E04 checks a local workerd HTTP/OpenAPI roundtrip and official MCP client exchange; it does not deploy or configure DNS.
