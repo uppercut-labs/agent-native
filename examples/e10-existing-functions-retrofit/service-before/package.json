@@ -1,0 +1,14 @@
+{
+  "name": "e10-existing-functions-before",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "search": "node src/cli.mjs content-search",
+    "test": "node --test test/*.test.mjs"
+  }
+}
