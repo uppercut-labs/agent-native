@@ -33,6 +33,16 @@ read capabilities, generates OpenAPI 3.1 from those contracts, and serves protoc
 Protected capability schemas and routes are omitted from this initial HTTP projection. See
 [the HTTP guide](docs/http.md) for response mappings, body/deadline limits, and integration boundaries.
 
+## Remote MCP
+
+The isolated `@uppercut-labs/agent-native/mcp` entrypoint uses the official MCP server SDK over
+Streamable HTTP. It exposes only explicitly public read capabilities, filters discovery per request,
+and reauthorizes every call through the shared executor. Results place the canonical value under
+`structuredContent.result`. See [the MCP guide](docs/mcp.md) and
+[fixture-tested compatibility](docs/compatibility.md). The fixture covers the official SDK client
+and server packages at version 2.3.0 and the negotiated protocol version 2025-11-25; this is not a
+claim that every commercial client or deployment host is supported.
+
 ## Generated CLI
 
 The separate `@uppercut-labs/agent-native/cli` runner entrypoint builds help and typed field flags from registry schemas. Calls select `--mode local|remote` explicitly; remote calls also select a configured credential profile and use a bounded HTTP request. Invocations write one `uan.cli-result/v1` JSON envelope to stdout and redacted target/failure diagnostics to stderr. No package-level `bin` command ships yet; applications expose the runner with their own registry. See [the CLI guide](docs/cli.md) and the installed E05/E12 examples.
@@ -57,9 +67,9 @@ npm run check
 
 The schema spike checks album lookup and unit conversion input/output shapes with Zod 4, then
 validates exported draft-2020-12 schemas independently with Ajv. JSON Schema projection throws for
-transforms that cannot be represented faithfully. The official MCP server SDK is a development-
-only dependency for an upstream `any` to `unknown` validation-boundary fixture; the contract core
-does not import it. No protocol-conformance claim follows from installing that SDK.
+transforms that cannot be represented faithfully. The official MCP server SDK is a runtime
+dependency of the isolated MCP adapter; the contract core does not import it. The official MCP
+client SDK is pinned for the local protocol fixture only.
 
 ## Status
 
