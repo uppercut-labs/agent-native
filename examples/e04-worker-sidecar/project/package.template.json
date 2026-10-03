@@ -12,10 +12,11 @@
     "start": "wrangler dev --local --ip 127.0.0.1"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.3.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
-    "wrangler": "4.147.0",
-    "@modelcontextprotocol/client": "2.3.0"
+    "@modelcontextprotocol/client": "2.3.0",
+    "wrangler": "4.147.0"
   }
 }
