@@ -20,7 +20,12 @@ export async function createE07Service({ grantPath, playlistPath, surfaceExposur
   if (process.env.NODE_ENV === 'production' || process.env.UAN_E07_TEST_MODE !== '1') {
     throw new Error('E07 is a disposable local fixture and refuses production mode.');
   }
-  if (typeof grantPath !== 'string' || typeof playlistPath !== 'string') {
+  if (
+    typeof grantPath !== 'string' ||
+    grantPath.trim().length === 0 ||
+    typeof playlistPath !== 'string' ||
+    playlistPath.trim().length === 0
+  ) {
     throw new TypeError('grantPath and playlistPath must point to explicit local fixture files.');
   }
 

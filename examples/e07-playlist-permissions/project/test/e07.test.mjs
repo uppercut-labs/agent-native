@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -79,6 +79,27 @@ async function connect(origin, token) {
   });
   await client.connect(transport);
   return client;
+}
+
+function jsonRpcPost(origin, body, token) {
+  return fetch(origin + '/mcp', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json, text/event-stream',
+      authorization: 'Bearer ' + token,
+      'content-type': 'application/json',
+    },
+    body,
+  });
+}
+
+async function rejectionText(operation) {
+  try {
+    await operation();
+  } catch (error) {
+    return String(error);
+  }
+  assert.fail('Expected operation to reject.');
 }
 
 function grant(subject, tenantId, scope, grantId) {
@@ -163,6 +184,44 @@ test('E07 grant IDs cannot be reused to resurrect a revoked grant', async () => 
     assert.equal(persisted.length, 1);
     assert.equal(persisted[0].revokedAt, original.issuedAt + 1);
   } finally {
+    await rm(parent, { recursive: true, force: true });
+  }
+});
+
+test('E07 refuses implicit persistence paths without creating default state', async () => {
+  const parent = await mkdtemp(path.join(os.tmpdir(), 'uan-e07-no-default-mutation-'));
+  const child = spawn(process.execPath, [path.join(projectRoot, 'src/server.mjs')], {
+    cwd: parent,
+    env: {
+      ...process.env,
+      NODE_ENV: 'test',
+      UAN_E07_TEST_MODE: '1',
+      E07_GRANTS_PATH: '',
+      E07_PLAYLISTS_PATH: '',
+      PORT: '0',
+    },
+    stdio: ['ignore', 'ignore', 'pipe'],
+  });
+  let stderr = '';
+  child.stderr.setEncoding('utf8');
+  child.stderr.on('data', (chunk) => (stderr += chunk));
+  let reachedDeadline = false;
+  const deadline = setTimeout(() => {
+    reachedDeadline = true;
+    child.kill('SIGTERM');
+  }, 3000);
+  try {
+    const exitCode = await new Promise((resolve, reject) => {
+      child.once('error', reject);
+      child.once('exit', resolve);
+    });
+    assert.equal(reachedDeadline, false, 'E07 accepted implicit persistence paths.');
+    assert.notEqual(exitCode, 0);
+    assert.match(stderr, /explicit local fixture files/i);
+    assert.deepEqual(await readdir(parent), []);
+  } finally {
+    clearTimeout(deadline);
+    if (child.exitCode === null) child.kill('SIGTERM');
     await rm(parent, { recursive: true, force: true });
   }
 });
@@ -280,20 +339,48 @@ test('E07 uses scoped durable grants, official bearer auth, distinct tenants and
       (await wrongIssuer.listTools()).tools.map((tool) => tool.name),
       [mcpToolName(listIdentity)],
     );
-    await assert.rejects(
+    const wrongIssuerPayload = 'WRONG_ISSUER_PAYLOAD_SENTINEL';
+    const wrongIssuerError = await rejectionText(() =>
       wrongIssuer.callTool({
         name: mcpToolName(editIdentity),
-        arguments: { playlistId: 'playlist-a', title: 'Wrong issuer' },
+        arguments: { playlistId: 'playlist-a', title: wrongIssuerPayload },
       }),
     );
+    assert.equal(wrongIssuerError.includes('wrong-issuer-token'), false);
+    assert.equal(wrongIssuerError.includes(wrongIssuerPayload), false);
     for (const token of ['wrong-audience-token', 'expired-token']) {
       const rejected = new Client({ name: 'uan-e07-invalid-auth-client', version: '1.0.0' });
       const transport = new StreamableHTTPClientTransport(new URL(server.origin + '/mcp'), {
         requestInit: { headers: { authorization: 'Bearer ' + token } },
       });
-      await assert.rejects(rejected.connect(transport));
+      const authError = await rejectionText(() => rejected.connect(transport));
+      assert.equal(authError.includes(token), false);
       await rejected.close().catch(() => {});
     }
+
+    const beforeInvalidRequests = await readFile(playlistPath, 'utf8');
+    const malformedSentinel = 'MALFORMED_PAYLOAD_SENTINEL';
+    const malformed = await jsonRpcPost(
+      server.origin,
+      '{"jsonrpc":"2.0","method":"tools/call","params":{"arguments":{"title":"' + malformedSentinel,
+      'alice-token',
+    );
+    assert.equal(malformed.status, 400);
+    const malformedBody = await malformed.text();
+    assert.equal(malformedBody.includes('alice-token'), false);
+    assert.equal(malformedBody.includes(malformedSentinel), false);
+
+    const oversizedSentinel = 'OVERSIZED_PAYLOAD_SENTINEL';
+    const oversized = await jsonRpcPost(
+      server.origin,
+      JSON.stringify({ payload: oversizedSentinel + 'x'.repeat(40 * 1024) }),
+      'alice-token',
+    );
+    assert.equal(oversized.status, 413);
+    const oversizedBody = await oversized.text();
+    assert.equal(oversizedBody.includes('alice-token'), false);
+    assert.equal(oversizedBody.includes(oversizedSentinel), false);
+    assert.equal(await readFile(playlistPath, 'utf8'), beforeInvalidRequests);
 
     await server.stop();
     server = await startFixture(grantPath, playlistPath);
@@ -360,11 +447,9 @@ test('E07 uses scoped durable grants, official bearer auth, distinct tenants and
       }),
       /not found/i,
     );
-    assert.ok(
-      JSON.parse(await readFile(playlistPath, 'utf8')).some(
-        (item) => item.id === 'playlist-a-revoked',
-      ),
-    );
+    const afterRevokedDelete = JSON.parse(await readFile(playlistPath, 'utf8'));
+    assert.ok(afterRevokedDelete.some((item) => item.id === 'playlist-a-revoked'));
+    assert.equal(afterRevokedDelete.find((item) => item.id === 'playlist-b').title, 'Bob title');
     assert.deepEqual(
       JSON.parse(await readFile(grantPath, 'utf8'))
         .map((row) => row.grantId)

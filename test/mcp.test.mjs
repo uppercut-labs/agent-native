@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { test } from 'node:test';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+import { canonicalCapabilityId } from '../dist/core/contracts.js';
+import { createMcpAppsHandler, validateMcpAppResources } from '../dist/mcp-apps.js';
 import { createMcpHandler, mcpToolName } from '../dist/mcp.js';
 import { createDiagnosticObservation } from '../dist/core/diagnostics.js';
 import { bindCapability, createCapabilityRegistry, defineCapability } from '../dist/index.js';
@@ -454,6 +456,174 @@ test('MCP stale destructive calls recheck the live surface exposure before the b
     assert.equal(fixture.counts().hiddenCalls, 0);
   } finally {
     await client.close();
+    await server.close();
+  }
+});
+
+test('MCP App resources reject origin and URI tricks before registration', () => {
+  const fixture = createFixtureRegistry();
+  const capabilityId = canonicalCapabilityId(lookupIdentity);
+  const invalidResources = [
+    {
+      capabilityId,
+      uri: 'https://attacker.example/app.html',
+      name: 'external scheme',
+      html: '<main>fixture</main>',
+    },
+    {
+      capabilityId,
+      uri: 'ui://uppercut/../app.html',
+      name: 'traversal',
+      html: '<main>fixture</main>',
+    },
+    {
+      capabilityId,
+      uri: 'ui://uppercut/app.html',
+      name: 'external script',
+      html: '<script src="//attacker.example/app.js"></script>',
+    },
+    {
+      capabilityId,
+      uri: 'ui://uppercut/app.html',
+      name: 'external CSS',
+      html: '<style>@import url(https://attacker.example/app.css)</style>',
+    },
+  ];
+
+  for (const resource of invalidResources) {
+    assert.throws(() => validateMcpAppResources(fixture.registry, [resource]), TypeError);
+  }
+  assert.throws(
+    () =>
+      validateMcpAppResources(fixture.registry, [
+        {
+          ...invalidResources[2],
+          capabilityId: 'missing.capability:read@1',
+          html: '<main>fixture</main>',
+        },
+      ]),
+    /undeclared capability/,
+  );
+});
+
+test('MCP App resource access is recalculated after revocation in the same client session', async () => {
+  const fixture = createFixtureRegistry();
+  const resourceAudience = new URL('https://mcp-app.example.test/resource');
+  const publicUri = 'ui://uppercut/public-album.html';
+  const protectedUri = 'ui://uppercut/protected-account.html';
+  const now = Math.floor(Date.now() / 1000);
+  const grant = {
+    issuer: 'https://issuer.example.test',
+    subject: 'caller-a',
+    clientId: 'mcp-app-fixture-client',
+    tenantId: 'tenant-a',
+    applicationId: 'mcp-app-resource-test',
+    audience: resourceAudience.toString(),
+    policyRevision: 'v1',
+    grantId: 'protected-resource-grant',
+    scopes: ['account:delete'],
+    issuedAt: now - 1,
+    expiresAt: now + 3600,
+    revokedAt: null,
+  };
+  const handler = createMcpAppsHandler(fixture.registry, {
+    resources: [
+      {
+        capabilityId: canonicalCapabilityId(lookupIdentity),
+        uri: publicUri,
+        name: 'Public album',
+        html: '<main>Public fixture</main>',
+      },
+      {
+        capabilityId: canonicalCapabilityId(fixture.hidden.identity),
+        uri: protectedUri,
+        name: 'Protected account',
+        html: '<main>Protected fixture</main>',
+      },
+    ],
+    surfaceExposure: { mcp: { destructive: ['account:delete@1'] } },
+    bearerAuth: {
+      verifier: {
+        async verifyAccessToken(token) {
+          return {
+            token,
+            clientId: grant.clientId,
+            scopes: ['mcp', 'account:delete'],
+            expiresAt: now + 3600,
+            resource: resourceAudience,
+          };
+        },
+      },
+      expectedResource: resourceAudience,
+    },
+    resolveTrustedPrincipal(authInfo) {
+      return {
+        issuer: grant.issuer,
+        subject: grant.subject,
+        clientId: authInfo.clientId,
+        tenantId: grant.tenantId,
+        audience: resourceAudience.toString(),
+        scopes: [...authInfo.scopes],
+        expiresAt: authInfo.expiresAt,
+      };
+    },
+    grantAuthorization: {
+      applicationId: grant.applicationId,
+      audience: grant.audience,
+      policyRevision: grant.policyRevision,
+      store: {
+        async find() {
+          return [structuredClone(grant)];
+        },
+        async save() {},
+        async revoke() {
+          return false;
+        },
+      },
+      authorizeResource: () => true,
+    },
+    discoverProtected: () => true,
+  });
+  const server = await listen(handler);
+  const anonymous = new Client({ name: 'uan-020-anonymous-app-client', version: '1.0.0' });
+  const authenticated = new Client({ name: 'uan-020-authenticated-app-client', version: '1.0.0' });
+
+  try {
+    await anonymous.connect(new StreamableHTTPClientTransport(new URL(server.origin + '/mcp')));
+    assert.deepEqual(
+      (await anonymous.listResources()).resources.map((resource) => resource.uri),
+      [publicUri],
+    );
+    await assert.rejects(anonymous.readResource({ uri: protectedUri }));
+
+    await authenticated.connect(
+      new StreamableHTTPClientTransport(new URL(server.origin + '/mcp'), {
+        requestInit: { headers: { authorization: 'Bearer fixture-resource-token' } },
+      }),
+    );
+    assert.deepEqual(
+      (await authenticated.listResources()).resources.map((resource) => resource.uri).sort(),
+      [protectedUri, publicUri].sort(),
+    );
+    const resource = await authenticated.readResource({ uri: protectedUri });
+    assert.deepEqual(resource.contents, [
+      {
+        uri: protectedUri,
+        mimeType: 'text/html;profile=mcp-app',
+        text: '<main>Protected fixture</main>',
+      },
+    ]);
+
+    grant.revokedAt = now;
+    assert.deepEqual(
+      (await authenticated.listResources()).resources.map((resource) => resource.uri),
+      [publicUri],
+    );
+    await assert.rejects(authenticated.readResource({ uri: protectedUri }));
+    assert.deepEqual(fixture.counts(), { publicCalls: 0, hiddenCalls: 0 });
+  } finally {
+    await anonymous.close().catch(() => {});
+    await authenticated.close().catch(() => {});
     await server.close();
   }
 });
