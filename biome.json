@@ -6,6 +6,8 @@
       "!dist",
       "!.test-dist",
       "!examples/e01-album-catalog/.exported",
+      "!examples/e02-astro-on-demand-catalog/.exported",
+      "!examples/e02-astro-on-demand-catalog/site-before",
       "!examples/e12-shared-unit-converter/.exported",
       "!examples/e05-node-cli/.exported",
       "!examples/e06-browser-only-theme-controls/.exported",

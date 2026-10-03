@@ -1,0 +1,10 @@
+{
+  "public/catalog-mark.svg": "examples/e02-astro-on-demand-catalog/site-before/public/catalog-mark.svg",
+  "public/protocol-post-negative.json": "examples/e02-astro-on-demand-catalog/site-before/public/protocol-post-negative.json",
+  "public/site.css": "examples/e02-astro-on-demand-catalog/site-before/public/site.css",
+  "src/data/albums.mjs": "examples/e02-astro-on-demand-catalog/site-before/src/data/albums.mjs",
+  "src/layouts/SiteLayout.astro": "examples/e02-astro-on-demand-catalog/site-before/src/layouts/SiteLayout.astro",
+  "src/pages/about.astro": "examples/e02-astro-on-demand-catalog/site-before/src/pages/about.astro",
+  "src/pages/albums.astro": "examples/e02-astro-on-demand-catalog/site-before/src/pages/albums.astro",
+  "src/pages/index.astro": "examples/e02-astro-on-demand-catalog/site-before/src/pages/index.astro"
+}

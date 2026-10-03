@@ -17,7 +17,7 @@ export const INIT_PLAN_VERSION = 'uan.init-plan/v1';
 export const INIT_OWNERSHIP_VERSION = 'uan.init-ownership/v1';
 
 export type InitFramework = 'astro' | 'unknown';
-export type InitRendering = 'static' | 'server' | 'unknown';
+export type InitRendering = 'static' | 'on-demand' | 'server' | 'unknown';
 export type InitPackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun' | 'unknown';
 export type InitHosting = 'browser-only' | 'cloudflare' | 'vercel' | 'netlify' | 'unknown';
 export type InitRouteMode = 'sidecar' | 'same-origin';
@@ -36,6 +36,9 @@ export type InitDetection = {
   readonly astroConfigSha256: string | null;
   readonly framework: InitFramework;
   readonly rendering: InitRendering;
+  readonly serverAdapter: boolean;
+  readonly onDemandRoutes: readonly string[];
+  readonly staticProtocolFiles: readonly string[];
   readonly packageManager: InitPackageManager;
   readonly hosting: InitHosting;
   readonly hostingConfig: string | null;
@@ -248,7 +251,8 @@ function sourceTokens(source: string): string[] {
 }
 
 function staticAstroOutput(source: string): {
-  rendering: InitRendering;
+  output: Exclude<InitRendering, 'on-demand'>;
+  serverAdapter: boolean;
   dynamic: boolean;
   patchable: boolean;
 } {
@@ -257,9 +261,11 @@ function staticAstroOutput(source: string): {
     (token, index) =>
       token === 'word:defineConfig' && tokens[index + 1] === '(' && tokens[index + 2] === '{',
   );
-  if (start < 0) return { rendering: 'unknown', dynamic: true, patchable: false };
+  if (start < 0)
+    return { output: 'unknown', serverAdapter: false, dynamic: true, patchable: false };
   let depth = 0;
   let output: string | undefined;
+  let serverAdapter = false;
   let end = -1;
   for (let index = start + 2; index < tokens.length; index += 1) {
     const token = tokens[index]!;
@@ -279,9 +285,19 @@ function staticAstroOutput(source: string): {
       (tokens[index + 3] === ',' || tokens[index + 3] === '}')
     ) {
       output = tokens[index + 2]!.slice('string:'.length);
+    } else if (
+      depth === 1 &&
+      token === 'word:adapter' &&
+      tokens[index + 1] === ':' &&
+      tokens[index + 2] !== ',' &&
+      tokens[index + 2] !== '}' &&
+      tokens[index + 2] !== 'word:undefined' &&
+      tokens[index + 2] !== 'word:null'
+    ) {
+      serverAdapter = true;
     }
   }
-  if (end < 0) return { rendering: 'unknown', dynamic: true, patchable: false };
+  if (end < 0) return { output: 'unknown', serverAdapter: false, dynamic: true, patchable: false };
   const configTokens = tokens.slice(start, end + 1);
   const dynamic = configTokens.some(
     (token, index) =>
@@ -293,17 +309,87 @@ function staticAstroOutput(source: string): {
         configTokens[index + 2] === 'word:env') ||
       (token === 'word:import' && configTokens[index + 1] === '('),
   );
-  if (dynamic || output === undefined) return { rendering: 'unknown', dynamic, patchable: false };
+  if (dynamic || output === undefined)
+    return { output: 'unknown', serverAdapter, dynamic, patchable: false };
   const patchable =
     /^import\s+\{\s*defineConfig\s*\}\s+from\s+(['"])astro\/config\1;\s*export\s+default\s+defineConfig\s*\(\s*\{\s*output\s*:\s*(['"])static\2\s*,?\s*\}\s*\);\s*$/s.test(
       source,
     );
-  return { rendering: output as 'static' | 'server', dynamic: false, patchable };
+  return { output: output as 'static' | 'server', serverAdapter, dynamic: false, patchable };
+}
+
+async function inspectAstroRoutes(directory: string): Promise<{
+  onDemandRoutes: string[];
+  staticProtocolFiles: string[];
+}> {
+  const onDemandRoutes: string[] = [];
+  const staticProtocolFiles: string[] = [];
+  const pagesRoot = path.join(directory, 'src/pages');
+
+  async function visit(current: string): Promise<void> {
+    for (const entry of await (await import('node:fs/promises'))
+      .readdir(current, {
+        withFileTypes: true,
+      })
+      .catch((error: unknown) => {
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'code' in error &&
+          error.code === 'ENOENT'
+        )
+          return [];
+        throw error;
+      })) {
+      if (entry.isSymbolicLink()) continue;
+      const absolute = path.join(current, entry.name);
+      if (entry.isDirectory()) {
+        await visit(absolute);
+        continue;
+      }
+      if (!/\.(?:astro|[cm]?[jt]s)$/.test(entry.name)) continue;
+      const relative = path.relative(pagesRoot, absolute).split(path.sep).join('/');
+      const source = await readFile(absolute, 'utf8');
+      const onDemand = /export\s+const\s+prerender\s*=\s*false\b/.test(source);
+      if (onDemand) onDemandRoutes.push(relative);
+      if (
+        /^(?:mcp(?:\.|\/)|agent-native\/v1\/)/.test(relative) &&
+        (!onDemand ||
+          !/export\s+(?:async\s+)?function\s+(?:POST|ALL)\b|export\s+const\s+(?:POST|ALL)\b/.test(
+            source,
+          ))
+      ) {
+        staticProtocolFiles.push(`src/pages/${relative}`);
+      }
+    }
+  }
+
+  await visit(pagesRoot);
+  for (const relative of ['mcp', 'mcp.json']) {
+    if (await exists(path.join(directory, 'public', relative)))
+      staticProtocolFiles.push(`public/${relative}`);
+  }
+  const publicProtocolRoot = path.join(directory, 'public/agent-native/v1');
+  for (const entry of await (await import('node:fs/promises'))
+    .readdir(publicProtocolRoot, {
+      withFileTypes: true,
+    })
+    .catch((error: unknown) => {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT')
+        return [];
+      throw error;
+    })) {
+    if (entry.isFile()) staticProtocolFiles.push(`public/agent-native/v1/${entry.name}`);
+  }
+  return { onDemandRoutes: onDemandRoutes.sort(), staticProtocolFiles: staticProtocolFiles.sort() };
 }
 
 async function astroEvidence(directory: string): Promise<{
   found: boolean;
   rendering: InitRendering;
+  serverAdapter: boolean;
+  onDemandRoutes: string[];
+  staticProtocolFiles: string[];
   dynamic: boolean;
   routeConflict: boolean;
   patchable: boolean;
@@ -332,6 +418,9 @@ async function astroEvidence(directory: string): Promise<{
     return {
       found: false,
       rendering: 'unknown',
+      serverAdapter: false,
+      onDemandRoutes: [],
+      staticProtocolFiles: [],
       dynamic: false,
       routeConflict: false,
       patchable: false,
@@ -345,6 +434,9 @@ async function astroEvidence(directory: string): Promise<{
     return {
       found: true,
       rendering: 'unknown',
+      serverAdapter: false,
+      onDemandRoutes: [],
+      staticProtocolFiles: [],
       dynamic: true,
       routeConflict: await hasMcpRoute(directory),
       patchable: false,
@@ -355,11 +447,19 @@ async function astroEvidence(directory: string): Promise<{
   evidence.push(configPath);
   const configFile = await assertNoSymlink(await realpath(directory), configPath);
   const text = await readFile(configFile, 'utf8');
-  const { rendering, dynamic, patchable } = staticAstroOutput(text);
+  const { output, serverAdapter, dynamic, patchable } = staticAstroOutput(text);
+  const routes = await inspectAstroRoutes(directory);
+  const rendering = output === 'static' && routes.onDemandRoutes.length > 0 ? 'on-demand' : output;
   if (rendering !== 'unknown') evidence.push(`literal output: ${rendering}`);
+  if (serverAdapter) evidence.push('Astro server adapter configured');
+  evidence.push(...routes.onDemandRoutes.map((route) => `on-demand route: src/pages/${route}`));
+  evidence.push(...routes.staticProtocolFiles.map((file) => `static protocol file: ${file}`));
   return {
     found: true,
     rendering,
+    serverAdapter,
+    onDemandRoutes: routes.onDemandRoutes,
+    staticProtocolFiles: routes.staticProtocolFiles,
     dynamic,
     routeConflict: await hasMcpRoute(directory),
     patchable,
@@ -463,6 +563,9 @@ export async function detectExistingProject(
       ? {
           found: false,
           rendering: 'unknown' as const,
+          serverAdapter: false,
+          onDemandRoutes: [],
+          staticProtocolFiles: [],
           dynamic: false,
           routeConflict: false,
           patchable: false,
@@ -486,9 +589,19 @@ export async function detectExistingProject(
   if (lockManagers.length > 1 && !overrides.packageManager) unresolved.push('competing-lockfiles');
   if (packageManager === 'unknown') unresolved.push('package-manager-unknown');
   if (appEvidence.dynamic) unresolved.push('dynamic-config-unsupported');
-  else if (appEvidence.rendering === 'static' && !appEvidence.patchable)
+  else if (
+    (appEvidence.rendering === 'static' || appEvidence.rendering === 'on-demand') &&
+    !appEvidence.patchable
+  )
     unresolved.push('astro-config-manual-integration');
-  if (appEvidence.rendering !== 'static') unresolved.push(`rendering-${appEvidence.rendering}`);
+  if (appEvidence.rendering === 'server' || appEvidence.rendering === 'unknown')
+    unresolved.push(`rendering-${appEvidence.rendering}`);
+  if (
+    (appEvidence.rendering === 'on-demand' || appEvidence.rendering === 'server') &&
+    !appEvidence.serverAdapter
+  )
+    unresolved.push('server-adapter-missing');
+  if (appEvidence.staticProtocolFiles.length > 0) unresolved.push('static-protocol-endpoint');
   const framework = overrides.framework ?? (appEvidence.found ? 'astro' : 'unknown');
   if (framework === 'unknown') unresolved.push('framework-unknown');
   const host = overrides.hosting ?? detectedHost.hosting;
@@ -510,6 +623,9 @@ export async function detectExistingProject(
     astroConfigSha256: appEvidence.configSha256,
     framework,
     rendering: appEvidence.rendering,
+    serverAdapter: appEvidence.serverAdapter,
+    onDemandRoutes: appEvidence.onDemandRoutes,
+    staticProtocolFiles: appEvidence.staticProtocolFiles,
     packageManager,
     hosting: host,
     hostingConfig: detectedHost.evidence.length === 1 ? detectedHost.evidence[0]! : null,
@@ -873,6 +989,10 @@ export async function applyInitPlan(
     throw new Error(`plan has unresolved detection: ${unresolved.join(', ')}`);
   if (choices.hosting !== 'browser-only' && choices.sidecarOrigin === undefined)
     throw new Error('a selected sidecar host requires an explicit sidecarOrigin');
+  if (choices.routeMode === 'same-origin' && plan.detection.rendering === 'static')
+    throw new Error(
+      'same-origin mode requires reviewed on-demand routes and a server adapter; choose sidecar for a static site',
+    );
   if (choices.sidecarOrigin !== undefined) {
     const parsed = new URL(choices.sidecarOrigin);
     if (

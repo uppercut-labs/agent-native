@@ -12,11 +12,12 @@ const supportedExamples = new Set([
   'e06-browser-only-theme-controls',
   'e04-worker-sidecar',
   'e07-playlist-permissions',
+  'e02-astro-on-demand-catalog',
   'e09-album-explorer',
 ]);
 if (exampleId === undefined || !supportedExamples.has(exampleId)) {
   throw new Error(
-    'Choose a supported example id: e01-album-catalog, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls, e04-worker-sidecar or e07-playlist-permissions or e09-album-explorer.',
+    'Choose a supported example id: e01-album-catalog, e02-astro-on-demand-catalog, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls, e04-worker-sidecar, e07-playlist-permissions or e09-album-explorer.',
   );
 }
 

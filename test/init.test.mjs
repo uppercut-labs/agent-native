@@ -8,6 +8,10 @@ import { applyInitPlan, createInitPlan, detectExistingProject, restoreInit } fro
 
 const repositoryRoot = path.resolve(new URL('..', import.meta.url).pathname);
 const baseline = path.join(repositoryRoot, 'examples/e01-album-catalog/site-before');
+const onDemandBaseline = path.join(
+  repositoryRoot,
+  'examples/e02-astro-on-demand-catalog/site-before',
+);
 const choices = {
   hosting: 'cloudflare',
   sidecarOrigin: 'https://albums.example.workers.dev',
@@ -106,6 +110,39 @@ test('lockfile and monorepo ambiguity require explicit overrides; dynamic and un
   }
 });
 
+test('Astro detection distinguishes on-demand output, adapters, and static protocol impostors', async () => {
+  const detection = await detectExistingProject(onDemandBaseline);
+  assert.equal(detection.rendering, 'on-demand');
+  assert.equal(detection.serverAdapter, true);
+  assert.deepEqual(detection.onDemandRoutes, ['api/albums/[slug].json.js']);
+  assert.deepEqual(detection.staticProtocolFiles, []);
+  assert.equal(detection.unresolved.includes('server-adapter-missing'), false);
+
+  const { parent, root } = await fixture();
+  try {
+    await mkdir(path.join(root, 'src/pages/api'), { recursive: true });
+    await writeFile(
+      path.join(root, 'src/pages/api/live.js'),
+      'export const prerender = false;\nexport const POST = ({ request }) => new Response(request.method);\n',
+    );
+    await mkdir(path.join(root, 'public'), { recursive: true });
+    await writeFile(path.join(root, 'public/mcp.json'), '{"jsonrpc":"2.0"}\n');
+    const unsafe = await detectExistingProject(root);
+    assert.equal(unsafe.rendering, 'on-demand');
+    assert.equal(unsafe.serverAdapter, false);
+    assert.deepEqual(unsafe.staticProtocolFiles, ['public/mcp.json']);
+    assert.ok(unsafe.unresolved.includes('server-adapter-missing'));
+    assert.ok(unsafe.unresolved.includes('static-protocol-endpoint'));
+    const plan = await createInitPlan(root, {}, { ...choices, routeMode: 'same-origin' });
+    await assert.rejects(
+      applyInitPlan(root, plan, { ...choices, routeMode: 'same-origin' }, { approved: true }),
+      /server-adapter-missing|static-protocol-endpoint/,
+    );
+  } finally {
+    await clean(parent);
+  }
+});
+
 test('stale /mcp route evidence and same-origin collision stop apply before writes', async () => {
   const { parent, root } = await fixture();
   try {
@@ -122,7 +159,22 @@ test('stale /mcp route evidence and same-origin collision stop apply before writ
     const plan = await createInitPlan(root, {}, { ...choices, routeMode: 'same-origin' });
     await assert.rejects(
       applyInitPlan(root, plan, { ...choices, routeMode: 'same-origin' }, { approved: true }),
-      /existing \/mcp route/,
+      /static-protocol-endpoint/,
+    );
+    assert.equal(await readFile(path.join(root, 'astro.config.mjs'), 'utf8'), originalAstro);
+  } finally {
+    await clean(parent);
+  }
+});
+
+test('pure static init accepts sidecar mode but rejects a same-origin endpoint choice', async () => {
+  const { parent, root } = await fixture();
+  try {
+    const sameOrigin = { ...choices, routeMode: 'same-origin' };
+    const plan = await createInitPlan(root, {}, sameOrigin);
+    await assert.rejects(
+      applyInitPlan(root, plan, sameOrigin, { approved: true }),
+      /choose sidecar for a static site/,
     );
     assert.equal(await readFile(path.join(root, 'astro.config.mjs'), 'utf8'), originalAstro);
   } finally {
