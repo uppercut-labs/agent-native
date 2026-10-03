@@ -1,5 +1,11 @@
 # Remote MCP over Streamable HTTP
 
+The MCP subpath needs the official server SDK as an explicit optional peer in the host project:
+
+~~~sh
+npm install @modelcontextprotocol/server@2.3.0
+~~~
+
 Import the adapter from its isolated package subpath:
 
 ~~~ts

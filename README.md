@@ -40,7 +40,8 @@ human catalog and unrelated pages prerendered while serving authenticated Agent 
 routes from one shared contract, binding, authorization policy, and executor path.
 
 The root, `./contracts`, `./registry`, and `./executor` entrypoints use only portable core modules.
-They do not import Zod, Node, DOM, framework, provider, or server modules. `npm run check` compiles
+They do not import Zod, Node, DOM, framework, provider, or server modules. Optional peers are
+installed by the host only for the adapters it imports; see [installation](docs/installation.md). `npm run check` compiles
 and scans browser output against a fake server-secret sentinel. This is a boundary regression
 check, not proof of compatibility with any real browser, client, or host.
 
@@ -124,14 +125,14 @@ npm run example:e02
 npm run example:e12
 npm run example:e05
 npm run example:e07
+npm run check:portability
 npm run check
 ```
 
 The schema spike checks album lookup and unit conversion input/output shapes with Zod 4, then
 validates exported draft-2020-12 schemas independently with Ajv. JSON Schema projection throws for
-transforms that cannot be represented faithfully. The official MCP server SDK is a runtime
-dependency of the isolated MCP adapter; the official MCP client SDK is pinned for the local protocol
-fixture only. See [UAN-008 sidecar evidence](docs/evidence/UAN-008-worker-sidecar.md) for host/origin controls, revision matching, and local-only limits.
+transforms that cannot be represented faithfully. The official MCP server SDK is an optional peer required by the isolated MCP adapter; the
+official MCP client SDK is pinned for the local protocol fixture only. See [UAN-008 sidecar evidence](docs/evidence/UAN-008-worker-sidecar.md) for host/origin controls, revision matching, and local-only limits.
 
 ## Status
 

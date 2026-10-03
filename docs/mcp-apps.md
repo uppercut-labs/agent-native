@@ -3,7 +3,7 @@
 MCP Apps is an optional presentation layer for an existing MCP capability. Install the official SDK when using this adapter:
 
 ~~~sh
-npm install @modelcontextprotocol/ext-apps@2.0.3
+npm install @modelcontextprotocol/server@2.3.0 @modelcontextprotocol/ext-apps@2.0.3
 ~~~
 
 Import the isolated subpath only in the server application:

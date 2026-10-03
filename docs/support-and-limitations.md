@@ -15,4 +15,4 @@ The local MCP checks use official SDK client/server packages. The browser draft 
 - OAuth issuance, durable production grant storage, application record policy, deployment ownership, and hosting remain application responsibilities.
 - The package is not published to npm. No installation command in these docs claims that it is.
 
-See [doctor and troubleshooting](doctor-and-troubleshooting.md), [framework support](frameworks.md), [fixture compatibility](compatibility.md), and the individual [adapter surfaces](surfaces.md) for narrower statements. Report documentation problems through the repository's [GitHub issues](https://github.com/uppercut-labs/agent-native/issues); this link uses the actual public repository issue route.
+See [installation](installation.md), [doctor and troubleshooting](doctor-and-troubleshooting.md), [framework support](frameworks.md), [fixture compatibility](compatibility.md), and the individual [adapter surfaces](surfaces.md) for narrower statements. Report documentation problems through the repository's [GitHub issues](https://github.com/uppercut-labs/agent-native/issues); this link uses the actual public repository issue route.

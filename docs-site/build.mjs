@@ -13,6 +13,7 @@ const repositoryUrl = 'https://github.com/uppercut-labs/agent-native';
 
 const guideOrder = [
   'getting-started',
+  'installation',
   'capabilities-and-bindings',
   'frameworks',
   'static-sites',
