@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "ticket": "UAN-004",
+  "status": "local-cli-and-loopback-parity-verified",
+  "checkedOn": "2026-10-02",
+  "requirements": [
+    {
+      "id": "R02",
+      "status": "partial",
+      "evidence": ["src/cli.ts", "test/cli.test.mjs"],
+      "scope": "CLI help and simple flags derive from registry schemas; complex input uses JSON. No general command plugin or all-schema flag mapper claim."
+    },
+    {
+      "id": "R10",
+      "status": "partial",
+      "evidence": ["src/cli.ts", "examples/e05-node-cli/project/test/cli.test.mjs"],
+      "scope": "Help includes version and effective target; exact local and remote mode selection and result parity are tested. Broader target/runtime coverage remains unverified."
+    },
+    {
+      "id": "R11",
+      "status": "partial",
+      "evidence": [
+        "src/cli.ts",
+        "test/cli.test.mjs",
+        "examples/e05-node-cli/project/test/cli.test.mjs"
+      ],
+      "scope": "Authorization is enforced during local invocation and remote bearer-authenticated invocation. Discovery authorization behavior is not implemented or tested in this ticket slice."
+    },
+    {
+      "id": "R20",
+      "status": "partial",
+      "evidence": [
+        "src/cli.ts",
+        "test/cli.test.mjs",
+        "examples/e05-node-cli/project/test/cli.test.mjs"
+      ],
+      "scope": "Bounded invalid-input, malformed-stdin, authorization, handler-error, output-validation, and remote-timeout paths produce versioned results and documented exits."
+    },
+    {
+      "id": "R24",
+      "status": "partial",
+      "evidence": [
+        "scripts/check-example.mjs",
+        "examples/e05-node-cli/project",
+        "examples/e12-shared-unit-converter/project"
+      ],
+      "scope": "E05 and E12 install from a freshly packed local tarball and generated lockfile. This is reproducible local artifact evidence, not npm publication."
+    }
+  ],
+  "examples": [
+    {
+      "id": "E05",
+      "status": "fresh-install-local-http-cli-parity-passed",
+      "source": "examples/e05-node-cli/project",
+      "command": "npm run example:e05",
+      "scope": "Node built-in HTTP loopback server; no package bin command, Hono/MCP integration, or deployed host claim."
+    },
+    {
+      "id": "E12",
+      "status": "fresh-install-generated-local-cli-passed",
+      "source": "examples/e12-shared-unit-converter/project",
+      "command": "npm run example:e12"
+    }
+  ],
+  "release": {
+    "npmPublished": false,
+    "packagePrivate": true,
+    "packageVersion": "0.0.0"
+  }
+}

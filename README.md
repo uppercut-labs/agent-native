@@ -1,7 +1,6 @@
 # Uppercut Agent Native
 
-Uppercut Agent Native is an early implementation of typed capability contracts and local
-execution. The package working name is `@uppercut-labs/agent-native`; its manifest remains
+Uppercut Agent Native is an early implementation of typed capability contracts with local and HTTP execution. The package working name is `@uppercut-labs/agent-native`; its manifest remains
 `private: true` at version `0.0.0`, so it cannot be published accidentally.
 
 ## Current scope
@@ -9,12 +8,11 @@ execution. The package working name is `@uppercut-labs/agent-native`; its manife
 UAN-001 established the strict TypeScript baseline, Zod adapter, JSON Schema projection checks,
 and stable diagnostic observations. UAN-002 adds immutable capability definitions, explicit
 runtime bindings, a checked registry, per-invocation authorization, and shared input/output
-validation. E01 and E12 are independently installable Node examples of this local execution
-slice.
+validation. E01 and E12 are independently installable Node examples of this execution slice; E05 is a fresh-install CLI fixture covering local and HTTP execution parity.
 
-Run `npm run example:e01` or `npm run example:e12` to export each example with the package tarball,
+Run `npm run example:e01`, `npm run example:e12`, or `npm run example:e05` to export each example with the package tarball,
 generate its lockfile, install it independently, and run its tests and CLI. E01 proves the album
-domain slice only; it is not the Astro retrofit. E12 prints `30.48 cm` for its fixed fixture.
+domain slice only; it is not the Astro retrofit. E12 returns `30.48 cm` for its fixed fixture through the versioned generated CLI.
 
 The root, `./contracts`, `./registry`, and `./executor` entrypoints use only portable core modules.
 They do not import Zod, Node, DOM, framework, provider, or server modules. `npm run check` compiles
@@ -35,6 +33,10 @@ read capabilities, generates OpenAPI 3.1 from those contracts, and serves protoc
 Protected capability schemas and routes are omitted from this initial HTTP projection. See
 [the HTTP guide](docs/http.md) for response mappings, body/deadline limits, and integration boundaries.
 
+## Generated CLI
+
+The separate `@uppercut-labs/agent-native/cli` runner entrypoint builds help and typed field flags from registry schemas. Calls select `--mode local|remote` explicitly; remote calls also select a configured credential profile and use a bounded HTTP request. Invocations write one `uan.cli-result/v1` JSON envelope to stdout and redacted target/failure diagnostics to stderr. No package-level `bin` command ships yet; applications expose the runner with their own registry. See [the CLI guide](docs/cli.md) and the installed E05/E12 examples.
+
 ## Development
 
 Requires Node.js 22 or newer and npm.
@@ -49,6 +51,7 @@ npm test
 npm run build
 npm run example:e01
 npm run example:e12
+npm run example:e05
 npm run check
 ```
 
