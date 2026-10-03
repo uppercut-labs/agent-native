@@ -1,8 +1,9 @@
-import { canonicalCapabilityId, type CapabilityDefinition } from './core/contracts.js';
+import { capabilitySurfaceNames, createCapabilitySurfaceMap } from './core/composition.js';
+import { type CapabilityDefinition, canonicalCapabilityId } from './core/contracts.js';
+import { createDiagnosticObservation } from './core/diagnostics.js';
 import type { AuthorizationPort, ExecutionCaller, ExecutionResult } from './core/executor.js';
 import { executeCapability } from './core/executor.js';
 import type { CapabilityRegistry, ExecutionSignal } from './core/registry.js';
-import { createDiagnosticObservation } from './core/diagnostics.js';
 
 const DEFAULT_BASE_PATH = '/agent-native/v1';
 const DEFAULT_MAX_BYTES = 32 * 1024;
@@ -92,19 +93,7 @@ export function httpInvocationPath(
   identity: CapabilityDefinition<unknown, unknown>['identity'],
   root = DEFAULT_BASE_PATH,
 ): string {
-  const id = canonicalCapabilityId(identity);
-  const colon = id.indexOf(':');
-  const at = id.lastIndexOf('@');
-  return (
-    basePath(root) +
-    '/capabilities/' +
-    encodeURIComponent(id.slice(0, colon)) +
-    '/' +
-    encodeURIComponent(id.slice(colon + 1, at)) +
-    '/v' +
-    id.slice(at + 1) +
-    '/invoke'
-  );
+  return basePath(root) + capabilitySurfaceNames(identity).http;
 }
 
 function isPublicRead(definition: CapabilityDefinition<unknown, unknown>): boolean {
@@ -148,23 +137,14 @@ export function createOpenApiDocument(
   registry: CapabilityRegistry,
   options: { readonly basePath?: string } = {},
 ): Readonly<Record<string, unknown>> {
+  createCapabilitySurfaceMap(registry.definitions);
   const root = basePath(options.basePath);
   const paths: Record<string, unknown> = {};
   for (const definition of registry.definitions.filter(
     (candidate) => isPublicRead(candidate) && hasUniqueServerBinding(registry, candidate),
   )) {
     const id = canonicalCapabilityId(definition.identity);
-    const operationId =
-      'invoke_' +
-      definition.identity.namespace.length +
-      '_' +
-      definition.identity.namespace +
-      '_' +
-      definition.identity.name.length +
-      '_' +
-      definition.identity.name +
-      '_v' +
-      definition.identity.majorVersion;
+    const operationId = capabilitySurfaceNames(definition.identity).openApiOperation;
     paths[httpInvocationPath(definition.identity, root)] = {
       post: {
         operationId,
@@ -326,8 +306,8 @@ export function createHttpHandler(
   options: HttpAdapterOptions = {},
 ): (request: Request) => Promise<Response> {
   const config = validateOptions(options);
-  const openApiPath = config.root + '/openapi.json';
-  const healthPath = config.root + '/health';
+  const openApiPath = `${config.root}/openapi.json`;
+  const healthPath = `${config.root}/health`;
   const routeMap = new Map<string, CapabilityDefinition<unknown, unknown>>();
   for (const definition of registry.definitions.filter(
     (candidate) => isPublicRead(candidate) && hasUniqueServerBinding(registry, candidate),

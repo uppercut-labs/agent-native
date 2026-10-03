@@ -9,6 +9,7 @@ const supportedExamples = new Set([
   'e01-album-catalog',
   'e02-astro-on-demand-catalog',
   'e03-next-reading-list',
+  'e08-reusable-versioned-pack',
   'e12-shared-unit-converter',
   'e05-node-cli',
   'e06-browser-only-theme-controls',
@@ -18,7 +19,7 @@ const supportedExamples = new Set([
 ]);
 if (exampleId === undefined || !supportedExamples.has(exampleId)) {
   throw new Error(
-    'Choose a supported example id: e01-album-catalog, e02-astro-on-demand-catalog, e03-next-reading-list, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls, e04-worker-sidecar, e07-playlist-permissions or e09-album-explorer.',
+    'Choose a supported example id: e01-album-catalog, e02-astro-on-demand-catalog, e03-next-reading-list, e08-reusable-versioned-pack, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls, e04-worker-sidecar, e07-playlist-permissions or e09-album-explorer.',
   );
 }
 
@@ -92,6 +93,11 @@ const packageTemplate = JSON.parse(
   await readFile(path.join(projectSource, 'package.template.json'), 'utf8'),
 );
 packageTemplate.dependencies['@uppercut-labs/agent-native'] = `file:./vendor/${archiveName}`;
+if (exampleId === 'e08-reusable-versioned-pack') {
+  runNpm(['pack', '--pack-destination', vendorRoot], path.join(projectSource, 'contracts'));
+  packageTemplate.dependencies['@example/e08-distance-contracts'] =
+    'file:./vendor/example-e08-distance-contracts-1.0.0.tgz';
+}
 await writeFile(
   path.join(exportRoot, 'package.json'),
   `${JSON.stringify(packageTemplate, null, 2)}\n`,

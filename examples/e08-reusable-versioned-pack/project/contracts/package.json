@@ -1,0 +1,12 @@
+{
+  "name": "@example/e08-distance-contracts",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": "./src/index.mjs",
+  "files": [
+    "src"
+  ],
+  "peerDependencies": {
+    "@uppercut-labs/agent-native": "0.0.0"
+  }
+}

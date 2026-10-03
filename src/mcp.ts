@@ -1,30 +1,31 @@
 import {
+  type AuthInfo,
+  type CallToolResult,
   createMcpHandler as createOfficialMcpHandler,
   fromJsonSchema,
-  McpServer,
   type JsonSchemaType,
   type McpRequestContext,
-  type AuthInfo,
+  McpServer,
   type OAuthTokenVerifier,
   requireBearerAuth,
   type ToolAnnotations,
-  type CallToolResult,
 } from '@modelcontextprotocol/server';
 import {
   createGrantAuthorization,
   executionCallerForPrincipal,
-  hasGrantForScopes,
   type GrantAuthorizationOptions,
+  hasGrantForScopes,
   type TrustedPrincipal,
 } from './auth.js';
+import { capabilitySurfaceNames, createCapabilitySurfaceMap } from './core/composition.js';
+import { type CapabilityDefinition, canonicalCapabilityId } from './core/contracts.js';
 import type { AuthorizationPort, ExecutionCaller } from './core/executor.js';
 import { executeCapability } from './core/executor.js';
-import { canonicalCapabilityId, type CapabilityDefinition } from './core/contracts.js';
 import type { CapabilityRegistry } from './core/registry.js';
 import {
+  type CapabilitySurfaceExposure,
   evaluateCapabilityDiscovery,
   isDestructiveCapabilityExposed,
-  type CapabilitySurfaceExposure,
 } from './discovery.js';
 
 const DEFAULT_ENDPOINT = '/mcp';
@@ -171,23 +172,7 @@ function isPublicRead(definition: CapabilityDefinition<unknown, unknown>): boole
 }
 
 export function mcpToolName(identity: CapabilityDefinition<unknown, unknown>['identity']): string {
-  const id = canonicalCapabilityId(identity);
-  const colon = id.indexOf(':');
-  const at = id.lastIndexOf('@');
-  const namespace = id.slice(0, colon);
-  const name = id.slice(colon + 1, at);
-  return (
-    'cap_' +
-    namespace.length +
-    '_' +
-    namespace +
-    '_' +
-    name.length +
-    '_' +
-    name +
-    '_v' +
-    id.slice(at + 1)
-  );
+  return capabilitySurfaceNames(identity).mcp;
 }
 
 function sdkSchema(schema: Readonly<Record<string, unknown>>) {
@@ -407,6 +392,7 @@ export function createMcpHandlerWithAppRegistration(
   options: McpAdapterOptions = {},
   appRegistration?: McpAppRegistration,
 ): (request: Request) => Promise<Response> {
+  createCapabilitySurfaceMap(registry.definitions);
   const config = validateOptions(options);
   const officialHandler = createOfficialMcpHandler(
     async (context: McpRequestContext) =>
