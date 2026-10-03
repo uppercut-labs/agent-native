@@ -28,15 +28,19 @@ export const searchContentCapability = defineCapability({
   risk: 'read',
   access: { kind: 'public' },
   surfaces: {
+    // docs:start http-get-override
     http: {
       path: '/api/content/search',
       method: 'GET',
       query: { query: 'q' },
     },
+    // docs:end http-get-override
+    // docs:start cli-command-override
     cli: {
       command: 'content-search',
       aliases: ['search'],
     },
+    // docs:end cli-command-override
   },
 });
 

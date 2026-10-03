@@ -3,6 +3,7 @@ import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promi
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Marked, marked } from 'marked';
+import { expandSourceRegions } from './source-regions.mjs';
 
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(siteRoot, '..');
@@ -206,7 +207,10 @@ async function writePage(key, html) {
 async function build() {
   const files = await collectMarkdown(docsRoot);
   const pages = new Map();
-  for (const file of files) pages.set(file, metadata(file, await readFile(file, 'utf8')));
+  for (const file of files) {
+    const markdown = await expandSourceRegions(await readFile(file, 'utf8'), file, repositoryRoot);
+    pages.set(file, metadata(file, markdown));
+  }
   const byKey = new Map([...pages.values()].map((page) => [page.key, page]));
   for (const key of guideOrder) {
     if (!byKey.has(key)) throw new Error(`Missing navigation page: docs/${key}.md`);
@@ -232,7 +236,7 @@ async function build() {
     );
     const rawFile = path.join(outputRoot, 'raw', `${page.key}.md`);
     await mkdir(path.dirname(rawFile), { recursive: true });
-    await copyFile(page.file, rawFile);
+    await writeFile(rawFile, page.markdown);
   }
 
   const intro = `<h1>Typed capabilities for the sites you already run.</h1>

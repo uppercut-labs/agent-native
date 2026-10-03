@@ -6,6 +6,7 @@ import {
 import { catalogPack } from '@example/e08-album-contracts';
 import { legacyBinding } from './consumer-a.mjs';
 
+// docs:start compose-v1-alias
 const composition = composeCapabilityPacks([
   {
     pack: catalogPack,
@@ -18,6 +19,7 @@ const composition = composeCapabilityPacks([
 ]);
 const selected = composition.resolve('album-v1');
 if (selected === undefined) throw new Error('v1 alias is not configured');
+// docs:end compose-v1-alias
 const registry = createCapabilityRegistry(composition.definitions, [legacyBinding]);
 const result = await executeCapability(registry, {
   identity: selected.identity,
