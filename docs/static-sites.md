@@ -5,6 +5,11 @@ injects an application-owned browser module through Astro's supported
 astro:config:setup injectScript('page', ...) hook. The hook is Vite-bundled as a page module; the
 application keeps ownership of its registry, browser bindings, and user interface.
 
+The [experimental init API](getting-started.md) patches a narrowly recognized static Astro config
+and writes an owned browser entry plus sidecar-origin settings. Its generated entry only signals
+readiness; it does not register an application capability. The E01 retrofit fixture builds from a
+local package tarball and checks that the selected origin appears in the browser bundle.
+
 Astro output must be static. The integration checks the final buildOutput, emits a diagnostic,
 and fails an unsupported server-output build. It does not add an Astro server adapter, SSR route,
 sidecar, or hosting configuration. Static builds use Astro's normal default output behavior. The

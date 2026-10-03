@@ -12,6 +12,12 @@ The Astro integration uses the documented `astro:config:setup` page-script injec
 navigation. Its official build output is checked for static pages/assets and for absence of HTTP and
 MCP server adapter code in browser bundles.
 
+The experimental [existing-project init](getting-started.md) can patch only an Astro config with
+the recognized literal static shape. It records a reviewed sidecar origin and generates a browser
+entry, then verifies the built E01 site from a local package tarball. More complex Astro config,
+server rendering, and other frameworks require manual integration; init does not claim support for
+them from file detection alone.
+
 The browser capability host remains experimental. E01 exercises a simulated WebMCP API in Node
 tests, not a real browser or agent. Other Astro releases, server output, deployment providers, and
 real-host WebMCP behavior are unverified.

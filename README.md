@@ -13,6 +13,12 @@ runtime bindings, a checked registry, per-invocation authorization, and shared i
 validation. E01 exercises shared album lookup and a static Astro site integration; E12 is a
 shared unit-converter example; E05 covers local and HTTP execution through the CLI. UAN-008 adds E04, a locally verified Worker sidecar for the same E01 contract while the Astro site remains static.
 
+UAN-009 adds a programmatic, plan-first retrofit for a narrowly recognized existing Astro static
+site. It tracks owned files, rechecks the plan before applying, and protects human edits during
+restoration. The E01 check installs a local tarball into a copied site and builds the retrofit.
+See the [experimental init guide](docs/getting-started.md) for its limits; no package-level init
+command or npm release exists yet.
+
 Run `npm run example:e01`, `npm run example:e12`, or `npm run example:e05` to build and pack the
 package, install it independently into each example, and run its tests and runnable surface. E01
 also verifies a pre-existing multi-page static Astro fixture before and after integration. E04 checks a local workerd HTTP/OpenAPI roundtrip and official MCP client exchange; it does not deploy or configure DNS.
@@ -95,3 +101,4 @@ fixture only. See [UAN-008 sidecar evidence](docs/evidence/UAN-008-worker-sideca
 
 Not published. MIT is the selected license. UAN-002 local acceptance and limitations are in
 `evidence/UAN-002.md`; pinned tool versions and upstream references are in `VERSION-EVIDENCE.md`.
+The current init acceptance and limits are in [UAN-009 evidence](docs/evidence/UAN-009-init.md).
