@@ -27,6 +27,14 @@ multiple matching bindings require a `bindingId`. Durable grants, identity integ
 transports remain outside this slice. See [the capability and binding guide](docs/capabilities-and-bindings.md)
 for the frozen signatures and limitations.
 
+## HTTP and OpenAPI
+
+The separate `@uppercut-labs/agent-native/http` entrypoint provides a framework-neutral Web
+Request/Response handler. It exposes deterministic POST invocation routes only for explicit public
+read capabilities, generates OpenAPI 3.1 from those contracts, and serves protocol health evidence.
+Protected capability schemas and routes are omitted from this initial HTTP projection. See
+[the HTTP guide](docs/http.md) for response mappings, body/deadline limits, and integration boundaries.
+
 ## Development
 
 Requires Node.js 22 or newer and npm.
