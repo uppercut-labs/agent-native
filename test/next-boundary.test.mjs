@@ -7,7 +7,7 @@ const root = path.resolve(new URL('..', import.meta.url).pathname);
 
 test('core and Astro consumers neither install nor import Next', async () => {
   const manifest = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
-  assert.equal(manifest.dependencies.next, undefined);
+  assert.equal(manifest.dependencies?.next, undefined);
   assert.equal(manifest.devDependencies.next, undefined);
   assert.equal(manifest.peerDependencies.next, undefined);
   for (const relative of ['src/index.ts', 'src/astro.ts', 'src/core/registry.ts']) {
