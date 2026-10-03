@@ -4,6 +4,7 @@ import {
   defineCapability,
 } from '@uppercut-labs/agent-native';
 import { createHttpHandler } from '@uppercut-labs/agent-native/http';
+import { createMcpHandler } from '@uppercut-labs/agent-native/mcp';
 import { fromZod } from '@uppercut-labs/agent-native/schema/zod';
 import * as z from 'zod';
 
@@ -31,7 +32,13 @@ export const albumLookup = defineCapability({
   access: { kind: 'public' },
 });
 const albums = new Map([['first-light', { slug: 'first-light', title: 'First Light' }]]);
-const handler = async ({ slug }) => {
+const handler = async ({ slug }, context) => {
+  if (slug === 'bounded-wait' && context.runtime === 'server') {
+    while (context.signal?.aborted !== true) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    throw new Error('bounded operation aborted');
+  }
   const album = albums.get(slug);
   return album === undefined ? { kind: 'missing' } : { kind: 'found', album };
 };
@@ -55,8 +62,38 @@ export function createAuthorization() {
     },
   };
 }
+
+function serverExecutionContext(request, allowAnonymous) {
+  const expectedToken = process.env.E05_TOKEN;
+  const authenticated =
+    typeof expectedToken === 'string' &&
+    expectedToken.length > 0 &&
+    request.headers.get('authorization') === `Bearer ${expectedToken}`;
+  const caller = authenticated
+    ? { kind: 'authenticated', subject: 'demo-cli', scopes: ['catalog:read'] }
+    : { kind: 'anonymous' };
+  return {
+    caller,
+    authorization: {
+      authorize(execution) {
+        if (execution.risk !== 'read' || execution.access.kind !== 'public') return false;
+        return (
+          allowAnonymous ||
+          (execution.caller.kind === 'authenticated' &&
+            execution.caller.scopes.includes('catalog:read'))
+        );
+      },
+    },
+  };
+}
+
 export const httpHandler = createHttpHandler(registry, {
-  resolveExecutionContext: httpHandlerContext,
+  deadlineMs: 100,
+  resolveExecutionContext: (request) => serverExecutionContext(request, false),
+});
+export const mcpHandler = createMcpHandler(registry, {
+  deadlineMs: 100,
+  resolveExecutionContext: (request) => serverExecutionContext(request, true),
 });
 
 export function createThrowingHttpHandler() {
@@ -69,27 +106,6 @@ export function createThrowingHttpHandler() {
   });
   const failingRegistry = createCapabilityRegistry([albumLookup], [failingBinding]);
   return createHttpHandler(failingRegistry, {
-    resolveExecutionContext: httpHandlerContext,
+    resolveExecutionContext: (request) => serverExecutionContext(request, false),
   });
-}
-
-function httpHandlerContext(request) {
-  const token = request.headers.get('authorization');
-  const authenticated = token === 'Bearer ' + process.env.E05_TOKEN;
-  const caller = authenticated
-    ? { kind: 'authenticated', subject: 'demo-cli', scopes: ['catalog:read'] }
-    : { kind: 'anonymous' };
-  return {
-    caller,
-    authorization: {
-      authorize(request) {
-        return (
-          request.risk === 'read' &&
-          request.access.kind === 'public' &&
-          request.caller.kind === 'authenticated' &&
-          request.caller.scopes.includes('catalog:read')
-        );
-      },
-    },
-  };
 }
