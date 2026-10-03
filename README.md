@@ -71,6 +71,15 @@ the official Node standalone adapter while retaining prerendered pages and navig
 [static-site guidance](docs/static-sites.md), [framework support](docs/frameworks.md), and
 [UAN-007 evidence](docs/evidence/UAN-007-astro.md).
 
+## Next.js App Router
+
+The isolated `next` entrypoint adapts the existing HTTP and official MCP handlers to Next 16.3.8
+Node-runtime route exports without importing Next into core or Astro consumers. Browser bootstrap
+code lives at `next/browser` and resyncs explicitly from `usePathname()` while preserving a normal
+browser fallback. E03 retains its pre-integration fixture and verifies a generated, locked
+after-state. See [Next.js App Router](docs/next.md) and
+[UAN-014 evidence](docs/evidence/UAN-014-next.md).
+
 ## Remote MCP
 
 The isolated `@uppercut-labs/agent-native/mcp` entrypoint uses the official MCP server SDK over
