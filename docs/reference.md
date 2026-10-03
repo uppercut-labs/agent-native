@@ -2,8 +2,8 @@
 
 This page is generated from [package.json](../package.json) and the
 [CLI parser](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts). Run `node docs-site/reference.mjs` after changing those
-sources. `npm run docs:check` fails if this page drifts. Agent Native is still a
-private `0.0.0` preview; these imports are available from local tarballs.
+sources. `npm run docs:check` fails if this page drifts. Agent Native
+`0.1.0` is a preview; verify registry availability before npm installation.
 
 ## Typed package entrypoints
 

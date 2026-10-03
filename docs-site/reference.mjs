@@ -59,8 +59,8 @@ export function renderReference(manifest, cliSource, sources = {}) {
 
 This page is generated from [package.json](../package.json) and the
 [CLI parser](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts). Run \`node docs-site/reference.mjs\` after changing those
-sources. \`npm run docs:check\` fails if this page drifts. Agent Native is still a
-private \`${manifest.version}\` preview; these imports are available from local tarballs.
+sources. \`npm run docs:check\` fails if this page drifts. Agent Native
+\`${manifest.version}\` is a preview; verify registry availability before npm installation.
 
 ## Typed package entrypoints
 

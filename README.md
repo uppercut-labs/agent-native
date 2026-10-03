@@ -1,9 +1,9 @@
 # Uppercut Agent Native
 
-Uppercut Agent Native is an experimental package for typed capability contracts with local,
-HTTP, CLI, MCP, Node/Hono, browser, and Astro static/on-demand surfaces. The package working name is
-`@uppercut-labs/agent-native`; its manifest remains `private: true` at version `0.0.0`, so it
-cannot be published accidentally.
+Uppercut Agent Native `0.1.0` is an experimental package for typed capability contracts with local,
+HTTP, CLI, MCP, Node/Hono, browser, and Astro static/on-demand surfaces. It is distributed as
+`@uppercut-labs/agent-native` under the MIT license. See [installation](docs/installation.md)
+for the first programmatic capability.
 
 ## Current scope
 
@@ -17,7 +17,7 @@ UAN-009 adds a programmatic, plan-first retrofit for a narrowly recognized exist
 site. It tracks owned files, rechecks the plan before applying, and protects human edits during
 restoration. The E01 check installs a local tarball into a copied site and builds the retrofit.
 See the [experimental init guide](docs/getting-started.md) for its limits; no package-level init
-command or npm release exists yet.
+command exists.
 
 UAN-010 adds trusted principal and durable grant contracts. E07 demonstrates a local persistent
 grant store with the official MCP SDK bearer gate, two fixture tenants, repeated protected edits,
@@ -136,7 +136,7 @@ official MCP client SDK is pinned for the local protocol fixture only. See [UAN-
 
 ## Status
 
-Not published. MIT is the selected license. UAN-002 local acceptance and limitations are in
+Version `0.1.0` is a preview under MIT. UAN-002 local acceptance and limitations are in
 [UAN-002 evidence](https://github.com/uppercut-labs/agent-native/blob/main/evidence/UAN-002.md); pinned tool versions and upstream references are in [VERSION-EVIDENCE.md](https://github.com/uppercut-labs/agent-native/blob/main/VERSION-EVIDENCE.md).
 The current init acceptance and limits are in [UAN-009 evidence](docs/evidence/UAN-009-init.md).
 The local trusted-auth and grant acceptance is in [UAN-010 evidence](docs/evidence/UAN-010-auth.md).

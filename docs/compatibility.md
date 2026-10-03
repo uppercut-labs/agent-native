@@ -1,6 +1,6 @@
 # Compatibility and evidence
 
-Agent Native remains a private `0.0.0` source preview. The table describes the exact local
+Agent Native `0.1.0` is a preview. The table describes the exact local
 fixtures; it is not a claim for all releases of a runtime or every client.
 
 | Surface | Runnable check | Verified boundary |

@@ -1,8 +1,7 @@
 # Existing Astro site: experimental init
 
-The `@uppercut-labs/agent-native/init` entrypoint is available in this source
-package, but the npm package is still private at version `0.0.0`. There is no
-`agent-native init` executable yet. Use the E01 fixture to try the current
+The `@uppercut-labs/agent-native/init` entrypoint is available in the
+`0.1.0` preview package. There is no `agent-native init` executable yet. Use the E01 fixture to try the current
 programmatic flow from a local package tarball:
 
 ```sh
@@ -94,5 +93,5 @@ The `npm run example:e01` export uses Node.js 22 or newer and a root `npm ci`. I
 static site and checks found/missing results. A malformed album slug is rejected before the
 handler runs; correct the slug and retry. See the [E01 project instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/e01-album-catalog/project/README.md).
 
-The current init API is a tested foundation for the later interactive CLI and
-npm release. It is not a production deployment or a browser-agent host test.
+The current init API is a tested foundation for a later interactive CLI.
+It is not a production deployment or a browser-agent host test.
