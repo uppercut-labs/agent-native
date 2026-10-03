@@ -6,7 +6,7 @@ import type {
 } from './contracts.js';
 import { canonicalCapabilityId, isValidCapabilityIdentity } from './contracts.js';
 import { invokeBindingHandler } from './binding-internal.js';
-import type { CapabilityRegistry, RuntimeTarget } from './registry.js';
+import type { CapabilityRegistry, ExecutionSignal, RuntimeTarget } from './registry.js';
 import { createDiagnosticObservation, type DiagnosticObservation } from './diagnostics.js';
 
 export type ExecutionCaller =
@@ -36,6 +36,7 @@ export type ExecuteCapabilityRequest = {
   readonly caller: ExecutionCaller;
   readonly authorization: AuthorizationPort;
   readonly bindingId?: string;
+  readonly signal?: ExecutionSignal;
 };
 
 export type ExecutionFailureKind =
@@ -47,7 +48,8 @@ export type ExecutionFailureKind =
   | 'unauthorized'
   | 'authorization-error'
   | 'invalid-output'
-  | 'handler-failed';
+  | 'handler-failed'
+  | 'deadline-exceeded';
 
 export type ExecutionFailure = {
   readonly kind: 'failure';
@@ -73,6 +75,10 @@ function failure(reason: ExecutionFailureKind, suffix: string): ExecutionFailure
       status: 'failed',
     }),
   });
+}
+
+function isAborted(signal: ExecutionSignal | undefined): boolean {
+  return signal?.aborted === true;
 }
 
 function findDefinition(
@@ -141,15 +147,22 @@ export async function executeCapability(
   if (!authorized) {
     return failure('unauthorized', 'unauthorized');
   }
+  if (isAborted(request.signal)) {
+    return failure('deadline-exceeded', 'deadline-exceeded');
+  }
 
   let rawOutput: unknown;
   try {
     rawOutput = await invokeBindingHandler(binding, parsedInput, {
       capabilityId,
       runtime: request.runtime,
+      ...(request.signal === undefined ? {} : { signal: request.signal }),
     });
   } catch {
     return failure('handler-failed', 'handler-failed');
+  }
+  if (isAborted(request.signal)) {
+    return failure('deadline-exceeded', 'deadline-exceeded');
   }
 
   let output: unknown;

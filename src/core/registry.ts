@@ -5,9 +5,14 @@ import { getBindingRecord, setBindingRecord } from './binding-internal.js';
 
 export type RuntimeTarget = 'browser' | 'server' | 'local';
 
+export type ExecutionSignal = {
+  readonly aborted: boolean;
+};
+
 export type BindingExecutionContext = {
   readonly capabilityId: string;
   readonly runtime: RuntimeTarget;
+  readonly signal?: ExecutionSignal;
 };
 
 export type CapabilityBindingOptions<Input, Output> = {

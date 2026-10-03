@@ -4,6 +4,7 @@ import {
   defineCapability,
   executeCapability,
 } from '@uppercut-labs/agent-native';
+import { createHttpHandler } from '@uppercut-labs/agent-native/http';
 import { fromZod } from '@uppercut-labs/agent-native/schema/zod';
 import * as z from 'zod';
 
@@ -50,7 +51,16 @@ export const localAlbumBinding = bindCapability(getAlbumCapability, {
   execute: lookupAlbum,
 });
 
-const registry = createCapabilityRegistry([getAlbumCapability], [localAlbumBinding]);
+export const serverAlbumBinding = bindCapability(getAlbumCapability, {
+  id: 'server-sample-catalog',
+  targets: ['server'],
+  execute: lookupAlbum,
+});
+
+const registry = createCapabilityRegistry(
+  [getAlbumCapability],
+  [localAlbumBinding, serverAlbumBinding],
+);
 
 /** @type {import('@uppercut-labs/agent-native').AuthorizationPort} */
 const publicReadAuthorization = {
@@ -69,3 +79,10 @@ export function runAlbumLookup(input) {
     authorization: publicReadAuthorization,
   });
 }
+
+export const albumHttpHandler = createHttpHandler(registry, {
+  resolveExecutionContext: () => ({
+    caller: { kind: 'anonymous' },
+    authorization: publicReadAuthorization,
+  }),
+});

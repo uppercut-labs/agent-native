@@ -32,6 +32,7 @@ export type {
   CapabilityBinding,
   CapabilityBindingOptions,
   CapabilityRegistry,
+  ExecutionSignal,
   RegistryErrorKind,
   RuntimeTarget,
 } from './core/registry.js';
