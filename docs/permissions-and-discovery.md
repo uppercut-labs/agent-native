@@ -18,7 +18,7 @@ For protected MCP discovery, the application may use `hasGrantForScopes` inside 
 
 Destructive visibility also requires an explicit per-app surface allowlist, such as `surfaceExposure: { mcp: { destructive: ['account:delete@1'] } }`. The canonical identity must be listed for that surface, and the current authorization check must still pass. This configuration does not change the domain capability's risk metadata. Browser and CLI use `browser` and `cli` keys respectively. The HTTP adapter in this package remains public-read-only and emits only public read routes in OpenAPI.
 
-The [E07 playlist fixture](../examples/e07-playlist-permissions/README.md) demonstrates official SDK bearer authentication, two tenants, persistent local grants, repeated edits, restart persistence, separate delete scope and direct denial after revocation. Its static test identities and JSON store reject production mode. The JSON store is a single-process fixture; concurrent independent processes are unsupported. Replace both with the application's real verifier and durable store before deployment. E07 checks revocation at the next store lookup in its sequential fixture; a production store's consistency and cache policy determine its actual latency.
+The [E07 playlist fixture](https://github.com/uppercut-labs/agent-native/blob/main/examples/e07-playlist-permissions/README.md) demonstrates official SDK bearer authentication, two tenants, persistent local grants, repeated edits, restart persistence, separate delete scope and direct denial after revocation. Its static test identities and JSON store reject production mode. The JSON store is a single-process fixture; concurrent independent processes are unsupported. Replace both with the application's real verifier and durable store before deployment. E07 checks revocation at the next store lookup in its sequential fixture; a production store's consistency and cache policy determine its actual latency.
 
 Agent Native does not suppress confirmation prompts imposed by a browser, identity provider or MCP host. Grant reuse avoids repeated *library* consent only while identity, scopes, resource, policy and expiry remain valid.
 
@@ -35,9 +35,24 @@ CLI help filters by usable local bindings or public remote routes. Hidden or una
 With Node.js 22 or newer, run `npm ci` and `npm run example:e07` from the package root.
 The single-process fixture persists grants and revokes an existing ID in its local JSON store:
 
-{{source:examples/e07-playlist-permissions/project/src/grant-store.mjs#revoke-grant}}
+<!-- source:examples/e07-playlist-permissions/project/src/grant-store.mjs#revoke-grant -->
+~~~js
+async revoke(grantId, revokedAt) {
+  return await this.#withWriteLock(async () => {
+    const grants = await this.#read();
+    const grant = grants.find((entry) => entry.grantId === grantId);
+    if (!grant || grant.revokedAt !== null) return false;
+    grant.revokedAt = revokedAt;
+    await this.#write(grants);
+    return true;
+  });
+}
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e07-playlist-permissions/project/src/grant-store.mjs#L56)
+<!-- /source -->
 
 The negative test proves that a revoked ID cannot be saved again and that the next protected
 call is denied. If the fixture refuses to start in production mode, remove
 `NODE_ENV=production` and use the documented local test mode; this JSON store intentionally
-rejects production use. See [E07 setup and cleanup](../examples/e07-playlist-permissions/README.md).
+rejects production use. See [E07 setup and cleanup](https://github.com/uppercut-labs/agent-native/blob/main/examples/e07-playlist-permissions/README.md).

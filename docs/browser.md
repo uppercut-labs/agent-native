@@ -42,10 +42,23 @@ release or agent host.
 With Node.js 22 or newer, run `npm ci` and `npm run example:e06` from the package root.
 The exported page binds its theme action only to `browser`:
 
-{{source:examples/e06-browser-only-theme-controls/project/src/theme.mjs#browser-theme-binding}}
+<!-- source:examples/e06-browser-only-theme-controls/project/src/theme.mjs#browser-theme-binding -->
+~~~js
+const binding = bindCapability(capability, {
+  id: 'page-theme',
+  targets: ['browser'],
+  execute: async ({ theme }) => {
+    document.documentElement.dataset.theme = theme;
+    return { theme };
+  },
+});
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e06-browser-only-theme-controls/project/src/theme.mjs#L23)
+<!-- /source -->
 
 The simulated lifecycle test checks registration, protected invocation, disposal, and the
 ordinary button fallback. A server invocation fails with `binding-unavailable`; use a
 separate server binding only if the application actually implements one. See the
-[E06 standalone instructions](../examples/e06-browser-only-theme-controls/project/README.md).
+[E06 standalone instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/e06-browser-only-theme-controls/project/README.md).
 No native WebMCP host result is implied by this fixture.

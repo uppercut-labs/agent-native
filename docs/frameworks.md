@@ -42,10 +42,17 @@ Hono reference: [official Node.js adapter guide](https://hono.dev/docs/getting-s
 With Node.js 22 or newer, run `npm ci` and `npm run example:e05` from the package root.
 The standalone export mounts the package HTTP and MCP handlers into one pinned Hono app:
 
-{{source:examples/e05-node-cli/project/src/server.mjs#hono-routes}}
+<!-- source:examples/e05-node-cli/project/src/server.mjs#hono-routes -->
+~~~js
+app.all('/agent-native/*', (context) => httpHandler(context.req.raw));
+app.all('/mcp', (context) => mcpHandler(context.req.raw));
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e05-node-cli/project/src/server.mjs#L11)
+<!-- /source -->
 
 The harness checks the ordinary HTTP result and an official MCP client call on loopback.
 If the listen address is occupied, stop the other process or choose another `PORT`; the
 fixture reports `server_error=address-in-use`. See the
-[E05 application instructions](../examples/e05-node-cli/project/README.md) for local
+[E05 application instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/e05-node-cli/project/README.md) for local
 start, stop, and shell-only credential cleanup.

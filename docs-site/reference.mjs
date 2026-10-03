@@ -58,7 +58,7 @@ export function renderReference(manifest, cliSource, sources = {}) {
   const reference = `# Generated package and CLI reference
 
 This page is generated from [package.json](../package.json) and the
-[CLI parser](../src/cli.ts). Run \`node docs-site/reference.mjs\` after changing those
+[CLI parser](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts). Run \`node docs-site/reference.mjs\` after changing those
 sources. \`npm run docs:check\` fails if this page drifts. Agent Native is still a
 private \`${manifest.version}\` preview; these imports are available from local tarballs.
 
@@ -88,7 +88,7 @@ For a runnable instance, use Node.js 22 or newer, \`npm ci\`, and
 \`npm run example:e10\` from the repository root. The exported E10 CLI runs
 \`npm run search -- --query night --limit 1\` successfully. An empty query exits
 2 with \`invalid-input\`; provide a nonempty query to retry. See
-[CLI behavior](cli.md) and [E10 instructions](../examples/e10-existing-functions-retrofit/project/README.md).
+[CLI behavior](cli.md) and [E10 instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/README.md).
 `;
   if (!sources.http || !sources.mcp || !sources.doctor) return reference;
   const sections = [
@@ -105,7 +105,7 @@ For a runnable instance, use Node.js 22 or newer, \`npm ci\`, and
     sections
       .map(
         ([label, filename, source, names]) =>
-          `\n### ${label}\n\n[View source](../${filename})\n\n~~~ts\n${names
+          `\n### ${label}\n\n[View source](https://github.com/uppercut-labs/agent-native/blob/main/${filename})\n\n~~~ts\n${names
             .map((name) => exportedDeclaration(source, filename, name))
             .join('\n\n')}\n~~~\n`,
       )

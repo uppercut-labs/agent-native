@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { copyFile, mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
+import { marked } from 'marked';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const npmCli = process.env.npm_execpath;
@@ -46,6 +48,39 @@ try {
   for (const file of pack.files) {
     assert.match(file.path, /^(?:dist\/|docs\/|LICENSE$|README\.md$|package\.json$)/);
   }
+  const packedPaths = new Set(pack.files.map((file) => file.path));
+  const brokenDocLinks = [];
+  const repositoryBlobPrefix = 'https://github.com/uppercut-labs/agent-native/blob/main/';
+  for (const file of pack.files.filter((entry) => entry.path.endsWith('.md'))) {
+    const markdown = await readFile(path.join(repositoryRoot, file.path), 'utf8');
+    if (/^\{\{source:/m.test(markdown)) {
+      brokenDocLinks.push(`${file.path}: unexpanded source region in packed Markdown`);
+    }
+    marked.walkTokens(marked.lexer(markdown), (token) => {
+      if (token.type !== 'link' && token.type !== 'image') return;
+      const href = token.href;
+      if (href.startsWith(repositoryBlobPrefix)) {
+        const sourcePath = decodeURIComponent(
+          href.slice(repositoryBlobPrefix.length).split('#', 1)[0],
+        );
+        if (!existsSync(path.join(repositoryRoot, sourcePath))) {
+          brokenDocLinks.push(`${file.path}: missing repository source ${href}`);
+        }
+        return;
+      }
+      if (/^(?:https?:|mailto:|data:|#)/i.test(href)) return;
+      const target = decodeURIComponent(href.split(/[?#]/, 1)[0]);
+      const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(file.path), target));
+      if (!packedPaths.has(resolved)) {
+        brokenDocLinks.push(`${file.path}: ${href} targets unpacked ${resolved}`);
+      }
+    });
+  }
+  assert.deepEqual(
+    brokenDocLinks,
+    [],
+    'Packed Markdown links must resolve inside the archive or to an existing repository source',
+  );
   const archivePath = path.join(temporaryRoot, pack.filename);
   const consumerRoot = path.join(temporaryRoot, 'core-browser-consumer');
   await mkdir(consumerRoot);

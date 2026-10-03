@@ -35,4 +35,4 @@ For protected capabilities, the application must provide token verification, iss
 - [ ] The Astro/example dependency path to `http-cache-semantics@4.2.0` is assessed against [GHSA-ch52-4w7c-c8xp](https://github.com/advisories/GHSA-ch52-4w7c-c8xp) before an Astro support claim or provider launch.
 - [ ] A final candidate tarball, digest/provenance, clean install, docs/example run and provider handoff are recorded on the exact release commit.
 
-See [support limits](support-and-limitations.md), [compatibility](compatibility.md), [security model](../SECURITY.md), and [contributing](../CONTRIBUTING.md). A green repository CI run is one gate; it does not close the deployment and host gates.
+See [support limits](support-and-limitations.md), [compatibility](compatibility.md), [security model](https://github.com/uppercut-labs/agent-native/blob/main/SECURITY.md), and [contributing](https://github.com/uppercut-labs/agent-native/blob/main/CONTRIBUTING.md). A green repository CI run is one gate; it does not close the deployment and host gates.

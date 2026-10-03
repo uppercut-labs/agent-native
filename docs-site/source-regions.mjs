@@ -11,8 +11,31 @@ function sourceFence(source) {
 
 export async function expandSourceRegions(markdown, pageFile, repositoryRoot) {
   const output = [];
-  for (const line of markdown.split('\n')) {
+  const lines = markdown.split('\n');
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
     const directive = line.trim();
+    if (directive.startsWith('<!-- source:')) {
+      const marker = /^<!-- (source:[^<>]+) -->$/.exec(directive);
+      if (!marker) throw new Error(`${pageFile}: invalid baked source marker: ${directive}`);
+      const expected = await expandSourceRegions(`{{${marker[1]}}}`, pageFile, repositoryRoot);
+      const end = lines.indexOf('<!-- /source -->', index + 1);
+      if (end < 0) throw new Error(`${pageFile}: missing baked source end marker: ${directive}`);
+      if (
+        lines
+          .slice(index + 1, end)
+          .join('\n')
+          .trimEnd() !== expected
+      ) {
+        throw new Error(`${pageFile}: baked source region drifted: ${directive}`);
+      }
+      output.push(expected);
+      index = end;
+      continue;
+    }
+    if (directive === '<!-- /source -->') {
+      throw new Error(`${pageFile}: unexpected baked source end marker`);
+    }
     if (!directive.startsWith('{{source:')) {
       output.push(line);
       continue;

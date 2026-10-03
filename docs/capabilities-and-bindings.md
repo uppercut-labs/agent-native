@@ -41,9 +41,9 @@ authorization error, invalid output, and handler failure. Each failure includes 
 
 ## Runnable examples
 
-- [E01 domain execution slice](../examples/e01-album-catalog/project/README.md) proves found and
+- [E01 domain execution slice](https://github.com/uppercut-labs/agent-native/blob/main/examples/e01-album-catalog/project/README.md) proves found and
   missing album outcomes plus malformed-slug rejection through local execution.
-- [E12 shared unit converter](../examples/e12-shared-unit-converter/project/README.md) proves the
+- [E12 shared unit converter](https://github.com/uppercut-labs/agent-native/blob/main/examples/e12-shared-unit-converter/project/README.md) proves the
   converter through an explicit local binding and the same executor.
 
 Run `npm run example:e01` and `npm run example:e12` at the repository root for fresh tarball
@@ -56,13 +56,38 @@ With Node.js 22 or newer, run `npm ci` in the repository root, then
 `npm run example:e01` and `npm run example:e12`. E01 returns a found or missing album through
 the local executor; a malformed slug fails input validation before its handler runs. E12 prints
 a versioned JSON conversion result with `30.48 cm`; an unsupported unit returns
-`invalid-input` before the shared converter runs. See the [E01 project](../examples/e01-album-catalog/project/README.md)
-and [E12 project](../examples/e12-shared-unit-converter/project/README.md) for independent exports.
+`invalid-input` before the shared converter runs. See the [E01 project](https://github.com/uppercut-labs/agent-native/blob/main/examples/e01-album-catalog/project/README.md)
+and [E12 project](https://github.com/uppercut-labs/agent-native/blob/main/examples/e12-shared-unit-converter/project/README.md) for independent exports.
 
 E01 executes a registered album lookup with an explicit public-read policy:
 
-{{source:examples/e01-album-catalog/project/src/catalog.mjs#local-album-execution}}
+<!-- source:examples/e01-album-catalog/project/src/catalog.mjs#local-album-execution -->
+~~~js
+/** @param {unknown} input */
+export function runAlbumLookup(input) {
+  return executeCapability(registry, {
+    identity: getAlbumCapability.identity,
+    runtime: 'local',
+    input,
+    caller: { kind: 'anonymous' },
+    authorization: publicReadAuthorization,
+  });
+}
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e01-album-catalog/project/src/catalog.mjs#L36)
+<!-- /source -->
 
 E12 binds one conversion function to local and browser runtimes:
 
-{{source:examples/e12-shared-unit-converter/project/src/converter.mjs#shared-converter-bindings}}
+<!-- source:examples/e12-shared-unit-converter/project/src/converter.mjs#shared-converter-bindings -->
+~~~js
+export const localConversionBinding = bindCapability(convertDistanceCapability, {
+  id: 'local-converter',
+  targets: ['local'],
+  execute: convertDistance,
+});
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e12-shared-unit-converter/project/src/converter.mjs#L43)
+<!-- /source -->

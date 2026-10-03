@@ -1,7 +1,7 @@
 # Generated package and CLI reference
 
 This page is generated from [package.json](../package.json) and the
-[CLI parser](../src/cli.ts). Run `node docs-site/reference.mjs` after changing those
+[CLI parser](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts). Run `node docs-site/reference.mjs` after changing those
 sources. `npm run docs:check` fails if this page drifts. Agent Native is still a
 private `0.0.0` preview; these imports are available from local tarballs.
 
@@ -52,7 +52,7 @@ For a runnable instance, use Node.js 22 or newer, `npm ci`, and
 `npm run example:e10` from the repository root. The exported E10 CLI runs
 `npm run search -- --query night --limit 1` successfully. An empty query exits
 2 with `invalid-input`; provide a nonempty query to retry. See
-[CLI behavior](cli.md) and [E10 instructions](../examples/e10-existing-functions-retrofit/project/README.md).
+[CLI behavior](cli.md) and [E10 instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/README.md).
 
 ## Typed adapter configuration
 
@@ -61,7 +61,7 @@ Framework mounts and security ownership are explained in the linked guides.
 
 ### CLI
 
-[View source](../src/cli.ts)
+[View source](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts)
 
 ~~~ts
 export type CliCredentialProfile = {
@@ -85,7 +85,7 @@ export type CapabilityCliOptions = {
 
 ### HTTP
 
-[View source](../src/http.ts)
+[View source](https://github.com/uppercut-labs/agent-native/blob/main/src/http.ts)
 
 ~~~ts
 export type HttpAdapterOptions = {
@@ -100,7 +100,7 @@ export type HttpAdapterOptions = {
 
 ### MCP
 
-[View source](../src/mcp.ts)
+[View source](https://github.com/uppercut-labs/agent-native/blob/main/src/mcp.ts)
 
 ~~~ts
 export type McpAdapterOptions = {
@@ -138,7 +138,7 @@ export type McpAdapterOptions = {
 
 ### Doctor
 
-[View source](../src/doctor.ts)
+[View source](https://github.com/uppercut-labs/agent-native/blob/main/src/doctor.ts)
 
 ~~~ts
 export type DoctorRunOptions = {

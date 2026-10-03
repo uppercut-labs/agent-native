@@ -19,7 +19,17 @@ A definition may preserve an established read route with a contract-level overri
 
 E10 keeps its existing search route with this override in the tested capability definition:
 
-{{source:examples/e10-existing-functions-retrofit/project/src/capability.mjs#http-get-override}}
+<!-- source:examples/e10-existing-functions-retrofit/project/src/capability.mjs#http-get-override -->
+~~~js
+http: {
+  path: '/api/content/search',
+  method: 'GET',
+  query: { query: 'q' },
+},
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/capability.mjs#L32)
+<!-- /source -->
 
 The `query` map runs from input property to query parameter. GET conversion supports string,
 number, integer, boolean, string enum, and arrays of those scalar values; nested objects and other
@@ -67,4 +77,4 @@ In the exported E10 project, start `npm start`, then request
 `http://127.0.0.1:8788/api/content/search?q=night&limit=1`; the response contains
 the existing first search match. Missing `q` or a fractional `limit` returns
 `invalid_input` without invoking the source function. Supply a valid query and
-integer limit, then retry. See [E10 setup](../examples/e10-existing-functions-retrofit/project/README.md).
+integer limit, then retry. See [E10 setup](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/README.md).

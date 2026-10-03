@@ -137,6 +137,6 @@ official MCP client SDK is pinned for the local protocol fixture only. See [UAN-
 ## Status
 
 Not published. MIT is the selected license. UAN-002 local acceptance and limitations are in
-`evidence/UAN-002.md`; pinned tool versions and upstream references are in `VERSION-EVIDENCE.md`.
+[UAN-002 evidence](https://github.com/uppercut-labs/agent-native/blob/main/evidence/UAN-002.md); pinned tool versions and upstream references are in [VERSION-EVIDENCE.md](https://github.com/uppercut-labs/agent-native/blob/main/VERSION-EVIDENCE.md).
 The current init acceptance and limits are in [UAN-009 evidence](docs/evidence/UAN-009-init.md).
 The local trusted-auth and grant acceptance is in [UAN-010 evidence](docs/evidence/UAN-010-auth.md).

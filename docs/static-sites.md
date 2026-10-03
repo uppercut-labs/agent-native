@@ -53,8 +53,8 @@ limited to the explicitly configured static origin for browser health/HTTP and d
 The fixture requires no paid binding, account provisioning, DNS change, or production deploy. A
 future deployment would need operator-selected host/origin values and a separately authorized
 Wrangler deploy; this slice intentionally runs only Wrangler local mode and dry-run bundle inspection.
-See [E01 Astro](../examples/e01-album-catalog/project/README.md),
-[E04 Worker sidecar](../examples/e04-worker-sidecar/project/README.md),
+See [E01 Astro](https://github.com/uppercut-labs/agent-native/blob/main/examples/e01-album-catalog/project/README.md),
+[E04 Worker sidecar](https://github.com/uppercut-labs/agent-native/blob/main/examples/e04-worker-sidecar/project/README.md),
 [UAN-007 evidence](evidence/UAN-007-astro.md), and
 [UAN-008 evidence](evidence/UAN-008-worker-sidecar.md).
 
@@ -84,18 +84,51 @@ and [local development command](https://developers.cloudflare.com/workers/wrangl
 With Node.js 22 or newer and `npm ci` at the package root, `npm run example:e02` installs,
 builds, and tests the pinned Astro on-demand fixture. Its public catalog definition is:
 
-{{source:examples/e02-astro-on-demand-catalog/project/src/catalog.mjs#astro-album-contract}}
+<!-- source:examples/e02-astro-on-demand-catalog/project/src/catalog.mjs#astro-album-contract -->
+~~~js
+export const albumLookup = defineCapability({
+  identity: { namespace: 'example.catalog', name: 'album.lookup', majorVersion: 1 },
+  description: 'Look up one public sample album by slug.',
+  input: fromZod(z.object({ slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) })),
+  output: fromZod(
+    z.discriminatedUnion('kind', [
+      z.object({ kind: z.literal('found'), album }),
+      z.object({ kind: z.literal('missing') }),
+    ]),
+  ),
+  risk: 'read',
+  access: { kind: 'public' },
+});
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e02-astro-on-demand-catalog/project/src/catalog.mjs#L20)
+<!-- /source -->
 
 The E02 fixture accepts an authenticated HTTP/MCP album lookup and denies anonymous execution;
-check its [standalone instructions](../examples/e02-astro-on-demand-catalog/project/README.md).
+check its [standalone instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/e02-astro-on-demand-catalog/project/README.md).
 If an on-demand route is inert, verify the application already has a supported server adapter
 and `prerender = false`; init does not install either.
 
 `npm run example:e04` installs the separate Worker fixture and checks its HTTP and MCP
 handlers locally. The sidecar mounts both transports from one registry:
 
-{{source:examples/e04-worker-sidecar/project/src/index.mjs#worker-transports}}
+<!-- source:examples/e04-worker-sidecar/project/src/index.mjs#worker-transports -->
+~~~js
+const http = createHttpHandler(registry, {
+  basePath: '/agent-native/v1',
+  maxRequestBytes: 8192,
+  deadlineMs: 5000,
+});
+const mcp = createMcpHandler(registry, {
+  endpoint: '/mcp',
+  maxRequestBytes: 8192,
+  deadlineMs: 5000,
+});
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e04-worker-sidecar/project/src/index.mjs#L5)
+<!-- /source -->
 
 A missing or stale `CATALOG_REVISION` yields a 503 health response; update it from E01's
-ordered public catalog before retrying. The [E04 instructions](../examples/e04-worker-sidecar/project/README.md)
+ordered public catalog before retrying. The [E04 instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/e04-worker-sidecar/project/README.md)
 give the exact Wrangler local commands. Neither example deploys a service.

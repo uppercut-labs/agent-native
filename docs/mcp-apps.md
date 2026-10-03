@@ -39,10 +39,19 @@ Official API references: [quickstart](https://github.com/modelcontextprotocol/ex
 With Node.js 22 or newer, run `npm ci` and `npm run example:e09` from the package root.
 The E09 controller calls the host bridge for a follow-up lookup:
 
-{{source:examples/e09-album-explorer/project/src/view-controller.mjs#host-mediated-lookup}}
+<!-- source:examples/e09-album-explorer/project/src/view-controller.mjs#host-mediated-lookup -->
+~~~js
+const result = await app.callServerTool({ name: toolName, arguments: { slug } });
+const outcome = decodeResult(result, outputSchema);
+show(outcome);
+return outcome;
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e09-album-explorer/project/src/view-controller.mjs#L52)
+<!-- /source -->
 
 The SDK fixture checks found, missing, denied, malformed, and text-only fallback states.
 If the host supplies malformed input or denies a call, the view shows an explicit
 unavailable or denied state; it never fetches MCP credentials itself. See the
-[E09 project instructions](../examples/e09-album-explorer/project/README.md).
+[E09 project instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/e09-album-explorer/project/README.md).
 A rendered browser host remains a separate compatibility check.

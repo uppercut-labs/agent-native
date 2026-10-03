@@ -16,7 +16,7 @@ fixtures; it is not a claim for all releases of a runtime or every client.
 Use Node.js 22 or newer and `npm ci` at the repository root before a listed command.
 Each command packs the package into an independent exported project; the root
 `npm run check` runs all twelve examples on Node 22 and 24 in CI.
-The [example coverage manifest](../docs-site/coverage.json) maps all E01-E12 scripts, source,
+The [example coverage manifest](https://github.com/uppercut-labs/agent-native/blob/main/docs-site/coverage.json) maps all E01-E12 scripts, source,
 guides, negative probes, requirements and the CI gate. A malformed input or denied request
 is part of each example's test, not a successful operation to copy into an application.
 

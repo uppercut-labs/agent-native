@@ -32,8 +32,25 @@ See [permissions and discovery](permissions-and-discovery.md), [fixture compatib
 With Node.js 22 or newer, run `npm ci` and `npm run example:e11` from the package root.
 The fixture defines its local and full required-check profiles in source:
 
-{{source:examples/e11-diagnostics-fault-lab/project/src/doctor.mjs#doctor-profiles}}
+<!-- source:examples/e11-diagnostics-fault-lab/project/src/doctor.mjs#doctor-profiles -->
+~~~js
+export const E11_DOCTOR_PROFILES = Object.freeze({
+  local: Object.freeze({
+    id: 'local',
+    selectedCheckIds: Object.freeze(LOCAL_CHECK_IDS),
+    requiredCheckIds: Object.freeze([...LOCAL_CHECK_IDS]),
+  }),
+  full: Object.freeze({
+    id: 'full',
+    selectedCheckIds: Object.freeze(FULL_CHECK_IDS),
+    requiredCheckIds: Object.freeze([...FULL_CHECK_IDS]),
+  }),
+});
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e11-diagnostics-fault-lab/project/src/doctor.mjs#L30)
+<!-- /source -->
 
 A repaired fixture under `--profile local` exits 0; the same fixture under the default
 full profile exits 3 until the optional loopback endpoint checks are actually run. An unknown
-scenario fails before creating a sandbox. See [E11 commands and sandbox cleanup](../examples/e11-diagnostics-fault-lab/project/README.md).
+scenario fails before creating a sandbox. See [E11 commands and sandbox cleanup](https://github.com/uppercut-labs/agent-native/blob/main/examples/e11-diagnostics-fault-lab/project/README.md).

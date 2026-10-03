@@ -22,6 +22,16 @@ test('source regions expand tested example code and reject broken references', a
   );
   assert.match(expanded, /~~~js\nconst answer = 42;\n~~~/);
   assert.match(expanded, /example\.mjs#L2/);
+  const baked = `<!-- source:examples/e01-fixture/project/src/example.mjs#demo -->\n${expanded}\n<!-- /source -->`;
+  assert.equal(await expandSourceRegions(baked, page, root), expanded);
+  await assert.rejects(
+    expandSourceRegions(baked.replace('const answer = 42;', 'const answer = 43;'), page, root),
+    /baked source region drifted/,
+  );
+  await assert.rejects(
+    expandSourceRegions(baked.replace('<!-- /source -->', ''), page, root),
+    /missing baked source end marker/,
+  );
 
   await assert.rejects(
     expandSourceRegions('{{source:../secret.mjs#demo}}', page, root),

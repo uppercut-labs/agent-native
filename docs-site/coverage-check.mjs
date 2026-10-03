@@ -116,7 +116,7 @@ export async function validateCoverage(repositoryRoot, suppliedManifest) {
         if (!guideText.includes(id) && !guideText.includes(exampleSlug)) {
           failures.push(`${id}: guide does not reference its example`);
         }
-        if (typeof source === 'string' && !guideText.includes(`{{source:${source}#`)) {
+        if (typeof source === 'string' && !guideText.includes(`<!-- source:${source}#`)) {
           failures.push(`${id}: guide has no source-backed snippet from ${source}`);
         }
       }

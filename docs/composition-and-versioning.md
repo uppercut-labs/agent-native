@@ -10,7 +10,18 @@ Composition does not wrap handlers, grant scopes, or create a privileged executi
 `majorVersion` is part of the canonical identity. A pack can therefore export v1 and v2 together,
 and `composeCapabilityPacks()` keeps both definitions. The E08 v2 consumer selects one exact major:
 
-{{source:examples/e08-reusable-versioned-pack/project/src/demo-b.mjs#select-v2-major}}
+<!-- source:examples/e08-reusable-versioned-pack/project/src/demo-b.mjs#select-v2-major -->
+~~~js
+const selected = composition.select({
+  namespace: 'example.org.catalog',
+  name: 'album.lookup',
+  majorVersion: 2,
+});
+if (selected === undefined) throw new Error('v2 contract is not installed');
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e08-reusable-versioned-pack/project/src/demo-b.mjs#L13)
+<!-- /source -->
 
 `composition.resolve()` accepts either a canonical ID or an explicitly configured alias. Every
 import must choose `{ kind: 'none' }` or `{ kind: 'explicit', aliases: [...] }`. An alias stores one
@@ -21,7 +32,24 @@ locations.
 
 The E08 v1 consumer pins an alias explicitly instead of inferring a latest version:
 
-{{source:examples/e08-reusable-versioned-pack/project/src/demo.mjs#compose-v1-alias}}
+<!-- source:examples/e08-reusable-versioned-pack/project/src/demo.mjs#compose-v1-alias -->
+~~~js
+const composition = composeCapabilityPacks([
+  {
+    pack: catalogPack,
+    source: 'src/demo.mjs:consumer-import',
+    aliasPolicy: {
+      kind: 'explicit',
+      aliases: [{ name: 'album-v1', capabilityId: 'example.org.catalog:album.lookup@1' }],
+    },
+  },
+]);
+const selected = composition.resolve('album-v1');
+if (selected === undefined) throw new Error('v1 alias is not configured');
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e08-reusable-versioned-pack/project/src/demo.mjs#L10)
+<!-- /source -->
 
 ## Contract migration reports
 
@@ -82,4 +110,4 @@ repository root. The standalone package installs v1 and v2 contracts and each
 consumer selects its intended major; the v1 alias remains pinned. A breaking
 same-ID replacement fails composition. Give the changed contract a new major,
 add a reviewed migration record, and keep the earlier major until its lifecycle
-policy explicitly permits removal. See [E08 setup](../examples/e08-reusable-versioned-pack/project/README.md).
+policy explicitly permits removal. See [E08 setup](https://github.com/uppercut-labs/agent-native/blob/main/examples/e08-reusable-versioned-pack/project/README.md).

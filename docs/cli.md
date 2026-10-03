@@ -32,7 +32,16 @@ Definitions may replace that invocation name with an established command and exp
 
 E10 binds its existing command names in the same tested definition:
 
-{{source:examples/e10-existing-functions-retrofit/project/src/capability.mjs#cli-command-override}}
+<!-- source:examples/e10-existing-functions-retrofit/project/src/capability.mjs#cli-command-override -->
+~~~js
+cli: {
+  command: 'content-search',
+  aliases: ['search'],
+},
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/capability.mjs#L39)
+<!-- /source -->
 
 Commands and aliases are lowercase slugs and must be unique across the registry. They resolve to
 the same canonical capability identity used for execution and result envelopes; an override does
@@ -76,4 +85,4 @@ With Node.js 22 or newer, run `npm ci` then `npm run example:e10` at the reposit
 root. In its exported project, `npm run search -- --query night --limit 1` yields the
 same versioned result envelope as the existing function. An empty query exits 2 with
 `invalid-input`; pass a nonempty query to repair it. See the
-[E10 CLI fixture](../examples/e10-existing-functions-retrofit/project/README.md).
+[E10 CLI fixture](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/README.md).
