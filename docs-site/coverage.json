@@ -16,13 +16,7 @@
         "probe": "rejects malformed slugs before authorization or handler execution",
         "expected": "Malformed slugs fail before the handler runs."
       },
-      "requirements": [
-        "R01",
-        "R02",
-        "R03",
-        "R13",
-        "R15"
-      ]
+      "requirements": ["R01", "R02", "R03", "R13", "R15"]
     },
     {
       "id": "E02",
@@ -38,10 +32,7 @@
         "probe": "assert.throws(() => albumLookup.input.parse({ slug: 'not valid' }))",
         "expected": "An invalid album slug fails input parsing."
       },
-      "requirements": [
-        "R06",
-        "R16"
-      ]
+      "requirements": ["R06", "R16"]
     },
     {
       "id": "E03",
@@ -57,12 +48,7 @@
         "probe": "a cross-user save is denied before the owner's list is mutated",
         "expected": "A cross-user save is denied before mutation."
       },
-      "requirements": [
-        "R06",
-        "R07",
-        "R16",
-        "R19"
-      ]
+      "requirements": ["R06", "R07", "R16", "R19"]
     },
     {
       "id": "E04",
@@ -78,12 +64,7 @@
         "probe": "Host and Origin use configured allowlists and deny unconfigured routes",
         "expected": "Unconfigured hosts, origins and routes are denied."
       },
-      "requirements": [
-        "R06",
-        "R15",
-        "R16",
-        "R21"
-      ]
+      "requirements": ["R06", "R15", "R16", "R21"]
     },
     {
       "id": "E05",
@@ -99,11 +80,7 @@
         "probe": "invalid schema input, malformed stdin, unknown version, and missing profile fail closed",
         "expected": "Invalid input, missing profiles and unknown versions fail closed."
       },
-      "requirements": [
-        "R06",
-        "R10",
-        "R16"
-      ]
+      "requirements": ["R06", "R10", "R16"]
     },
     {
       "id": "E06",
@@ -119,10 +96,7 @@
         "probe": "assert.equal(serverResult.reason, 'binding-unavailable')",
         "expected": "Server execution fails because the binding is browser-only."
       },
-      "requirements": [
-        "R07",
-        "R22"
-      ]
+      "requirements": ["R07", "R22"]
     },
     {
       "id": "E07",
@@ -138,11 +112,7 @@
         "probe": "E07 grant IDs cannot be reused to resurrect a revoked grant",
         "expected": "A revoked grant ID cannot be reused."
       },
-      "requirements": [
-        "R11",
-        "R12",
-        "R20"
-      ]
+      "requirements": ["R11", "R12", "R20"]
     },
     {
       "id": "E08",
@@ -158,11 +128,7 @@
         "probe": "a v1 identity cannot silently accept a breaking replacement",
         "expected": "A breaking v1 replacement is rejected."
       },
-      "requirements": [
-        "R04",
-        "R05",
-        "R24"
-      ]
+      "requirements": ["R04", "R05", "R24"]
     },
     {
       "id": "E09",
@@ -178,10 +144,7 @@
         "probe": "E09 missing, denied, malformed UI data and text-only fallbacks have explicit states",
         "expected": "Missing, denied and malformed results keep explicit UI states."
       },
-      "requirements": [
-        "R08",
-        "R22"
-      ]
+      "requirements": ["R08", "R22"]
     },
     {
       "id": "E10",
@@ -197,11 +160,7 @@
         "probe": "generated GET route rejects invalid input and mutation attempts",
         "expected": "Invalid GET inputs and mutations are rejected."
       },
-      "requirements": [
-        "R09",
-        "R10",
-        "R18"
-      ]
+      "requirements": ["R09", "R10", "R18"]
     },
     {
       "id": "E11",
@@ -217,10 +176,7 @@
         "probe": "unknown scenario and invalid variant do not create a sandbox",
         "expected": "Unknown scenarios and invalid variants create no sandbox."
       },
-      "requirements": [
-        "R17",
-        "R20"
-      ]
+      "requirements": ["R17", "R20"]
     },
     {
       "id": "E12",
@@ -236,12 +192,7 @@
         "probe": "fails closed on invalid input before calling a binding",
         "expected": "Invalid units fail before the binding runs."
       },
-      "requirements": [
-        "R01",
-        "R02",
-        "R03",
-        "R10"
-      ]
+      "requirements": ["R01", "R02", "R03", "R10"]
     }
   ]
 }
