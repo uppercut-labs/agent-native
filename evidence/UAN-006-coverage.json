@@ -1,0 +1,57 @@
+{
+  "formatVersion": 1,
+  "ticket": "UAN-006",
+  "status": "simulated-browser-adapter-verified",
+  "checkedOn": "2026-10-02",
+  "webmcpDraft": "https://webmachinelearning.github.io/webmcp/",
+  "requirements": [
+    {
+      "id": "R02",
+      "status": "partial",
+      "evidence": ["src/browser.ts", "test/browser.test.mjs"],
+      "scope": "Browser import graph is isolated and runtime target selection is tested with simulated WebMCP."
+    },
+    {
+      "id": "R07",
+      "status": "partial",
+      "evidence": ["src/browser.ts", "test/browser.test.mjs"],
+      "scope": "Registration, invocation, auth resync and lifecycle are simulated; no native host was tested."
+    },
+    {
+      "id": "R11",
+      "status": "partial",
+      "evidence": ["docs/browser.md", "evidence/UAN-006.md"],
+      "scope": "Adapter follows the current WebMCP draft API shape; real browser compatibility is unverified."
+    },
+    {
+      "id": "R19",
+      "status": "partial",
+      "evidence": [
+        "tsconfig.browser.json",
+        "test/browser.test.mjs",
+        "examples/e06-browser-only-theme-controls/project/src/verify-build.mjs"
+      ],
+      "scope": "Browser entry import graph and E06 emitted assets exclude server imports/secrets; no browser rendering test."
+    }
+  ],
+  "examples": [
+    {
+      "id": "E06",
+      "status": "standalone-build-and-simulated-test-passed",
+      "source": "examples/e06-browser-only-theme-controls/project",
+      "exporter": "scripts/check-example.mjs",
+      "hostEvidence": "simulated-only"
+    },
+    {
+      "id": "E12",
+      "status": "local-and-browser-binding-fixtures-passed",
+      "source": "examples/e12-shared-unit-converter/project",
+      "hostEvidence": "shared executor tests only; no WebMCP host"
+    }
+  ],
+  "nativeWebMcpHostCompatibility": "unverified",
+  "release": {
+    "npmPublishedAtVerification": false,
+    "packagePrivateAtVerification": true
+  }
+}

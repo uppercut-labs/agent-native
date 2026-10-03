@@ -33,6 +33,14 @@ read capabilities, generates OpenAPI 3.1 from those contracts, and serves protoc
 Protected capability schemas and routes are omitted from this initial HTTP projection. See
 [the HTTP guide](docs/http.md) for response mappings, body/deadline limits, and integration boundaries.
 
+## Browser tools
+
+The isolated @uppercut-labs/agent-native/browser entrypoint feature-detects the current WebMCP
+document.modelContext API and owns registrations with an AbortSignal. It projects only definitions
+with browser bindings; public reads are exposed by default, while protected tools require an explicit
+projection policy and are still authorized on every call. The E06 WebMCP API fixture is simulated;
+no native browser host is claimed. See the browser guide (docs/browser.md).
+
 ## Remote MCP
 
 The isolated `@uppercut-labs/agent-native/mcp` entrypoint uses the official MCP server SDK over

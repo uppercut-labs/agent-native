@@ -1,7 +1,7 @@
 # E12 — Shared unit converter
 
-This is a local Node example of one capability contract, one explicit local binding, and a pure
-deterministic centimeter/inch converter. Calls use the shared executor, which selects the local
+This example uses one capability contract and one pure deterministic centimeter/inch converter
+through both local and browser bindings. Calls use the shared executor, which selects the requested local or browser
 binding, validates input, checks the required authorization port, invokes the handler, and validates
 output. The converter has no network, account, framework, or transport dependency. Invalid units
 and non-finite numeric inputs fail before the handler runs.
@@ -15,4 +15,5 @@ expects a structured `invalid-input` failure.
 
 The tarball is included only to prove independent package installation before the public npm
 release. After publication, the generated project can install `@uppercut-labs/agent-native` from
-npm. This example does not claim MCP protocol or real-host compatibility.
+npm. The browser-target path proves runtime selection through the shared executor; it does not claim
+WebMCP host compatibility. This example does not claim remote MCP protocol or real-host compatibility.
