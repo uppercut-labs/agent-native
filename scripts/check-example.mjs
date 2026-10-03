@@ -59,7 +59,7 @@ async function copyProjectFiles(sourceRoot, targetRoot) {
     const targetPath = path.join(targetRoot, entry.name);
     if (entry.isDirectory()) {
       await copyProjectFiles(sourcePath, targetPath);
-    } else if (entry.name !== 'package.template.json') {
+    } else if (entry.name !== 'package.template.json' && entry.name !== 'package-lock.json') {
       await copyFile(sourcePath, targetPath);
     }
   }
@@ -97,6 +97,7 @@ await writeFile(
   `${JSON.stringify(packageTemplate, null, 2)}\n`,
 );
 
+// Each pack has a new integrity hash, so generate the exported lockfile for this tarball.
 runNpm(['install', '--package-lock-only', '--ignore-scripts'], exportRoot);
 runNpm(['ci'], exportRoot);
 if (exampleId !== 'e03-next-reading-list') runNpm(['test'], exportRoot);
