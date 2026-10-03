@@ -1,0 +1,77 @@
+:root {
+  color-scheme: light;
+  font-family: Georgia, serif;
+  background: #f4f1e8;
+  color: #173d32;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1rem max(1.25rem, calc((100vw - 62rem) / 2));
+  border-bottom: 1px solid #c8c3b4;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+nav {
+  display: flex;
+  gap: 1rem;
+}
+a {
+  color: inherit;
+}
+main {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 4rem 1.25rem;
+}
+.hero {
+  max-width: 42rem;
+  padding: 3rem 0;
+}
+h1 {
+  max-width: 15ch;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  line-height: 0.98;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font: 700 0.72rem sans-serif;
+}
+.button {
+  display: inline-block;
+  padding: 0.8rem 1rem;
+  border-radius: 99px;
+  background: #173d32;
+  color: #fff;
+}
+.album-list {
+  padding: 0;
+  list-style: none;
+}
+.album-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid #c8c3b4;
+}
+@media (max-width: 38rem) {
+  .site-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

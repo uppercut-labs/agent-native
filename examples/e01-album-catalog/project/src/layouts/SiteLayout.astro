@@ -1,0 +1,31 @@
+---
+import { ClientRouter } from 'astro:transitions';
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <ClientRouter />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/site.css" />
+    <title>{title} | Uppercut Catalog</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Uppercut Catalog home">
+        <img src="/mark.svg" width="32" height="32" alt="" />
+        <span>Uppercut Catalog</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="/">Home</a>
+        <a href="/albums/">Albums</a>
+        <a href="/about/">About</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>

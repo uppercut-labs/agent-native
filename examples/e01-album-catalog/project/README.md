@@ -1,16 +1,22 @@
-# E01 domain execution slice
+# E01 Astro static album catalog
 
-This independently installable local example exercises UAN-002's album lookup definition,
-binding, runtime selection, authorization hook, and output validation. It prints:
+This example starts from the tracked pre-integration Astro project at
+`examples/e01-album-catalog/site-before`: home, albums, and about pages, shared navigation, CSS,
+SVG mark, and public album data. The standalone fixture retains those pages/assets/navigation and
+adds the Agent Native browser capability to its existing albums page.
 
-```text
-{"kind":"found","album":{"slug":"first-light","title":"First Light"}}
-```
+Astro is pinned to 7.3.5 with a committed lockfile. The supported package integration uses Astro's
+`astro:config:setup` `injectScript('page', ...)` hook and confirms `buildOutput === 'static'`.
+It requires static output and does not install an Astro server adapter. The browser bootstrap uses
+`astro:page-load`, `astro:before-swap`, and Window `pageshow` to handle initial load, client
+navigation, and back-forward cache restoration.
 
-Run `npm run example:e01` from the package repository to build and pack the library, export this
-project with the local tarball, install it independently, run tests, and check the CLI. The
-negative fixture passes a malformed slug and expects `invalid-input` before any handler can
-return a result.
+The public album data in `src/data/albums.mjs` feeds both the pre-rendered page and the capability's
+shared browser-safe registry in `src/catalog-shared.mjs`. Server HTTP code remains in
+`src/catalog.mjs` and is not imported into the browser entry.
 
-This is the E01 domain-contract and local-execution slice. It does not implement Astro retrofit,
-browser registration, a server sidecar, MCP, HTTP/OpenAPI, generated CLI support, or a real host.
+From the package repository root, run `npm run example:e01`. This builds and checks the before-state
+site, packs and installs the package into an exported standalone project, runs simulated lifecycle
+and Astro hook tests, and builds/checks the final static output. The WebMCP API is simulated in tests;
+no real browser host or agent was used. Unsupported WebMCP keeps the ordinary HTML album lookup
+available with an explanatory status message.

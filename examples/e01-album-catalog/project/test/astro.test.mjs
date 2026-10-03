@@ -1,0 +1,219 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { createBrowserCapabilityAdapter } from '@uppercut-labs/agent-native/browser';
+import { agentNativeAstro } from '@uppercut-labs/agent-native/astro';
+import {
+  browserCatalogRegistry,
+  getAlbumCapability,
+  runBrowserAlbumLookup,
+} from '../src/catalog-shared.mjs';
+import { installAstroCatalog } from '../src/astro-catalog.mjs';
+
+class Events {
+  listeners = new Map();
+
+  addEventListener(type, listener) {
+    const items = this.listeners.get(type) ?? new Set();
+    items.add(listener);
+    this.listeners.set(type, items);
+  }
+
+  removeEventListener(type, listener) {
+    this.listeners.get(type)?.delete(listener);
+  }
+
+  dispatch(type, event = {}) {
+    for (const listener of this.listeners.get(type) ?? []) listener(event);
+  }
+
+  listenerCount(type) {
+    return this.listeners.get(type)?.size ?? 0;
+  }
+}
+
+function makeDocument({ catalog = true, supported = true } = {}) {
+  const docEvents = new Events();
+  const windowEvents = new Events();
+  const active = new Map();
+  const registrations = [];
+  const status = [];
+  const modelContext = supported
+    ? {
+        async registerTool(tool, { signal } = {}) {
+          registrations.push(tool);
+          active.set(tool.name, { tool, signal });
+          signal?.addEventListener(
+            'abort',
+            () => {
+              if (active.get(tool.name)?.tool === tool) active.delete(tool.name);
+            },
+            { once: true },
+          );
+        },
+      }
+    : undefined;
+
+  const document = {
+    defaultView: windowEvents,
+    ...(modelContext === undefined ? {} : { modelContext }),
+    addEventListener: docEvents.addEventListener.bind(docEvents),
+    removeEventListener: docEvents.removeEventListener.bind(docEvents),
+    dispatch: docEvents.dispatch.bind(docEvents),
+    listenerCount: docEvents.listenerCount.bind(docEvents),
+    querySelector(selector) {
+      if (selector === '[data-album-catalog]') return catalog ? {} : null;
+      return null;
+    },
+    setCatalog(value) {
+      catalog = value;
+    },
+  };
+
+  return { document, active, registrations, status, windowEvents };
+}
+
+test('Astro browser lifecycle stays deduplicated and uses the shared album capability', async () => {
+  const fixture = makeDocument();
+  const installation = installAstroCatalog(fixture.document, {
+    registry: browserCatalogRegistry,
+    createAdapter: createBrowserCapabilityAdapter,
+    lookup: runBrowserAlbumLookup,
+    onStatus: (message) => fixture.status.push(message),
+  });
+  assert.strictEqual(
+    installAstroCatalog(fixture.document, {
+      registry: browserCatalogRegistry,
+      createAdapter: createBrowserCapabilityAdapter,
+      lookup: runBrowserAlbumLookup,
+    }),
+    installation,
+  );
+  await installation.whenReady();
+  assert.equal(fixture.document.listenerCount('astro:page-load'), 1);
+  assert.equal(fixture.active.size, 1);
+
+  const first = [...fixture.active.values()][0];
+  assert.ok(first);
+  const result = await first.tool.execute(
+    { slug: 'first-light' },
+    { signal: new AbortController().signal },
+  );
+  assert.deepEqual(result, {
+    ok: true,
+    capabilityId: 'example.catalog:album.lookup@1',
+    value: {
+      kind: 'found',
+      album: { slug: 'first-light', title: 'First Light' },
+    },
+  });
+
+  fixture.document.dispatch('astro:page-load');
+  await installation.whenReady();
+  assert.equal(fixture.active.size, 1);
+  assert.equal(fixture.registrations.length, 2);
+});
+
+test('Astro navigation, pagehide, and bfcache pageshow revoke and restore registration', async () => {
+  const fixture = makeDocument();
+  const installation = installAstroCatalog(fixture.document, {
+    registry: browserCatalogRegistry,
+    createAdapter: createBrowserCapabilityAdapter,
+    lookup: runBrowserAlbumLookup,
+  });
+  await installation.whenReady();
+  const first = [...fixture.active.values()][0];
+  assert.ok(first);
+
+  fixture.document.dispatch('astro:before-swap');
+  assert.equal(fixture.active.size, 0);
+  fixture.document.setCatalog(false);
+  fixture.document.dispatch('astro:page-load');
+  await installation.whenReady();
+  assert.equal(fixture.active.size, 0);
+
+  fixture.document.setCatalog(true);
+  fixture.document.dispatch('astro:page-load');
+  await installation.whenReady();
+  assert.equal(fixture.active.size, 1);
+  assert.equal(first.signal?.aborted, true);
+
+  fixture.windowEvents.dispatch('pagehide');
+  assert.equal(fixture.active.size, 0);
+  fixture.windowEvents.dispatch('pageshow');
+  await installation.whenReady();
+  assert.equal(fixture.active.size, 1);
+  assert.equal(fixture.registrations.length, 3);
+  installation.dispose();
+  assert.equal(fixture.active.size, 0);
+});
+
+test('unsupported WebMCP keeps human album lookup available', async () => {
+  const fixture = makeDocument({ supported: false });
+  const resultOutput = { textContent: '' };
+  const slugInput = { value: 'blue-hour' };
+  const form = {
+    matches: (selector) => selector === 'form[data-album-lookup]',
+    querySelector(selector) {
+      if (selector === 'input[name="slug"]') return slugInput;
+      if (selector === '[data-lookup-result]') return resultOutput;
+      return null;
+    },
+  };
+  const installation = installAstroCatalog(fixture.document, {
+    registry: browserCatalogRegistry,
+    createAdapter: createBrowserCapabilityAdapter,
+    lookup: runBrowserAlbumLookup,
+    onStatus: (message) => fixture.status.push(message),
+  });
+  await installation.whenReady();
+  assert.match(fixture.status.at(-1), /You can still search the catalog below/);
+
+  let prevented = false;
+  fixture.document.dispatch('submit', { target: form, preventDefault: () => (prevented = true) });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(prevented, true);
+  assert.equal(
+    resultOutput.textContent,
+    '{"kind":"found","album":{"slug":"blue-hour","title":"Blue Hour"}}',
+  );
+  installation.dispose();
+});
+
+test('Astro integration injects a bundled page entry and rejects server output', async () => {
+  const integration = agentNativeAstro({ browserEntry: '/fixture/src/browser-entry.mjs' });
+  let injected;
+  const messages = [];
+  const logger = {
+    info: (message) => messages.push(message),
+    warn: (message) => messages.push(message),
+  };
+  await integration.hooks['astro:config:setup']({
+    config: { output: 'static' },
+    injectScript: (stage, script) => (injected = { stage, script }),
+    logger,
+  });
+  await integration.hooks['astro:config:done']({ buildOutput: 'static', logger });
+  assert.deepEqual(injected, {
+    stage: 'page',
+    script: 'import "/fixture/src/browser-entry.mjs";',
+  });
+  assert.ok(messages.some((message) => message.includes('verified static output')));
+
+  let serverInjected = false;
+  const serverIntegration = agentNativeAstro({ browserEntry: '/fixture/server-entry.mjs' });
+  await serverIntegration.hooks['astro:config:setup']({
+    config: { output: 'server' },
+    injectScript: () => (serverInjected = true),
+    logger,
+  });
+  assert.equal(serverInjected, false);
+  assert.throws(
+    () => serverIntegration.hooks['astro:config:done']({ buildOutput: 'server', logger }),
+    /requires output: "static"/,
+  );
+});
+
+test('Astro integration requires an absolute browser entry path', () => {
+  assert.throws(() => agentNativeAstro({ browserEntry: './src/entry.mjs' }), /absolute/);
+  assert.equal(getAlbumCapability.identity.name, 'album.lookup');
+});

@@ -1,0 +1,13 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { publicAlbums } from '../data/albums.mjs';
+---
+<SiteLayout title="Albums">
+  <section>
+    <p class="eyebrow">Catalog</p>
+    <h1>Albums</h1>
+    <ul class="album-list">
+      {publicAlbums.map((album) => <li><a href={`#${album.slug}`}>{album.title}</a><code id={album.slug}>{album.slug}</code></li>)}
+    </ul>
+  </section>
+</SiteLayout>

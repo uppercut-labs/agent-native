@@ -1,17 +1,17 @@
 {
-  "name": "e01-album-catalog-execution",
+  "name": "e01-astro-static-album-catalog",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "scripts": {
-    "start": "node src/cli.mjs",
+    "start": "astro build && node scripts/verify-static.mjs",
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@uppercut-labs/agent-native": "0.0.0",
+    "astro": "7.3.5",
     "zod": "4.6.5"
   }
 }

@@ -1,0 +1,10 @@
+{
+  "astro.config.mjs": "e5d5ea9257e249ae17fca29f597bc14551cda34cbcb5ee277491f634091ea861",
+  "src/layouts/SiteLayout.astro": "8106bd417471a437a3f6ceb66ba2e400396f6677afab69d9a4421eae9aeac226",
+  "src/data/albums.mjs": "6f0609e57ae2cec81439979d4b9f1a1d3c0ed8971eb0014062bcc4bb4648c103",
+  "src/pages/index.astro": "9bb858c381b1d02ea2e5ea2da60e6e22c038f56f901fb5a9da8bb2a42765dda7",
+  "src/pages/albums.astro": "9f2edfe5ce1ad3b5823c23395e3e5a6a233c95b37e024c38c42ac3c6f883a1a1",
+  "src/pages/about.astro": "b28c6853b6783c4b57f8130da3111e7736c535bbce1b340c2e8e6d1a03d230ee",
+  "public/mark.svg": "d823010663e50d5c2d78eead592bf15cd46b13d095299eec47b76c4514db89fb",
+  "public/site.css": "c7f1fe310ba57172b23d86c8378ed671878d53e0489a2e82751ff797ae346719"
+}

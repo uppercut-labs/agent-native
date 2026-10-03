@@ -384,7 +384,7 @@ export function createHttpHandler(
     }
 
     const deadline = deadlineSignal();
-    let timer: number | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<TimedResult>((resolve) => {
       timer = setTimeout(() => {
         deadline.abort();
