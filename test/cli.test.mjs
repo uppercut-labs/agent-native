@@ -55,8 +55,8 @@ test('default CLI version and help match the package manifest', async () => {
   const version = await invoke(registry, ['--version']);
   const help = await invoke(registry, ['--help']);
   assert.equal(version.code, 0);
-  assert.equal(version.stdout, manifest.name + ' ' + manifest.version + '\n');
-  assert.ok(help.stdout.includes(manifest.version + ' | CLI result'));
+  assert.equal(version.stdout, `${manifest.name} ${manifest.version}\n`);
+  assert.ok(help.stdout.includes(`${manifest.version} | CLI result`));
 });
 
 test('invalid flags and structured input fail before the local handler', async () => {
