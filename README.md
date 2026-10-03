@@ -19,6 +19,12 @@ restoration. The E01 check installs a local tarball into a copied site and build
 See the [experimental init guide](docs/getting-started.md) for its limits; no package-level init
 command or npm release exists yet.
 
+UAN-010 adds trusted principal and durable grant contracts. E07 demonstrates a local persistent
+grant store with the official MCP SDK bearer gate, two fixture tenants, repeated protected edits,
+separate delete permission, restart persistence and revocation. See
+[permissions and discovery](docs/permissions-and-discovery.md). The E07 identities and store are
+test-only and refuse production mode.
+
 Run `npm run example:e01`, `npm run example:e12`, or `npm run example:e05` to build and pack the
 package, install it independently into each example, and run its tests and runnable surface. E01
 also verifies a pre-existing multi-page static Astro fixture before and after integration. E04 checks a local workerd HTTP/OpenAPI roundtrip and official MCP client exchange; it does not deploy or configure DNS.
@@ -30,8 +36,9 @@ check, not proof of compatibility with any real browser, client, or host.
 
 Every execution requires an `AuthorizationPort`; there is no implicit allow-all path. The executor
 checks input, authorization, handler, and output in that order. Runtime matching is exact, and
-multiple matching bindings require a `bindingId`. Durable grants, identity integration, and
-transports remain outside this slice. See [the capability and binding guide](docs/capabilities-and-bindings.md)
+multiple matching bindings require a `bindingId`. Durable grants are available through the
+application-owned `GrantStorePort`; production identity, persistence and resource policy remain
+host responsibilities. See [the capability and binding guide](docs/capabilities-and-bindings.md)
 for the frozen signatures and limitations.
 
 ## HTTP and OpenAPI
@@ -62,9 +69,10 @@ feature-detected and optional; the human catalog search works without it. See
 ## Remote MCP
 
 The isolated `@uppercut-labs/agent-native/mcp` entrypoint uses the official MCP server SDK over
-Streamable HTTP. It exposes only explicitly public read capabilities, filters discovery per request,
-and reauthorizes every call through the shared executor. Results place the canonical value under
-`structuredContent.result`. See [the MCP guide](docs/mcp.md) and
+Streamable HTTP. It exposes explicitly public read capabilities by default and can discover
+protected capabilities only with an explicit callback and verified auth integration. It filters
+discovery per request and reauthorizes every call through the shared executor. Results place the
+canonical value under `structuredContent.result`. See [the MCP guide](docs/mcp.md) and
 [fixture-tested compatibility](docs/compatibility.md). The fixture covers the official SDK client
 and server packages at version 2.3.0 and the negotiated protocol version 2025-11-25; this is not a
 claim that every commercial client or deployment host is supported.
@@ -88,6 +96,7 @@ npm run build
 npm run example:e01
 npm run example:e12
 npm run example:e05
+npm run example:e07
 npm run check
 ```
 
@@ -102,3 +111,4 @@ fixture only. See [UAN-008 sidecar evidence](docs/evidence/UAN-008-worker-sideca
 Not published. MIT is the selected license. UAN-002 local acceptance and limitations are in
 `evidence/UAN-002.md`; pinned tool versions and upstream references are in `VERSION-EVIDENCE.md`.
 The current init acceptance and limits are in [UAN-009 evidence](docs/evidence/UAN-009-init.md).
+The local trusted-auth and grant acceptance is in [UAN-010 evidence](docs/evidence/UAN-010-auth.md).
