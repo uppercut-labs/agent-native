@@ -1,0 +1,34 @@
+[
+  {
+    "id": "the-left-hand-of-darkness",
+    "title": "The Left Hand of Darkness",
+    "author": "Ursula K. Le Guin",
+    "year": 1969,
+    "shelf": "Speculative fiction",
+    "note": "A patient study of culture, loyalty, and the assumptions people carry."
+  },
+  {
+    "id": "braiding-sweetgrass",
+    "title": "Braiding Sweetgrass",
+    "author": "Robin Wall Kimmerer",
+    "year": 2013,
+    "shelf": "Nature writing",
+    "note": "Botany and Indigenous knowledge meet in essays about reciprocity."
+  },
+  {
+    "id": "the-dispossessed",
+    "title": "The Dispossessed",
+    "author": "Ursula K. Le Guin",
+    "year": 1974,
+    "shelf": "Speculative fiction",
+    "note": "An ambiguous utopia concerned with freedom, work, and belonging."
+  },
+  {
+    "id": "invisible-cities",
+    "title": "Invisible Cities",
+    "author": "Italo Calvino",
+    "year": 1972,
+    "shelf": "Fiction",
+    "note": "Brief, dreamlike cities become a map of memory and desire."
+  }
+]

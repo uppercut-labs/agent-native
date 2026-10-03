@@ -1,0 +1,228 @@
+:root {
+  --paper: #f2ecdf;
+  --ink: #202923;
+  --muted: #667066;
+  --rule: #b9b3a6;
+  --accent: #b6462f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 85% 6%, rgb(182 70 47 / 10%), transparent 24rem),
+    linear-gradient(90deg, transparent 0 7%, rgb(32 41 35 / 4%) 7% 7.1%, transparent 7.1%);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+a {
+  color: inherit;
+}
+
+main {
+  width: min(1120px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.masthead,
+.section-heading,
+.book-heading,
+footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.masthead {
+  padding: 28px 0 18px;
+  border-bottom: 1px solid var(--ink);
+  font-family: "Arial Narrow", "Helvetica Neue", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+}
+
+footer p,
+.masthead p {
+  margin: 0;
+  font-size: 0.74rem;
+}
+
+.wordmark {
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.intro {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(300px, 3fr);
+  gap: 20px;
+  padding: 88px 0 96px;
+}
+
+.eyebrow,
+.shelf,
+.section-heading,
+.index {
+  font-family: "Arial Narrow", "Helvetica Neue", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.eyebrow {
+  margin: 12px 0 0;
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+h1 {
+  max-width: 850px;
+  margin: 0;
+  font-size: clamp(3.5rem, 8vw, 7.7rem);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 0.88;
+}
+
+.lede {
+  grid-column: 2;
+  max-width: 550px;
+  margin: 30px 0 0;
+  color: var(--muted);
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  line-height: 1.45;
+}
+
+.section-heading {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ink);
+  font-size: 0.68rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font: inherit;
+}
+
+.catalog ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalog li {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 20px;
+  padding: 30px 0 38px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.index {
+  color: var(--accent);
+  font-size: 0.7rem;
+}
+
+.book-heading h3 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 3.6rem);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+}
+
+.book-heading span {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.byline {
+  margin: 8px 0 30px;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.note {
+  max-width: 560px;
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.shelf {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+footer {
+  padding: 28px 0 42px;
+  font-family: "Arial Narrow", "Helvetica Neue", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+footer a {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-underline-offset: 4px;
+}
+
+.tool-status {
+  width: min(1120px, calc(100% - 40px));
+  margin: -26px auto 28px;
+  color: var(--muted);
+  font:
+    0.72rem / 1.4 "Arial Narrow",
+    "Helvetica Neue",
+    sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 680px) {
+  main {
+    width: min(100% - 28px, 1120px);
+  }
+
+  .intro {
+    display: block;
+    padding: 58px 0 68px;
+  }
+
+  .eyebrow {
+    margin: 0 0 20px;
+  }
+
+  .lede {
+    margin-top: 24px;
+  }
+
+  .catalog li {
+    grid-template-columns: 36px 1fr;
+    gap: 10px;
+  }
+
+  .book-heading {
+    display: block;
+  }
+
+  .book-heading span {
+    display: block;
+    margin-top: 6px;
+  }
+
+  footer {
+    align-items: flex-start;
+    gap: 24px;
+  }
+}

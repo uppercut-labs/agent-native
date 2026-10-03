@@ -12,6 +12,7 @@ const onDemandBaseline = path.join(
   repositoryRoot,
   'examples/e02-astro-on-demand-catalog/site-before',
 );
+const nextBaseline = path.join(repositoryRoot, 'examples/e03-next-reading-list/site-before');
 const choices = {
   hosting: 'cloudflare',
   sidecarOrigin: 'https://albums.example.workers.dev',
@@ -177,6 +178,51 @@ test('pure static init accepts sidecar mode but rejects a same-origin endpoint c
       /choose sidecar for a static site/,
     );
     assert.equal(await readFile(path.join(root, 'astro.config.mjs'), 'utf8'), originalAstro);
+  } finally {
+    await clean(parent);
+  }
+});
+
+test('Next inspection plans manual integration and reports route conflicts without edits', async () => {
+  const parent = await mkdtemp(path.join(os.tmpdir(), 'uan-next-init-'));
+  const root = path.join(parent, 'existing next site');
+  await cp(nextBaseline, root, { recursive: true });
+  try {
+    const layoutBefore = await readFile(path.join(root, 'app/layout.js'));
+    const authBefore = await readFile(path.join(root, 'lib/fixture-identity.js'));
+    const catalogRouteBefore = await readFile(path.join(root, 'app/api/catalog/route.js'));
+    const savedListRouteBefore = await readFile(path.join(root, 'app/api/saved-list/route.js'));
+    const detection = await detectExistingProject(root);
+    assert.equal(detection.framework, 'next');
+    assert.equal(detection.rendering, 'server');
+    assert.equal(detection.routeConflict, false);
+    assert.ok(detection.evidence.includes('package.json: Next dependency'));
+
+    await mkdir(path.join(root, 'app/mcp'), { recursive: true });
+    await writeFile(path.join(root, 'app/mcp/route.js'), 'export function POST() {}\n');
+    const plan = await createInitPlan(
+      root,
+      {},
+      {
+        hosting: 'vercel',
+        routeMode: 'same-origin',
+      },
+    );
+    assert.equal(plan.detection.framework, 'next');
+    assert.equal(plan.detection.routeConflict, true);
+    assert.deepEqual(plan.proposedFiles, []);
+    assert.equal(plan.conflicts.length, 1);
+    assert.match(plan.manualIntegration, /no files are proposed/i);
+    assert.deepEqual(await readFile(path.join(root, 'app/layout.js')), layoutBefore);
+    assert.deepEqual(await readFile(path.join(root, 'lib/fixture-identity.js')), authBefore);
+    assert.deepEqual(
+      await readFile(path.join(root, 'app/api/catalog/route.js')),
+      catalogRouteBefore,
+    );
+    assert.deepEqual(
+      await readFile(path.join(root, 'app/api/saved-list/route.js')),
+      savedListRouteBefore,
+    );
   } finally {
     await clean(parent);
   }

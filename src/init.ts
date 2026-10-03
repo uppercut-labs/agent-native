@@ -16,7 +16,7 @@ import path from 'node:path';
 export const INIT_PLAN_VERSION = 'uan.init-plan/v1';
 export const INIT_OWNERSHIP_VERSION = 'uan.init-ownership/v1';
 
-export type InitFramework = 'astro' | 'unknown';
+export type InitFramework = 'astro' | 'next' | 'unknown';
 export type InitRendering = 'static' | 'on-demand' | 'server' | 'unknown';
 export type InitPackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun' | 'unknown';
 export type InitHosting = 'browser-only' | 'cloudflare' | 'vercel' | 'netlify' | 'unknown';
@@ -57,6 +57,7 @@ export type InitPlan = {
     readonly reason: string;
   }[];
   readonly manualIntegration: string | null;
+  readonly conflicts: readonly string[];
   readonly planDigest: string;
   readonly alreadyInitialized: boolean;
   readonly selectedChoices: InitChoices | null;
@@ -470,7 +471,7 @@ async function astroEvidence(directory: string): Promise<{
 }
 
 async function hasMcpRoute(directory: string): Promise<boolean> {
-  for (const base of ['src/pages', 'pages', 'app']) {
+  for (const base of ['src/pages', 'src/app', 'pages', 'app']) {
     const root = path.join(directory, base);
     for (const name of [
       'mcp.astro',
@@ -482,11 +483,52 @@ async function hasMcpRoute(directory: string): Promise<boolean> {
       'mcp/index.ts',
       'mcp/route.ts',
       'mcp/route.js',
+      'mcp/route.mjs',
+      'mcp/route.jsx',
+      'mcp/route.tsx',
     ]) {
       if (await exists(path.join(root, name))) return true;
     }
   }
   return false;
+}
+
+async function nextEvidence(directory: string): Promise<{
+  found: boolean;
+  rendering: InitRendering;
+  routeConflict: boolean;
+  evidence: string[];
+}> {
+  const pkg = await packageInfo(directory);
+  const deps = [pkg?.['dependencies'], pkg?.['devDependencies'], pkg?.['peerDependencies']].filter(
+    (value): value is Record<string, unknown> => typeof value === 'object' && value !== null,
+  );
+  const packageHasNext = deps.some((group) => Object.hasOwn(group, 'next'));
+  const markers: string[] = [];
+  for (const candidate of [
+    'next.config.js',
+    'next.config.mjs',
+    'next.config.ts',
+    'app',
+    'src/app',
+    'pages',
+    'src/pages',
+  ]) {
+    if (await exists(path.join(directory, candidate))) markers.push(candidate);
+  }
+  const found = packageHasNext || markers.some((marker) => marker.startsWith('next.config.'));
+  if (!found) return { found: false, rendering: 'unknown', routeConflict: false, evidence: [] };
+  const routeConflict = await hasMcpRoute(directory);
+  return {
+    found: true,
+    rendering: 'server',
+    routeConflict,
+    evidence: [
+      ...(packageHasNext ? ['package.json: Next dependency'] : []),
+      ...markers.map((marker) => `Next marker: ${marker}`),
+      ...(routeConflict ? ['existing route: /mcp'] : []),
+    ],
+  };
 }
 
 async function hostingEvidence(
@@ -523,7 +565,8 @@ export async function detectExistingProject(
   const rootPackage = await packageInfo(root);
   const candidates: string[] = [];
   const rootAstro = await astroEvidence(root);
-  if (rootAstro.found) candidates.push(root);
+  const rootNext = await nextEvidence(root);
+  if (rootAstro.found || rootNext.found) candidates.push(root);
   const workspaceValue = rootPackage?.['workspaces'];
   const workspacePaths = Array.isArray(workspaceValue)
     ? workspaceValue.filter((item): item is string => typeof item === 'string')
@@ -538,7 +581,10 @@ export async function detectExistingProject(
   if (hasWorkspaceLayout) {
     for (const group of ['apps', 'packages', 'sites']) {
       for (const child of await listDirectories(path.join(root, group))) {
-        if ((await astroEvidence(child)).found && !candidates.includes(child))
+        if (
+          ((await astroEvidence(child)).found || (await nextEvidence(child)).found) &&
+          !candidates.includes(child)
+        )
           candidates.push(child);
       }
     }
@@ -558,22 +604,42 @@ export async function detectExistingProject(
   }
   const applicationRoot = overrideRealRoot ?? (candidates.length === 1 ? candidates[0]! : null);
   const appRelative = applicationRoot === null ? null : path.relative(root, applicationRoot);
+  const appAstro = applicationRoot === null ? null : await astroEvidence(applicationRoot);
+  const appNext = applicationRoot === null ? null : await nextEvidence(applicationRoot);
+  const detectedFramework: InitFramework =
+    appAstro?.found && !appNext?.found
+      ? 'astro'
+      : appNext?.found && !appAstro?.found
+        ? 'next'
+        : 'unknown';
+  const framework = overrides.framework ?? detectedFramework;
   const appEvidence =
-    applicationRoot === null
-      ? {
-          found: false,
-          rendering: 'unknown' as const,
-          serverAdapter: false,
-          onDemandRoutes: [],
-          staticProtocolFiles: [],
-          dynamic: false,
-          routeConflict: false,
-          patchable: false,
-          configPath: null,
-          configSha256: null,
-          evidence: [],
-        }
-      : await astroEvidence(applicationRoot);
+    framework === 'astro' && appAstro !== null
+      ? appAstro
+      : framework === 'next' && appNext !== null
+        ? {
+            ...appNext,
+            serverAdapter: false,
+            onDemandRoutes: [],
+            staticProtocolFiles: [],
+            dynamic: false,
+            patchable: false,
+            configPath: null,
+            configSha256: null,
+          }
+        : {
+            found: false,
+            rendering: 'unknown' as const,
+            serverAdapter: false,
+            onDemandRoutes: [],
+            staticProtocolFiles: [],
+            dynamic: false,
+            routeConflict: false,
+            patchable: false,
+            configPath: null,
+            configSha256: null,
+            evidence: [],
+          };
   const lockEvidence: string[] = [];
   for (const name of Object.keys(LOCKFILES))
     if (await exists(path.join(root, name))) lockEvidence.push(name);
@@ -588,21 +654,24 @@ export async function detectExistingProject(
     );
   if (lockManagers.length > 1 && !overrides.packageManager) unresolved.push('competing-lockfiles');
   if (packageManager === 'unknown') unresolved.push('package-manager-unknown');
-  if (appEvidence.dynamic) unresolved.push('dynamic-config-unsupported');
-  else if (
-    (appEvidence.rendering === 'static' || appEvidence.rendering === 'on-demand') &&
-    !appEvidence.patchable
-  )
-    unresolved.push('astro-config-manual-integration');
-  if (appEvidence.rendering === 'server' || appEvidence.rendering === 'unknown')
-    unresolved.push(`rendering-${appEvidence.rendering}`);
-  if (
-    (appEvidence.rendering === 'on-demand' || appEvidence.rendering === 'server') &&
-    !appEvidence.serverAdapter
-  )
-    unresolved.push('server-adapter-missing');
-  if (appEvidence.staticProtocolFiles.length > 0) unresolved.push('static-protocol-endpoint');
-  const framework = overrides.framework ?? (appEvidence.found ? 'astro' : 'unknown');
+  if (framework === 'astro') {
+    if (appEvidence.dynamic) unresolved.push('dynamic-config-unsupported');
+    else if (
+      (appEvidence.rendering === 'static' || appEvidence.rendering === 'on-demand') &&
+      !appEvidence.patchable
+    )
+      unresolved.push('astro-config-manual-integration');
+    if (appEvidence.rendering === 'server' || appEvidence.rendering === 'unknown')
+      unresolved.push(`rendering-${appEvidence.rendering}`);
+    if (
+      (appEvidence.rendering === 'on-demand' || appEvidence.rendering === 'server') &&
+      !appEvidence.serverAdapter
+    )
+      unresolved.push('server-adapter-missing');
+    if (appEvidence.staticProtocolFiles.length > 0) unresolved.push('static-protocol-endpoint');
+  } else if (framework === 'next') {
+    unresolved.push('next-manual-integration');
+  }
   if (framework === 'unknown') unresolved.push('framework-unknown');
   const host = overrides.hosting ?? detectedHost.hosting;
   if (host === 'unknown')
@@ -721,6 +790,11 @@ export async function createInitPlan(
 ): Promise<InitPlan> {
   const detection = await detectExistingProject(projectRoot, overrides);
   const appPrefix = detection.applicationRoot ? `${detection.applicationRoot}/` : '';
+  const routeMode = selectedChoices?.routeMode ?? 'sidecar';
+  const conflicts =
+    detection.routeConflict && routeMode === 'same-origin'
+      ? ['existing /mcp route conflicts with the planned same-origin MCP endpoint']
+      : [];
   const ownershipText = await readOptional(detection.projectRoot, MANIFEST_PATH);
   let alreadyInitialized = false;
   if (ownershipText !== null) {
@@ -733,14 +807,15 @@ export async function createInitPlan(
       if (current === null || hash(current) !== record.afterSha256) alreadyInitialized = false;
     }
   }
-  const proposedFiles = alreadyInitialized
-    ? []
-    : [
-        `${appPrefix}${BOOTSTRAP_PATH}`,
-        `${appPrefix}${SETTINGS_PATH}`,
-        ...(detection.astroConfigPath ? [`${appPrefix}${detection.astroConfigPath}`] : []),
-        MANIFEST_PATH,
-      ];
+  const proposedFiles =
+    alreadyInitialized || detection.framework === 'next' || conflicts.length > 0
+      ? []
+      : [
+          `${appPrefix}${BOOTSTRAP_PATH}`,
+          `${appPrefix}${SETTINGS_PATH}`,
+          ...(detection.astroConfigPath ? [`${appPrefix}${detection.astroConfigPath}`] : []),
+          MANIFEST_PATH,
+        ];
   const payload = {
     schemaVersion: INIT_PLAN_VERSION as typeof INIT_PLAN_VERSION,
     detection,
@@ -755,12 +830,17 @@ export async function createInitPlan(
           },
         ],
     manualIntegration:
-      alreadyInitialized ||
-      detection.framework !== 'astro' ||
-      detection.rendering !== 'static' ||
-      detection.unresolved.includes('astro-config-manual-integration')
-        ? 'Review Astro config manually; this init does not rewrite unsupported config shapes.'
-        : 'Astro config will be patched only from the recognized literal static template; review the generated diff before approval.',
+      conflicts.length > 0
+        ? 'Resolve or choose a different MCP route before applying; no files are proposed.'
+        : detection.framework === 'next'
+          ? 'Next integration is planned without rewriting existing auth, routes, layout, or config. Add reviewed route modules that delegate to @uppercut-labs/agent-native/next and an optional client bootstrap from @uppercut-labs/agent-native/next/browser.'
+          : alreadyInitialized ||
+              detection.framework !== 'astro' ||
+              detection.rendering !== 'static' ||
+              detection.unresolved.includes('astro-config-manual-integration')
+            ? 'Review Astro config manually; this init does not rewrite unsupported config shapes.'
+            : 'Astro config will be patched only from the recognized literal static template; review the generated diff before approval.',
+    conflicts,
     alreadyInitialized,
     selectedChoices,
     detectionOverrides: overrides,

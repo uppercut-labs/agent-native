@@ -5,5 +5,10 @@
     "types": [],
     "lib": ["ES2022", "DOM"]
   },
-  "include": ["src/core/**/*.ts", "src/browser.ts", "test/browser-contract-import.ts"]
+  "include": [
+    "src/core/**/*.ts",
+    "src/browser.ts",
+    "src/next-browser.ts",
+    "test/browser-contract-import.ts"
+  ]
 }

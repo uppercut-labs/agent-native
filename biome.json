@@ -11,7 +11,10 @@
       "!examples/e12-shared-unit-converter/.exported",
       "!examples/e05-node-cli/.exported",
       "!examples/e06-browser-only-theme-controls/.exported",
-      "!examples/e04-worker-sidecar/.exported"
+      "!examples/e03-next-reading-list/.exported",
+      "!examples/e03-next-reading-list/site-before",
+      "!examples/e04-worker-sidecar/.exported",
+      "!examples/e09-album-explorer/.exported"
     ]
   },
   "formatter": {

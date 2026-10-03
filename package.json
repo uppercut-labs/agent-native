@@ -71,6 +71,14 @@
       "types": "./dist/astro.d.ts",
       "import": "./dist/astro.js"
     },
+    "./next": {
+      "types": "./dist/next.d.ts",
+      "import": "./dist/next.js"
+    },
+    "./next/browser": {
+      "types": "./dist/next-browser.d.ts",
+      "import": "./dist/next-browser.js"
+    },
     "./init": {
       "types": "./dist/init.d.ts",
       "import": "./dist/init.js"
@@ -98,7 +106,8 @@
     "example:e12": "node scripts/check-example.mjs e12-shared-unit-converter",
     "example:e05": "node scripts/check-example.mjs e05-node-cli",
     "example:e06": "node scripts/check-example.mjs e06-browser-only-theme-controls",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run example:e01 && npm run example:e02 && npm run example:e12 && npm run example:e05 && npm run example:e06 && npm run example:e04 && npm run example:e07 && npm run example:e09",
+    "example:e03": "node scripts/check-example.mjs e03-next-reading-list",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run example:e01 && npm run example:e02 && npm run example:e03 && npm run example:e12 && npm run example:e05 && npm run example:e06 && npm run example:e04 && npm run example:e07 && npm run example:e09",
     "example:e04": "node scripts/check-example.mjs e04-worker-sidecar",
     "example:e07": "node scripts/check-example.mjs e07-playlist-permissions",
     "example:e09": "node scripts/check-example.mjs e09-album-explorer"
