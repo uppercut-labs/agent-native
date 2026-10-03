@@ -226,6 +226,9 @@ test('resource registration is allowlisted, origin-closed, and has no external o
     const content = resource.contents[0];
     assert.ok(content && 'text' in content);
     assert.equal(content.mimeType, 'text/html;profile=mcp-app');
+    assert.equal((content.text.match(/<script type="module">/g) ?? []).length, 1);
+    assert.equal(content.text.split('</script>').length - 1, 1);
+    assert.equal(content.text.includes('src="./view.js"'), false);
     assert.equal(
       /<(?:script|iframe|link|img|source|video|audio)\b[^>]*(?:src|href)\s*=\s*["'](?:https?:)?\/\//i.test(
         content.text,

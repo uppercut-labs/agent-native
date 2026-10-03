@@ -24,9 +24,13 @@ if (
 ) {
   throw new Error('MCP App resource must have no external script or origin.');
 }
+const scriptMarker = '<script type="module" src="./view.js"></script>';
+if (template.split(scriptMarker).length !== 2) {
+  throw new Error('MCP App template must contain exactly one view script marker.');
+}
 const html = template.replace(
-  '<script type="module" src="./view.js"></script>',
-  `<script type="module">\n${script}\n</script>`,
+  scriptMarker,
+  () => `<script type="module">\n${script.replace(/<\/script/gi, '<\\/script')}\n</script>`,
 );
 await writeFile(path.join(outDir, 'mcp-app.html'), html);
 console.log('Built isolated MCP App resource with inline JavaScript.');
