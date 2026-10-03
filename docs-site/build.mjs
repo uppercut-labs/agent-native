@@ -25,6 +25,7 @@ const guideOrder = [
   'cli',
   'permissions-and-discovery',
   'composition-and-versioning',
+  'doctor-and-troubleshooting',
   'compatibility',
   'support-and-limitations',
 ];

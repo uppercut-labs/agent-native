@@ -54,8 +54,8 @@ for the frozen signatures and limitations.
 ## HTTP and OpenAPI
 
 The separate `@uppercut-labs/agent-native/http` entrypoint provides a framework-neutral Web
-Request/Response handler. It exposes deterministic POST invocation routes only for explicit public
-read capabilities, generates OpenAPI 3.1 from those contracts, and serves protocol health evidence.
+Request/Response handler. It exposes deterministic invocation routes for explicit public read
+capabilities, including validated GET overrides, generates OpenAPI 3.1 from those contracts, and serves protocol health evidence.
 Protected capability schemas and routes are omitted from this initial HTTP projection. See
 [the HTTP guide](docs/http.md) for response mappings, body/deadline limits, and integration boundaries.
 
@@ -99,6 +99,13 @@ claim that every commercial client or deployment host is supported.
 ## Generated CLI
 
 The separate `@uppercut-labs/agent-native/cli` runner entrypoint builds help and typed field flags from registry schemas. Calls select `--mode local|remote` explicitly; remote calls also select a configured credential profile and use a bounded HTTP request. Invocations write one `uan.cli-result/v1` JSON envelope to stdout and redacted target/failure diagnostics to stderr. No package-level `bin` command ships yet; applications expose the runner with their own registry. See [the CLI guide](docs/cli.md) and the installed E05/E12 examples.
+
+## Diagnostics
+
+The `./doctor` entrypoint builds versioned findings, required-check profiles, read-only registry
+inspection, and policy-filtered capability lists. E11 packs the package into a fault/repair lab;
+its local profile reports only local evidence, and the default full profile remains incomplete
+without an explicit loopback probe. See [doctor and troubleshooting](docs/doctor-and-troubleshooting.md).
 
 ## Development
 
