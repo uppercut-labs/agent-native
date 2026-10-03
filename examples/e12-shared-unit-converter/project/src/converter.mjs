@@ -45,9 +45,15 @@ export const localConversionBinding = bindCapability(convertDistanceCapability, 
   execute: convertDistance,
 });
 
+export const browserConversionBinding = bindCapability(convertDistanceCapability, {
+  id: 'browser-converter',
+  targets: ['browser'],
+  execute: convertDistance,
+});
+
 export const registry = createCapabilityRegistry(
   [convertDistanceCapability],
-  [localConversionBinding],
+  [localConversionBinding, browserConversionBinding],
 );
 
 /** @type {import('@uppercut-labs/agent-native').AuthorizationPort} */
@@ -58,10 +64,10 @@ export const publicReadAuthorization = {
 };
 
 /** @param {unknown} input */
-export function runConversion(input) {
+export function runConversion(input, runtime = 'local') {
   return executeCapability(registry, {
     identity: convertDistanceCapability.identity,
-    runtime: 'local',
+    runtime,
     input,
     caller: { kind: 'anonymous' },
     authorization: publicReadAuthorization,

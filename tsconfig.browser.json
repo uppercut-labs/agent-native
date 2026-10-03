@@ -3,7 +3,7 @@
   "compilerOptions": {
     "noEmit": true,
     "types": [],
-    "lib": ["ES2022"]
+    "lib": ["ES2022", "DOM"]
   },
-  "include": ["src/core/**/*.ts", "test/browser-contract-import.ts"]
+  "include": ["src/core/**/*.ts", "src/browser.ts", "test/browser-contract-import.ts"]
 }
