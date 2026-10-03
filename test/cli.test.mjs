@@ -92,14 +92,16 @@ test('authorization denial keeps a machine result and never calls a handler', as
   assert.equal(calls, 0);
 });
 
-test('non-JSON-serializable handler output is replaced by a valid failure envelope', async () => {
-  const registry = fixture(async () => 1n);
-  const result = await invoke(registry, ['--mode', 'local', 'cli.test:run@1', '--text', 'hello']);
-  assert.equal(result.code, 1);
-  assert.deepEqual(JSON.parse(result.stdout).result, {
-    kind: 'failure',
-    reason: 'result-serialization-failed',
-  });
+test('non-JSON handler output is replaced by a valid failure envelope', async () => {
+  for (const value of [1n, Number.POSITIVE_INFINITY]) {
+    const registry = fixture(async () => value);
+    const result = await invoke(registry, ['--mode', 'local', 'cli.test:run@1', '--text', 'hello']);
+    assert.equal(result.code, 1);
+    assert.deepEqual(JSON.parse(result.stdout).result, {
+      kind: 'failure',
+      reason: 'result-serialization-failed',
+    });
+  }
 });
 
 test('versioned CLI result schema validates success and failure envelopes', async () => {
@@ -282,3 +284,155 @@ async function runCapabilityCliForHelp(registry, argv, policy) {
   assert.equal(code, 0);
   return stdout;
 }
+
+test('CLI command and alias overrides resolve to the canonical capability', async () => {
+  const definition = defineCapability({
+    identity: { namespace: 'content', name: 'search', majorVersion: 1 },
+    description: 'Search public content.',
+    input: fromZod(z.object({ query: z.string().min(1), limit: z.number().int().optional() })),
+    output: fromZod(z.object({ query: z.string(), count: z.number().int() })),
+    risk: 'read',
+    access: { kind: 'public' },
+    surfaces: { cli: { command: 'content-search', aliases: ['search'] } },
+  });
+  const binding = bindCapability(definition, {
+    id: 'content-search',
+    targets: ['local'],
+    execute: async ({ query, limit = 5 }) => ({ query, count: limit }),
+  });
+  const registry = createCapabilityRegistry([definition], [binding]);
+
+  for (const command of ['content-search', 'search']) {
+    const result = await invoke(registry, [
+      '--mode',
+      'local',
+      command,
+      '--query',
+      'night',
+      '--limit',
+      '1',
+    ]);
+    assert.equal(result.code, 0);
+    assert.equal(JSON.parse(result.stdout).result.capabilityId, 'content:search@1');
+    assert.deepEqual(JSON.parse(result.stdout).result.value, { query: 'night', count: 1 });
+  }
+
+  const invalid = await invoke(registry, [
+    '--mode',
+    'local',
+    'search',
+    '--input-json',
+    '{"query":""}',
+  ]);
+  assert.equal(invalid.code, 2);
+  assert.equal(JSON.parse(invalid.stdout).result.reason, 'invalid-input');
+});
+
+test('CLI rejects duplicate commands and aliases before execution', async () => {
+  const definitions = ['first', 'second'].map((name, index) =>
+    defineCapability({
+      identity: { namespace: 'duplicate.cli', name, majorVersion: 1 },
+      description: 'Duplicate CLI fixture.',
+      input: fromZod(z.object({})),
+      output: fromZod(z.object({ ok: z.boolean() })),
+      risk: 'read',
+      access: { kind: 'public' },
+      surfaces: {
+        cli: { command: index === 0 ? 'first-command' : 'second-command', aliases: ['shared'] },
+      },
+    }),
+  );
+  let calls = 0;
+  const bindings = definitions.map((definition, index) =>
+    bindCapability(definition, {
+      id: `duplicate-cli-${index}`,
+      targets: ['local'],
+      execute: async () => {
+        calls += 1;
+        return { ok: true };
+      },
+    }),
+  );
+  const result = await invoke(createCapabilityRegistry(definitions, bindings), [
+    '--mode',
+    'local',
+    'shared',
+  ]);
+  assert.equal(result.code, 1);
+  assert.equal(JSON.parse(result.stdout).result.reason, 'invalid-cli-surfaces');
+  assert.equal(calls, 0);
+});
+
+test('remote CLI follows GET override and retains canonical invocation', async () => {
+  const definition = defineCapability({
+    identity: { namespace: 'content', name: 'search', majorVersion: 1 },
+    description: 'Search public content.',
+    input: fromZod(z.object({ query: z.string().min(1), limit: z.number().int().optional() })),
+    output: fromZod(z.object({ query: z.string(), count: z.number().int() })),
+    risk: 'read',
+    access: { kind: 'public' },
+    surfaces: {
+      http: { path: '/api/content/search', method: 'GET', query: { query: 'q' } },
+      cli: { command: 'content-search', aliases: ['search'] },
+    },
+  });
+  const binding = bindCapability(definition, {
+    id: 'content-search-remote',
+    targets: ['server'],
+    execute: async () => ({ query: 'unused', count: 0 }),
+  });
+  const registry = createCapabilityRegistry([definition], [binding]);
+  let calls = 0;
+  for (const command of ['search', 'content:search@1']) {
+    let stdout = '';
+    const code = await runCapabilityCli(
+      [command, '--mode', 'remote', '--profile', 'test', '--query', 'night', '--limit', '1'],
+      {
+        registry,
+        caller: { kind: 'anonymous' },
+        authorization: { authorize: () => true },
+        credentialProfiles: { test: { baseUrl: 'http://127.0.0.1:9999', token: 'fixture' } },
+        fetcher: async (url, init) => {
+          calls += 1;
+          assert.equal(url.pathname, '/api/content/search');
+          assert.equal(url.searchParams.get('q'), 'night');
+          assert.equal(url.searchParams.get('limit'), '1');
+          assert.equal(init.method, 'GET');
+          assert.equal(init.body, undefined);
+          return Response.json({ query: 'night', count: 1 });
+        },
+      },
+      {
+        writeStdout(value) {
+          stdout += value;
+        },
+        writeStderr() {},
+      },
+    );
+    assert.equal(code, 0);
+    assert.deepEqual(JSON.parse(stdout).result.value, { query: 'night', count: 1 });
+  }
+  assert.equal(calls, 2);
+
+  let invalidOutput = '';
+  const invalidCode = await runCapabilityCli(
+    ['search', '--mode', 'remote', '--profile', 'test', '--query', ''],
+    {
+      registry,
+      caller: { kind: 'anonymous' },
+      authorization: { authorize: () => true },
+      credentialProfiles: { test: { baseUrl: 'http://127.0.0.1:9999', token: 'fixture' } },
+      fetcher: async () => {
+        throw new Error('invalid input reached network');
+      },
+    },
+    {
+      writeStdout(value) {
+        invalidOutput += value;
+      },
+      writeStderr() {},
+    },
+  );
+  assert.equal(invalidCode, 2);
+  assert.equal(JSON.parse(invalidOutput).result.reason, 'invalid-input');
+});

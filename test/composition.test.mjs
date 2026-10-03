@@ -159,6 +159,38 @@ test('migration reports include risk and access metadata changes', () => {
   assert.ok(report.changes.some((change) => change.area === 'access'));
 });
 
+test('surface overrides require a new major while description-only changes do not', () => {
+  const previous = pack('surface.example', '@surface/contracts').definition;
+  const sameIdWithRoute = defineCapability({
+    identity: previous.identity,
+    description: previous.description,
+    input,
+    output,
+    risk: 'read',
+    access: { kind: 'protected', scopes: ['units:convert'] },
+    surfaces: {
+      http: { path: '/api/convert', method: 'GET' },
+      cli: { command: 'convert' },
+    },
+  });
+  const report = compareCapabilityDefinitions(previous, sameIdWithRoute);
+  assert.equal(report.schemaEquivalent, true);
+  assert.ok(report.changes.some((change) => change.area === 'surface' && change.breaking));
+  assert.throws(
+    () => assertCompatibleCapabilityReplacement(previous, sameIdWithRoute),
+    (error) => error instanceof CapabilityMigrationError && error.kind === 'breaking-replacement',
+  );
+  const descriptionOnly = defineCapability({
+    identity: previous.identity,
+    description: 'Same conversion with clearer operator wording.',
+    input,
+    output,
+    risk: 'read',
+    access: { kind: 'protected', scopes: ['units:convert'] },
+  });
+  assert.equal(assertCompatibleCapabilityReplacement(previous, descriptionOnly).breaking, false);
+});
+
 test('migration records are revalidated instead of trusting structural lookalikes', () => {
   const previous = pack('review.example', '@review/contracts');
   const nextDefinition = defineCapability({

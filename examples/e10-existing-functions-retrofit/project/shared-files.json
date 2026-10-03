@@ -1,0 +1,4 @@
+{
+  "src/existing/content.mjs": "examples/e10-existing-functions-retrofit/service-before/src/content.mjs",
+  "src/data/content.json": "examples/e10-existing-functions-retrofit/service-before/data/content.json"
+}

@@ -3,9 +3,15 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as z from 'zod';
 import {
+  bindCapability,
+  createCapabilityRegistry,
+  executeCapability,
+} from '@uppercut-labs/agent-native';
+import {
   convertDistanceCapability,
   browserConversionBinding,
   localConversionBinding,
+  publicReadAuthorization,
   runConversion,
 } from '../src/converter.mjs';
 
@@ -56,4 +62,46 @@ test('rejects non-finite values through the input contract', async () => {
       }
     }
   }
+});
+
+test('local and browser surfaces report equivalent invalid input and output contract failures', async () => {
+  const invalidInputs = [];
+  for (const runtime of ['local', 'browser']) {
+    invalidInputs.push(await runConversion({ value: 2, from: 'mi', to: 'cm' }, runtime));
+  }
+  assert.deepEqual(
+    invalidInputs.map(({ kind, reason }) => ({ kind, reason })),
+    [
+      { kind: 'failure', reason: 'invalid-input' },
+      { kind: 'failure', reason: 'invalid-input' },
+    ],
+  );
+
+  const invalidBindings = ['local', 'browser'].map((runtime) =>
+    bindCapability(convertDistanceCapability, {
+      id: `invalid-${runtime}-converter`,
+      targets: [runtime],
+      execute: async () => ({ value: 1, unit: 'unsupported' }),
+    }),
+  );
+  const invalidRegistry = createCapabilityRegistry([convertDistanceCapability], invalidBindings);
+  const failures = [];
+  for (const runtime of ['local', 'browser']) {
+    failures.push(
+      await executeCapability(invalidRegistry, {
+        identity: convertDistanceCapability.identity,
+        runtime,
+        input: { value: 1, from: 'cm', to: 'in' },
+        caller: { kind: 'anonymous' },
+        authorization: publicReadAuthorization,
+      }),
+    );
+  }
+  assert.deepEqual(
+    failures.map(({ kind, reason }) => ({ kind, reason })),
+    [
+      { kind: 'failure', reason: 'invalid-output' },
+      { kind: 'failure', reason: 'invalid-output' },
+    ],
+  );
 });

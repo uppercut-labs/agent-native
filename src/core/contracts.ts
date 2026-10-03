@@ -1,4 +1,4 @@
-import type { SchemaPort } from './schema.js';
+import { cloneJsonValue, type SchemaPort } from './schema.js';
 import { createDiagnosticObservation, type DiagnosticObservation } from './diagnostics.js';
 
 export type CapabilityIdentity = {
@@ -13,6 +13,23 @@ export type CapabilityAccessRule =
   | { readonly kind: 'public' }
   | { readonly kind: 'protected'; readonly scopes: readonly string[] };
 
+export type CapabilityHttpSurface = {
+  readonly path: string;
+  readonly method: 'GET' | 'POST';
+  /** Maps input property names to HTTP query parameter names for GET routes. */
+  readonly query?: Readonly<Record<string, string>>;
+};
+
+export type CapabilityCliSurface = {
+  readonly command: string;
+  readonly aliases?: readonly string[];
+};
+
+export type CapabilitySurfaceOverrides = {
+  readonly http?: CapabilityHttpSurface;
+  readonly cli?: CapabilityCliSurface;
+};
+
 export type CapabilityDefinition<Input, Output> = {
   readonly identity: CapabilityIdentity;
   readonly description: string;
@@ -20,6 +37,7 @@ export type CapabilityDefinition<Input, Output> = {
   readonly output: SchemaPort<Output>;
   readonly risk: CapabilityRisk;
   readonly access: CapabilityAccessRule;
+  readonly surfaces?: CapabilitySurfaceOverrides;
 };
 
 export type CapabilityDefinitionOptions<Input, Output> = {
@@ -29,6 +47,7 @@ export type CapabilityDefinitionOptions<Input, Output> = {
   readonly output: SchemaPort<Output>;
   readonly risk: CapabilityRisk;
   readonly access: CapabilityAccessRule;
+  readonly surfaces?: CapabilitySurfaceOverrides;
 };
 
 export class CapabilityDefinitionError extends TypeError {
@@ -45,9 +64,133 @@ export class CapabilityDefinitionError extends TypeError {
 }
 
 const IDENTITY_SLUG_PATTERN = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
+const CLI_COMMAND_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const QUERY_PARAMETER_PATTERN = /^[A-Za-z0-9._~-]+$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function validateHttpPath(path: unknown): asserts path is string {
+  if (
+    typeof path !== 'string' ||
+    !path.startsWith('/') ||
+    path === '/' ||
+    path.endsWith('/') ||
+    path.includes('?') ||
+    path.includes('#') ||
+    path.includes('\\') ||
+    path.includes('//') ||
+    path.split('/').some((part) => part === '.' || part === '..') ||
+    !path
+      .slice(1)
+      .split('/')
+      .every((segment) =>
+        Array.from(segment).every((character) => /[A-Za-z0-9._~-]/.test(character)),
+      )
+  ) {
+    throw new TypeError(
+      'surfaces.http.path must be an absolute URL path without a query, fragment, or traversal',
+    );
+  }
+}
+
+function validateSurfaces(surfaces: CapabilitySurfaceOverrides | undefined, risk: CapabilityRisk) {
+  if (surfaces === undefined) return;
+  if (!isRecord(surfaces)) throw new TypeError('surfaces must be an object');
+  if (Object.keys(surfaces).some((key) => key !== 'http' && key !== 'cli')) {
+    throw new TypeError('surfaces contains an unsupported adapter override');
+  }
+  if (surfaces.http !== undefined) {
+    if (!isRecord(surfaces.http)) throw new TypeError('surfaces.http must be an object');
+    if (
+      Object.keys(surfaces.http).some(
+        (key) => key !== 'path' && key !== 'method' && key !== 'query',
+      )
+    ) {
+      throw new TypeError('surfaces.http contains an unsupported option');
+    }
+    validateHttpPath(surfaces.http.path);
+    if (surfaces.http.method !== 'GET' && surfaces.http.method !== 'POST') {
+      throw new TypeError('surfaces.http.method must be GET or POST');
+    }
+    if (surfaces.http.method === 'GET' && risk !== 'read') {
+      throw new TypeError('GET HTTP surfaces are only valid for read capabilities');
+    }
+    if (surfaces.http.method === 'POST' && surfaces.http.query !== undefined) {
+      throw new TypeError('surfaces.http.query is only valid for GET surfaces');
+    }
+    if (surfaces.http.query !== undefined) {
+      if (!isRecord(surfaces.http.query)) {
+        throw new TypeError('surfaces.http.query must map input fields to query parameters');
+      }
+      const parameters = new Set<string>();
+      for (const [field, parameter] of Object.entries(surfaces.http.query)) {
+        if (
+          field.length === 0 ||
+          typeof parameter !== 'string' ||
+          !QUERY_PARAMETER_PATTERN.test(parameter)
+        ) {
+          throw new TypeError('surfaces.http.query must map fields to valid query parameter names');
+        }
+        if (parameters.has(parameter)) {
+          throw new TypeError(`surfaces.http.query contains duplicate parameter ${parameter}`);
+        }
+        parameters.add(parameter);
+      }
+    }
+  }
+  if (surfaces.cli !== undefined) {
+    if (!isRecord(surfaces.cli)) throw new TypeError('surfaces.cli must be an object');
+    if (Object.keys(surfaces.cli).some((key) => key !== 'command' && key !== 'aliases')) {
+      throw new TypeError('surfaces.cli contains an unsupported option');
+    }
+    if (!CLI_COMMAND_PATTERN.test(surfaces.cli.command)) {
+      throw new TypeError('surfaces.cli.command must be a lowercase command slug');
+    }
+    if (
+      surfaces.cli.aliases !== undefined &&
+      (!Array.isArray(surfaces.cli.aliases) ||
+        surfaces.cli.aliases.some(
+          (alias) => typeof alias !== 'string' || !CLI_COMMAND_PATTERN.test(alias),
+        ))
+    ) {
+      throw new TypeError('surfaces.cli.aliases must contain lowercase command slugs');
+    }
+    const names = [surfaces.cli.command, ...(surfaces.cli.aliases ?? [])];
+    if (new Set(names).size !== names.length) {
+      throw new TypeError('surfaces.cli command and aliases must be unique');
+    }
+  }
+}
+
+function freezeSurfaces(
+  surfaces: CapabilitySurfaceOverrides | undefined,
+): CapabilitySurfaceOverrides | undefined {
+  if (surfaces === undefined) return undefined;
+  const http =
+    surfaces.http === undefined
+      ? undefined
+      : Object.freeze({
+          path: surfaces.http.path,
+          method: surfaces.http.method,
+          ...(surfaces.http.query === undefined
+            ? {}
+            : { query: Object.freeze({ ...surfaces.http.query }) }),
+        });
+  const cli =
+    surfaces.cli === undefined
+      ? undefined
+      : Object.freeze({
+          command: surfaces.cli.command,
+          ...(surfaces.cli.aliases === undefined
+            ? {}
+            : { aliases: Object.freeze([...surfaces.cli.aliases]) }),
+        });
+  return Object.freeze({
+    ...(http === undefined ? {} : { http }),
+    ...(cli === undefined ? {} : { cli }),
+  });
 }
 
 export function isCapabilityDefinition(
@@ -70,6 +213,11 @@ export function isCapabilityDefinition(
     value['description'].trim().length === 0 ||
     (value['risk'] !== 'read' && value['risk'] !== 'write' && value['risk'] !== 'destructive')
   ) {
+    return false;
+  }
+  try {
+    validateSurfaces(value['surfaces'] as CapabilitySurfaceOverrides | undefined, value['risk']);
+  } catch {
     return false;
   }
   const access = value['access'];
@@ -100,7 +248,12 @@ export function isCapabilityDefinition(
   try {
     const inputSchema: unknown = value['input']['toJSONSchema']();
     const outputSchema: unknown = value['output']['toJSONSchema']();
-    return isRecord(inputSchema) && isRecord(outputSchema);
+    return (
+      isRecord(inputSchema) &&
+      isRecord(outputSchema) &&
+      isRecord(cloneJsonValue(inputSchema, 'input schema')) &&
+      isRecord(cloneJsonValue(outputSchema, 'output schema'))
+    );
   } catch {
     return false;
   }
@@ -170,6 +323,8 @@ export function defineCapability<Input, Output>(
     throw new TypeError('access.kind must be public or protected');
   }
 
+  validateSurfaces(options.surfaces, options.risk);
+
   if (
     typeof options.input?.parse !== 'function' ||
     typeof options.input.toJSONSchema !== 'function' ||
@@ -191,6 +346,11 @@ export function defineCapability<Input, Output>(
     if (typeof jsonSchema !== 'object' || jsonSchema === null || Array.isArray(jsonSchema)) {
       throw new CapabilityDefinitionError(`${label} schema must export a JSON Schema object`);
     }
+    try {
+      cloneJsonValue(jsonSchema, `${label} schema`);
+    } catch {
+      throw new CapabilityDefinitionError(`${label} schema must contain only JSON values`);
+    }
   }
 
   const identity: CapabilityIdentity = Object.freeze({ ...options.identity });
@@ -198,6 +358,7 @@ export function defineCapability<Input, Output>(
     options.access.kind === 'public'
       ? Object.freeze({ kind: 'public' })
       : Object.freeze({ kind: 'protected', scopes: Object.freeze([...options.access.scopes]) });
+  const surfaces = freezeSurfaces(options.surfaces);
   return Object.freeze({
     identity,
     description: options.description.trim(),
@@ -205,5 +366,6 @@ export function defineCapability<Input, Output>(
     output: options.output,
     risk: options.risk,
     access,
+    ...(surfaces === undefined ? {} : { surfaces }),
   });
 }

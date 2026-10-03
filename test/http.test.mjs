@@ -297,27 +297,29 @@ test('GET does not invoke and invalid handler output returns a redacted failure'
 });
 
 test('schema-valid non-JSON output returns a redacted 500', async () => {
-  const definition = defineCapability({
-    identity,
-    description: 'Non-JSON output fixture.',
-    input: inputSchema,
-    output: fromZod(z.any()),
-    risk: 'read',
-    access: { kind: 'public' },
-  });
-  const binding = bindCapability(definition, {
-    id: 'non-json-output',
-    targets: ['server'],
-    execute: async () => 1n,
-  });
-  const handler = createHttpHandler(createCapabilityRegistry([definition], [binding]), options());
-  const response = await handler(
-    new Request('http://localhost' + httpInvocationPath(identity), post()),
-  );
-  assert.equal(response.status, 500);
-  assert.deepEqual(await response.json(), {
-    error: { code: 'execution_failed', message: 'Capability execution failed.' },
-  });
+  for (const value of [1n, Number.POSITIVE_INFINITY]) {
+    const definition = defineCapability({
+      identity,
+      description: 'Non-JSON output fixture.',
+      input: inputSchema,
+      output: fromZod(z.any()),
+      risk: 'read',
+      access: { kind: 'public' },
+    });
+    const binding = bindCapability(definition, {
+      id: 'non-json-output',
+      targets: ['server'],
+      execute: async () => value,
+    });
+    const handler = createHttpHandler(createCapabilityRegistry([definition], [binding]), options());
+    const response = await handler(
+      new Request('http://localhost' + httpInvocationPath(identity), post()),
+    );
+    assert.equal(response.status, 500);
+    assert.deepEqual(await response.json(), {
+      error: { code: 'execution_failed', message: 'Capability execution failed.' },
+    });
+  }
 });
 
 test('deadline is signaled to a cooperative binding and returns 504', async () => {
@@ -373,4 +375,149 @@ test('OpenAPI endpoint is reachable and base path rejects traversal', async () =
     assert.equal(doc.openapi, '3.1.0');
     assert.ok(doc.paths['/api/v2/capabilities/catalog/album.lookup/v1/invoke']);
   });
+});
+
+test('GET overrides map typed query input and appear in OpenAPI without a request body', async () => {
+  const definition = defineCapability({
+    identity: { namespace: 'content', name: 'search', majorVersion: 1 },
+    description: 'Search public content.',
+    input: fromZod(
+      z.object({ query: z.string().min(1), limit: z.number().int().min(1).max(10).optional() }),
+    ),
+    output: fromZod(z.object({ query: z.string(), slugs: z.array(z.string()) })),
+    risk: 'read',
+    access: { kind: 'public' },
+    surfaces: {
+      http: { path: '/api/content/search', method: 'GET', query: { query: 'q' } },
+    },
+  });
+  let calls = 0;
+  const binding = bindCapability(definition, {
+    id: 'content-search',
+    targets: ['server'],
+    execute: async ({ query, limit = 5 }) => {
+      calls += 1;
+      return { query, slugs: ['one', 'two'].slice(0, limit) };
+    },
+  });
+  const registry = createCapabilityRegistry([definition], [binding]);
+  const handler = createHttpHandler(registry, options());
+
+  assert.equal(httpInvocationPath(definition), '/api/content/search');
+  const document = createOpenApiDocument(registry);
+  const operation = document.paths['/api/content/search'].get;
+  assert.equal(operation.requestBody, undefined);
+  assert.deepEqual(
+    operation.parameters.map(({ name, required }) => ({ name, required })),
+    [
+      { name: 'q', required: true },
+      { name: 'limit', required: false },
+    ],
+  );
+
+  const response = await handler(
+    new Request('http://localhost/api/content/search?q=night&limit=1'),
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { query: 'night', slugs: ['one'] });
+  assert.equal(calls, 1);
+
+  for (const url of [
+    'http://localhost/api/content/search',
+    'http://localhost/api/content/search?q=night&limit=1.5',
+    'http://localhost/api/content/search?q=night&limit=',
+    'http://localhost/api/content/search?q=night&unknown=true',
+  ]) {
+    const invalid = await handler(new Request(url));
+    assert.equal(invalid.status, 422);
+    assert.equal((await invalid.json()).error.code, 'invalid_input');
+  }
+  assert.equal(calls, 1);
+  const bounded = createHttpHandler(registry, { ...options(), maxRequestBytes: 16 });
+  const oversized = await bounded(
+    new Request('http://localhost/api/content/search?q=' + 'n'.repeat(32)),
+  );
+  assert.equal(oversized.status, 413);
+  assert.equal((await oversized.json()).error.code, 'request_too_large');
+  assert.equal(calls, 1);
+  const mutation = await handler(
+    new Request('http://localhost/api/content/search?q=night', { method: 'POST' }),
+  );
+  assert.equal(mutation.status, 405);
+  assert.equal(mutation.headers.get('allow'), 'GET');
+});
+
+test('HTTP overrides reject GET mutations, unsupported query conversions and duplicate paths', () => {
+  assert.throws(
+    () =>
+      defineCapability({
+        identity: { namespace: 'content', name: 'write', majorVersion: 1 },
+        description: 'Unsafe GET mutation.',
+        input: fromZod(z.object({ value: z.string() })),
+        output: fromZod(z.object({ ok: z.boolean() })),
+        risk: 'write',
+        access: { kind: 'protected', scopes: ['content:write'] },
+        surfaces: { http: { path: '/api/content/write', method: 'GET' } },
+      }),
+    /GET HTTP surfaces/,
+  );
+
+  const definitions = ['first', 'second'].map((name) =>
+    defineCapability({
+      identity: { namespace: 'content', name, majorVersion: 1 },
+      description: `${name} duplicate fixture.`,
+      input: fromZod(z.object({ filter: z.object({ tag: z.string() }) })),
+      output: fromZod(z.object({ ok: z.boolean() })),
+      risk: 'read',
+      access: { kind: 'public' },
+      surfaces: { http: { path: '/api/duplicate', method: 'GET' } },
+    }),
+  );
+  const bindings = definitions.map((definition, index) =>
+    bindCapability(definition, {
+      id: `duplicate-${index}`,
+      targets: ['server'],
+      execute: async () => ({ ok: true }),
+    }),
+  );
+  const registry = createCapabilityRegistry(definitions, bindings);
+  assert.throws(() => createHttpHandler(registry), /duplicate HTTP path|unsupported query/);
+
+  const unsupported = createCapabilityRegistry([definitions[0]], [bindings[0]]);
+  assert.throws(() => createOpenApiDocument(unsupported), /unsupported query conversion/);
+});
+
+test('GET query decoding preserves own reserved property names', async () => {
+  const input = {
+    parse(value) {
+      if (typeof value !== 'object' || value === null || !Object.hasOwn(value, '__proto__')) {
+        throw new TypeError('missing own query field');
+      }
+      return value;
+    },
+    toJSONSchema() {
+      return JSON.parse(
+        '{"type":"object","properties":{"__proto__":{"type":"string"}},"required":["__proto__"]}',
+      );
+    },
+  };
+  const definition = defineCapability({
+    identity: { namespace: 'safe', name: 'query', majorVersion: 1 },
+    description: 'Read an own query field.',
+    input,
+    output: fromZod(z.object({ ok: z.boolean() })),
+    risk: 'read',
+    access: { kind: 'public' },
+    surfaces: { http: { path: '/api/safe/query', method: 'GET' } },
+  });
+  const binding = bindCapability(definition, {
+    id: 'safe-query',
+    targets: ['server'],
+    execute: async (value) => ({ ok: Object.hasOwn(value, '__proto__') }),
+  });
+  const handler = createHttpHandler(createCapabilityRegistry([definition], [binding]), options());
+  const response = await handler(new Request('http://localhost/api/safe/query?__proto__=value'));
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true });
+  assert.equal({}.polluted, undefined);
 });

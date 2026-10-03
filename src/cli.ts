@@ -2,7 +2,8 @@ import { canonicalCapabilityId, type CapabilityDefinition } from './core/contrac
 import type { AuthorizationPort, ExecutionCaller, ExecutionResult } from './core/executor.js';
 import { executeCapability } from './core/executor.js';
 import type { CapabilityRegistry } from './core/registry.js';
-import { httpInvocationPath } from './http.js';
+import { cloneJsonValue } from './core/schema.js';
+import { httpInvocationPath, httpQueryParameters } from './http.js';
 import {
   evaluateCapabilityDiscovery,
   isDestructiveCapabilityExposed,
@@ -184,13 +185,29 @@ function parseArguments(argv: readonly string[]): ParsedArguments {
   return { identity, mode, profile, bindingId, timeoutMs, help, version, inputJson, flags };
 }
 
-function findDefinition(
+function cliNames(definition: CapabilityDefinition<unknown, unknown>): readonly string[] {
+  const override = definition.surfaces?.cli;
+  return override === undefined
+    ? [canonicalCapabilityId(definition.identity)]
+    : [override.command, ...(override.aliases ?? []), canonicalCapabilityId(definition.identity)];
+}
+
+function cliDefinitionMap(
   registry: CapabilityRegistry,
-  identityText: string,
-): CapabilityDefinition<unknown, unknown> | undefined {
-  return registry.definitions.find(
-    (definition) => canonicalCapabilityId(definition.identity) === identityText,
-  );
+): ReadonlyMap<string, CapabilityDefinition<unknown, unknown>> {
+  const result = new Map<string, CapabilityDefinition<unknown, unknown>>();
+  for (const definition of registry.definitions) {
+    for (const name of cliNames(definition)) {
+      const previous = result.get(name);
+      if (previous !== undefined) {
+        throw new TypeError(
+          `duplicate CLI command or alias ${name} for ${canonicalCapabilityId(previous.identity)} and ${canonicalCapabilityId(definition.identity)}`,
+        );
+      }
+      result.set(name, definition);
+    }
+  }
+  return result;
 }
 
 function fieldProperties(
@@ -294,7 +311,7 @@ function helpText(
 ): string {
   const lines = [
     `@uppercut-labs/agent-native ${packageVersion} | CLI result ${CLI_RESULT_SCHEMA_VERSION}`,
-    'Usage: <application-cli> <namespace:name@major> --mode local|remote [options]',
+    'Usage: <application-cli> <command> --mode local|remote [options]',
     'Local executes an exact registered local binding; remote invokes the generated HTTP route.',
     'Options: --input-json JSON, --<field> VALUE, --binding-id ID, --profile NAME, --timeout-ms MS',
     'Simple string, number, integer, boolean and enum fields use typed flags; object/array fields use --input-json.',
@@ -303,7 +320,10 @@ function helpText(
     'Capabilities:',
   ];
   for (const definition of selected === undefined ? visibleDefinitions : [selected]) {
-    lines.push(`  ${canonicalCapabilityId(definition.identity)}  ${definition.description}`);
+    const [command, ...aliases] = cliNames(definition);
+    lines.push(
+      `  ${command}${aliases.length === 0 ? '' : ` (aliases: ${aliases.join(', ')})`}  ${definition.description}`,
+    );
     for (const [key, schemaValue] of Object.entries(fieldProperties(definition))) {
       const schema =
         typeof schemaValue === 'object' && schemaValue !== null && !Array.isArray(schemaValue)
@@ -343,6 +363,19 @@ async function invokeRemote(
   timeoutMs: number,
   fetcher: typeof fetch,
 ): Promise<CliResult> {
+  const method = definition.surfaces?.http?.method ?? 'POST';
+  let query: URLSearchParams | undefined;
+  let body: string | undefined;
+  try {
+    const parsedInput = definition.input.parse(input);
+    if (method === 'GET') {
+      query = httpQueryParameters(definition, parsedInput);
+    } else {
+      body = JSON.stringify(cloneJsonValue(parsedInput, 'remote request input'));
+    }
+  } catch {
+    return { kind: 'failure', reason: 'invalid-input' };
+  }
   let url: URL;
   try {
     const baseUrl = new URL(profile.baseUrl);
@@ -354,7 +387,8 @@ async function invokeRemote(
     ) {
       return { kind: 'failure', reason: 'insecure-profile-url' };
     }
-    url = new URL(httpInvocationPath(definition.identity), baseUrl);
+    url = new URL(httpInvocationPath(definition), baseUrl);
+    if (query !== undefined) url.search = query.toString();
   } catch {
     return { kind: 'failure', reason: 'invalid-profile-url' };
   }
@@ -362,13 +396,13 @@ async function invokeRemote(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const request = async (): Promise<CliResult> => {
     const response = await fetcher(url, {
-      method: 'POST',
+      method,
       headers: {
         accept: 'application/json',
         authorization: `Bearer ${profile.token}`,
-        'content-type': 'application/json',
+        ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       },
-      body: JSON.stringify(input),
+      ...(body === undefined ? {} : { body }),
       signal: controller.signal,
     });
     if (!response.ok) return remoteFailure(response.status);
@@ -419,6 +453,12 @@ export async function runCapabilityCli(
   streams: CliStreams,
 ): Promise<number> {
   const packageVersion = options.packageVersion ?? '0.0.0';
+  let definitionsByCommand: ReadonlyMap<string, CapabilityDefinition<unknown, unknown>>;
+  try {
+    definitionsByCommand = cliDefinitionMap(options.registry);
+  } catch {
+    return writeFailure(streams, 'invalid-cli-surfaces');
+  }
   let parsed: ParsedArguments;
   try {
     parsed = parseArguments(argv);
@@ -432,7 +472,7 @@ export async function runCapabilityCli(
   }
   if (parsed.help) {
     const selected =
-      parsed.identity === undefined ? undefined : findDefinition(options.registry, parsed.identity);
+      parsed.identity === undefined ? undefined : definitionsByCommand.get(parsed.identity);
     if (parsed.identity !== undefined && selected === undefined) {
       streams.writeStdout('Capability is unavailable or not visible.\n');
       return 0;
@@ -465,17 +505,13 @@ export async function runCapabilityCli(
   }
   if (parsed.identity === undefined) return writeFailure(streams, 'capability-identity-required');
   if (parsed.mode === undefined) return writeFailure(streams, 'execution-mode-required');
+  const definition = definitionsByCommand.get(parsed.identity);
   if (
+    definition === undefined &&
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(parsed.identity) &&
     !/^[a-z0-9]+(?:[.-][a-z0-9]+)*:[a-z0-9]+(?:[.-][a-z0-9]+)*@[1-9][0-9]*$/.test(parsed.identity)
   ) {
     return writeFailure(streams, 'invalid-capability-identity', parsed.mode);
-  }
-
-  let definition: CapabilityDefinition<unknown, unknown> | undefined;
-  try {
-    definition = findDefinition(options.registry, parsed.identity);
-  } catch {
-    return writeFailure(streams, 'invalid-capability-identity');
   }
   if (definition === undefined) return writeFailure(streams, 'capability-missing');
   if (!hasCliBinding(options.registry, definition, parsed.mode, parsed.bindingId)) {
@@ -548,7 +584,7 @@ export async function runCapabilityCli(
       : { schemaVersion: CLI_RESULT_SCHEMA_VERSION, target: { mode: parsed.mode }, result };
   let serializedEnvelope: string | undefined;
   try {
-    serializedEnvelope = JSON.stringify(envelope);
+    serializedEnvelope = JSON.stringify(cloneJsonValue(envelope, 'CLI result'));
   } catch {
     return writeFailure(streams, 'result-serialization-failed', parsed.mode);
   }

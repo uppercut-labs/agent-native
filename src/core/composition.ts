@@ -54,7 +54,7 @@ export type CapabilityComposition = {
 };
 
 export type CapabilityContractChange = {
-  readonly area: 'input' | 'output' | 'risk' | 'access';
+  readonly area: 'input' | 'output' | 'risk' | 'access' | 'surface';
   readonly kind:
     | 'property-added'
     | 'property-removed'
@@ -477,10 +477,22 @@ export function compareCapabilityDefinitions(
       breaking: true,
     });
   }
+  if (stableValue(previous.surfaces) !== stableValue(next.surfaces)) {
+    changes.push({
+      area: 'surface',
+      kind: 'value-changed',
+      path: '$.surfaces',
+      ...(previous.surfaces === undefined ? {} : { before: previous.surfaces }),
+      ...(next.surfaces === undefined ? {} : { after: next.surfaces }),
+      breaking: true,
+    });
+  }
   return Object.freeze({
     fromId,
     toId,
-    schemaEquivalent: changes.every((change) => change.area === 'risk' || change.area === 'access'),
+    schemaEquivalent: changes.every(
+      (change) => change.area === 'risk' || change.area === 'access' || change.area === 'surface',
+    ),
     changes: Object.freeze(changes),
     breaking: changes.some((change) => change.breaking),
   });

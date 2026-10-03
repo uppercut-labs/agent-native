@@ -10,6 +10,7 @@ const supportedExamples = new Set([
   'e02-astro-on-demand-catalog',
   'e03-next-reading-list',
   'e08-reusable-versioned-pack',
+  'e10-existing-functions-retrofit',
   'e12-shared-unit-converter',
   'e05-node-cli',
   'e06-browser-only-theme-controls',
@@ -19,7 +20,7 @@ const supportedExamples = new Set([
 ]);
 if (exampleId === undefined || !supportedExamples.has(exampleId)) {
   throw new Error(
-    'Choose a supported example id: e01-album-catalog, e02-astro-on-demand-catalog, e03-next-reading-list, e08-reusable-versioned-pack, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls, e04-worker-sidecar, e07-playlist-permissions or e09-album-explorer.',
+    'Choose a supported example id: e01-album-catalog, e02-astro-on-demand-catalog, e03-next-reading-list, e08-reusable-versioned-pack, e10-existing-functions-retrofit, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls, e04-worker-sidecar, e07-playlist-permissions or e09-album-explorer.',
   );
 }
 
@@ -109,5 +110,7 @@ runNpm(['ci'], exportRoot);
 if (exampleId !== 'e03-next-reading-list') runNpm(['test'], exportRoot);
 if (exampleId === 'e04-worker-sidecar' || exampleId === 'e03-next-reading-list')
   runNpm(['run', 'verify'], exportRoot);
+else if (exampleId === 'e10-existing-functions-retrofit')
+  runNpm(['run', 'search', '--', '--query', 'night', '--limit', '1'], exportRoot);
 else runNpm(['start'], exportRoot);
 process.stdout.write(`Standalone ${exampleId} installed and tested at ${exportRoot}\n`);

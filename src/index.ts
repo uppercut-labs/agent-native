@@ -46,8 +46,11 @@ export type {
   CapabilityAccessRule,
   CapabilityDefinition,
   CapabilityDefinitionOptions,
+  CapabilityHttpSurface,
   CapabilityIdentity,
   CapabilityRisk,
+  CapabilityCliSurface,
+  CapabilitySurfaceOverrides,
 } from './core/contracts.js';
 export {
   CapabilityDefinitionError,
