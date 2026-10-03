@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "ciWorkflow": ".github/workflows/ci.yml",
+  "examples": [
+    {
+      "id": "E01",
+      "feature": "Static Astro catalog retrofit",
+      "project": "examples/e01-album-catalog/project",
+      "script": "example:e01",
+      "source": "examples/e01-album-catalog/project/src/catalog.mjs",
+      "readme": "examples/e01-album-catalog/project/README.md",
+      "guide": "docs/getting-started.md",
+      "evidence": "docs/evidence/UAN-007-astro.md",
+      "negative": {
+        "test": "examples/e01-album-catalog/project/test/catalog.test.mjs",
+        "probe": "rejects malformed slugs before authorization or handler execution",
+        "expected": "Malformed slugs fail before the handler runs."
+      }
+    },
+    {
+      "id": "E02",
+      "feature": "Astro on-demand catalog",
+      "project": "examples/e02-astro-on-demand-catalog/project",
+      "script": "example:e02",
+      "source": "examples/e02-astro-on-demand-catalog/project/src/catalog.mjs",
+      "readme": "examples/e02-astro-on-demand-catalog/project/README.md",
+      "guide": "docs/static-sites.md",
+      "evidence": "docs/evidence/UAN-013-astro-on-demand.md",
+      "negative": {
+        "test": "examples/e02-astro-on-demand-catalog/project/test/catalog.test.mjs",
+        "probe": "assert.throws(() => albumLookup.input.parse({ slug: 'not valid' }))",
+        "expected": "An invalid album slug fails input parsing."
+      }
+    },
+    {
+      "id": "E03",
+      "feature": "Next reading-list authorization",
+      "project": "examples/e03-next-reading-list/project",
+      "script": "example:e03",
+      "source": "examples/e03-next-reading-list/project/lib/saved-list.js",
+      "readme": "examples/e03-next-reading-list/project/README.md",
+      "guide": "docs/next.md",
+      "evidence": "docs/evidence/UAN-014-next.md",
+      "negative": {
+        "test": "examples/e03-next-reading-list/project/test/saved-list-authorization.test.js",
+        "probe": "a cross-user save is denied before the owner's list is mutated",
+        "expected": "A cross-user save is denied before mutation."
+      }
+    },
+    {
+      "id": "E04",
+      "feature": "Worker sidecar routing",
+      "project": "examples/e04-worker-sidecar/project",
+      "script": "example:e04",
+      "source": "examples/e04-worker-sidecar/project/src/index.mjs",
+      "readme": "examples/e04-worker-sidecar/project/README.md",
+      "guide": "docs/static-sites.md",
+      "evidence": "docs/evidence/UAN-008-worker-sidecar.md",
+      "negative": {
+        "test": "examples/e04-worker-sidecar/project/test/sidecar.test.mjs",
+        "probe": "Host and Origin use configured allowlists and deny unconfigured routes",
+        "expected": "Unconfigured hosts, origins and routes are denied."
+      }
+    },
+    {
+      "id": "E05",
+      "feature": "Node/Hono and CLI",
+      "project": "examples/e05-node-cli/project",
+      "script": "example:e05",
+      "source": "examples/e05-node-cli/project/src/server.mjs",
+      "readme": "examples/e05-node-cli/project/README.md",
+      "guide": "docs/frameworks.md",
+      "evidence": "docs/evidence/UAN-015-node-hono.md",
+      "negative": {
+        "test": "examples/e05-node-cli/project/test/cli.test.mjs",
+        "probe": "invalid schema input, malformed stdin, unknown version, and missing profile fail closed",
+        "expected": "Invalid input, missing profiles and unknown versions fail closed."
+      }
+    },
+    {
+      "id": "E06",
+      "feature": "Browser-only theme controls",
+      "project": "examples/e06-browser-only-theme-controls/project",
+      "script": "example:e06",
+      "source": "examples/e06-browser-only-theme-controls/project/src/theme.mjs",
+      "readme": "examples/e06-browser-only-theme-controls/project/README.md",
+      "guide": "docs/browser.md",
+      "evidence": "docs/evidence/UAN-010-auth.md",
+      "negative": {
+        "test": "examples/e06-browser-only-theme-controls/project/test/theme.test.mjs",
+        "probe": "assert.equal(serverResult.reason, 'binding-unavailable')",
+        "expected": "Server execution fails because the binding is browser-only."
+      }
+    },
+    {
+      "id": "E07",
+      "feature": "Playlist grants and revocation",
+      "project": "examples/e07-playlist-permissions/project",
+      "script": "example:e07",
+      "source": "examples/e07-playlist-permissions/project/src/grant-store.mjs",
+      "readme": "examples/e07-playlist-permissions/README.md",
+      "guide": "docs/permissions-and-discovery.md",
+      "evidence": "docs/evidence/UAN-020-negative-security-fixtures.md",
+      "negative": {
+        "test": "examples/e07-playlist-permissions/project/test/e07.test.mjs",
+        "probe": "E07 grant IDs cannot be reused to resurrect a revoked grant",
+        "expected": "A revoked grant ID cannot be reused."
+      }
+    },
+    {
+      "id": "E08",
+      "feature": "Versioned capability pack",
+      "project": "examples/e08-reusable-versioned-pack/project",
+      "script": "example:e08",
+      "source": "examples/e08-reusable-versioned-pack/project/src/demo-b.mjs",
+      "readme": "examples/e08-reusable-versioned-pack/project/README.md",
+      "guide": "docs/composition-and-versioning.md",
+      "evidence": "docs/evidence/UAN-017-version-migrations.md",
+      "negative": {
+        "test": "examples/e08-reusable-versioned-pack/project/test/e08.test.mjs",
+        "probe": "a v1 identity cannot silently accept a breaking replacement",
+        "expected": "A breaking v1 replacement is rejected."
+      }
+    },
+    {
+      "id": "E09",
+      "feature": "Interactive MCP album explorer",
+      "project": "examples/e09-album-explorer/project",
+      "script": "example:e09",
+      "source": "examples/e09-album-explorer/project/src/view-controller.mjs",
+      "readme": "examples/e09-album-explorer/project/README.md",
+      "guide": "docs/mcp-apps.md",
+      "evidence": "docs/evidence/UAN-012-mcp-apps.md",
+      "negative": {
+        "test": "examples/e09-album-explorer/project/test/e09.test.mjs",
+        "probe": "E09 missing, denied, malformed UI data and text-only fallbacks have explicit states",
+        "expected": "Missing, denied and malformed results keep explicit UI states."
+      }
+    },
+    {
+      "id": "E10",
+      "feature": "Existing function and route overrides",
+      "project": "examples/e10-existing-functions-retrofit/project",
+      "script": "example:e10",
+      "source": "examples/e10-existing-functions-retrofit/project/src/capability.mjs",
+      "readme": "examples/e10-existing-functions-retrofit/project/README.md",
+      "guide": "docs/http.md",
+      "evidence": "docs/evidence/UAN-018-surface-overrides.md",
+      "negative": {
+        "test": "examples/e10-existing-functions-retrofit/project/test/e10.test.mjs",
+        "probe": "generated GET route rejects invalid input and mutation attempts",
+        "expected": "Invalid GET inputs and mutations are rejected."
+      }
+    },
+    {
+      "id": "E11",
+      "feature": "Diagnostics fault lab",
+      "project": "examples/e11-diagnostics-fault-lab/project",
+      "script": "example:e11",
+      "source": "examples/e11-diagnostics-fault-lab/project/src/doctor.mjs",
+      "readme": "examples/e11-diagnostics-fault-lab/project/README.md",
+      "guide": "docs/doctor-and-troubleshooting.md",
+      "evidence": "docs/evidence/UAN-019-doctor.md",
+      "negative": {
+        "test": "examples/e11-diagnostics-fault-lab/project/test/fixture.test.mjs",
+        "probe": "unknown scenario and invalid variant do not create a sandbox",
+        "expected": "Unknown scenarios and invalid variants create no sandbox."
+      }
+    },
+    {
+      "id": "E12",
+      "feature": "Shared unit converter",
+      "project": "examples/e12-shared-unit-converter/project",
+      "script": "example:e12",
+      "source": "examples/e12-shared-unit-converter/project/src/converter.mjs",
+      "readme": "examples/e12-shared-unit-converter/project/README.md",
+      "guide": "docs/capabilities-and-bindings.md",
+      "evidence": "docs/evidence/UAN-016-composition.md",
+      "negative": {
+        "test": "examples/e12-shared-unit-converter/project/test/converter.test.mjs",
+        "probe": "fails closed on invalid input before calling a binding",
+        "expected": "Invalid units fail before the binding runs."
+      }
+    }
+  ]
+}

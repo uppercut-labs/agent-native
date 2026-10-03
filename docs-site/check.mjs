@@ -2,8 +2,10 @@ import { existsSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateCoverage } from './coverage-check.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'dist');
+const repositoryRoot = path.resolve(root, '..', '..');
 
 async function collectHtml(directory) {
   const files = [];
@@ -45,7 +47,8 @@ const index = JSON.parse(await readFile(path.join(root, 'search-index.json'), 'u
 if (index.length !== htmlFiles.length - 1) {
   failures.push(`Search index has ${index.length} records for ${htmlFiles.length - 1} guide pages`);
 }
+failures.push(...(await validateCoverage(repositoryRoot)));
 if (failures.length) throw new Error(failures.join('\n'));
 console.log(
-  `Validated ${htmlFiles.length} generated HTML pages and ${index.length} search entries`,
+  `Validated ${htmlFiles.length} generated HTML pages, ${index.length} search entries, and 12 example coverage records`,
 );
