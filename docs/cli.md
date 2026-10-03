@@ -20,6 +20,8 @@ const status = await runCapabilityCli(process.argv.slice(2), {
 process.exitCode = status;
 ```
 
+The help list filters to public reads by default, and a selected hidden or unknown identity gets the same generic unavailable message. Applications may provide an async `canDiscover` callback for protected help metadata and `surfaceExposure: { cli: { destructive: ['account:delete@1'] } }` for exact destructive exposure. A destructive entry still needs the app's `canDiscover` approval; direct execution is independently checked by the shared executor.
+
 The registry generates the application CLI help list and simple field flags from each input JSON Schema. String,
 number, integer, boolean, and enum properties accept typed flags; nested objects and arrays require
 `--input-json JSON`. Use `--input-json -` to read one JSON document from the provided stdin port.
@@ -46,3 +48,7 @@ and disable shell interpretation.
 See the installed E05 and E12 application examples for real local and loopback HTTP fixtures, positive output, timeout,
 credential, malformed-input, and handler-failure paths. E05 uses Node's built-in HTTP server and
 does not claim a Hono/MCP integration, deployment, or external credential provider.
+
+## Discovery filtering
+
+Help lists public reads by default. Applications may provide an async `canDiscover` callback for protected metadata and `surfaceExposure: { cli: { destructive: ['account:delete@1'] } }` for exact destructive exposure. Local help requires one unique local binding; remote help lists only public reads with one server binding. Direct destructive local invocation requires the explicit CLI exposure entry before input reaches a binding, and the shared executor independently checks authorization. Close `canDiscover` over a trusted caller from the application's auth boundary; do not infer identity from argv.

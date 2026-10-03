@@ -21,9 +21,15 @@ entrypoints remain free of MCP SDK imports.
 By default, the adapter registers only capabilities whose access is explicitly public and whose
 risk is read. The optional `canDiscover` callback can narrow that set; it cannot reveal protected
 capabilities. Protected discovery requires an explicit `discoverProtected` callback, official SDK
-bearer verification, trusted principal resolution, and grant authorization. The server factory
-applies discovery on every protocol request, and the shared executor rechecks authorization for
-each `tools/call`. A direct call to a hidden or filtered tool name receives the SDK's normal
+bearer verification, trusted principal resolution, and grant authorization. Destructive capabilities
+also require an exact per-app MCP exposure entry:
+
+~~~ts
+surfaceExposure: { mcp: { destructive: ['account:delete@1'] } }
+~~~
+
+The server factory applies discovery on every protocol request, and the shared executor rechecks
+authorization for each `tools/call`. Granting a scope alone never exposes a destructive tool. A direct call to a hidden or filtered tool name receives the SDK's normal
 unknown-tool protocol error without running a binding. See
 [permissions and discovery](permissions-and-discovery.md) and the
 [E07 playlist fixture](../examples/e07-playlist-permissions/README.md).
@@ -46,3 +52,11 @@ and invokes the sample album capability, checks the structured result against th
 schema, and exercises malformed transport input, oversized input, invalid tool arguments, hidden
 definitions and a request-specific discovery filter. This is fixture-tested protocol evidence; it
 does not establish support for every commercial MCP client or a deployed host.
+
+Destructive definitions require an exact app surface entry, in addition to a current grant:
+
+~~~ts
+surfaceExposure: { mcp: { destructive: ['account:delete@1'] } }
+~~~
+
+The adapter filters out definitions without one unique server binding and requires current token scopes plus a matching, unexpired, unrevoked grant before consulting `discoverProtected`; that callback only narrows discovery. The shared executor still checks every call. Exposure is also checked at the call boundary so a stale listing cannot retain destructive access.
