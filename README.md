@@ -1,7 +1,7 @@
 # Uppercut Agent Native
 
 Uppercut Agent Native is an experimental package for typed capability contracts with local,
-HTTP, CLI, MCP, Node/Hono, browser, and Astro static-site surfaces. The package working name is
+HTTP, CLI, MCP, Node/Hono, browser, and Astro static/on-demand surfaces. The package working name is
 `@uppercut-labs/agent-native`; its manifest remains `private: true` at version `0.0.0`, so it
 cannot be published accidentally.
 
@@ -29,6 +29,10 @@ Run `npm run example:e01`, `npm run example:e12`, or `npm run example:e05` to bu
 package, install it independently into each example, and run its tests and runnable surface. E05
 uses one registry in a pinned Node/Hono host for generated HTTP and MCP plus local/remote CLI. E01
 also verifies a pre-existing multi-page static Astro fixture before and after integration. E04 checks a local workerd HTTP/OpenAPI roundtrip and official MCP client exchange; it does not deploy or configure DNS.
+
+E02 verifies Astro 7.3.5 on-demand routes with the official Node standalone adapter. It keeps the
+human catalog and unrelated pages prerendered while serving authenticated Agent Native HTTP and MCP
+routes from one shared contract, binding, authorization policy, and executor path.
 
 The root, `./contracts`, `./registry`, and `./executor` entrypoints use only portable core modules.
 They do not import Zod, Node, DOM, framework, provider, or server modules. `npm run check` compiles
@@ -58,12 +62,12 @@ with browser bindings; public reads are exposed by default, while protected tool
 projection policy and are still authorized on every call. The WebMCP API fixture is simulated; no
 native browser host is claimed. See [the browser guide](docs/browser.md).
 
-## Astro static sites
+## Astro sites
 
 The isolated `@uppercut-labs/agent-native/astro` integration injects an application-owned browser
-entry with Astro's page-script hook, verifies static output, and installs no server adapter. E01 is
-pinned to Astro 7.3.5 and retains its existing pages, assets, and navigation. WebMCP remains
-feature-detected and optional; the human catalog search works without it. See
+entry with Astro's page-script hook and validates the selected static or on-demand mode. It never
+installs a server adapter. E01 remains wholly static; E02 uses application-owned Astro endpoints and
+the official Node standalone adapter while retaining prerendered pages and navigation. See
 [static-site guidance](docs/static-sites.md), [framework support](docs/frameworks.md), and
 [UAN-007 evidence](docs/evidence/UAN-007-astro.md).
 
@@ -95,6 +99,7 @@ npm run typecheck
 npm test
 npm run build
 npm run example:e01
+npm run example:e02
 npm run example:e12
 npm run example:e05
 npm run example:e07

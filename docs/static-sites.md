@@ -1,6 +1,6 @@
 # Static sites
 
-Agent Native's Astro integration is an experimental browser bootstrap for static Astro output. It
+Agent Native's Astro integration is an experimental browser bootstrap for static and mixed Astro output. It
 injects an application-owned browser module through Astro's supported
 astro:config:setup injectScript('page', ...) hook. The hook is Vite-bundled as a page module; the
 application keeps ownership of its registry, browser bindings, and user interface.
@@ -10,9 +10,11 @@ and writes an owned browser entry plus sidecar-origin settings. Its generated en
 readiness; it does not register an application capability. The E01 retrofit fixture builds from a
 local package tarball and checks that the selected origin appears in the browser bundle.
 
-Astro output must be static. The integration checks the final buildOutput, emits a diagnostic,
-and fails an unsupported server-output build. It does not add an Astro server adapter, SSR route,
-sidecar, or hosting configuration. Static builds use Astro's normal default output behavior. The
+Pure static builds use the default mode. A mixed application explicitly selects
+`agentNativeAstro({ browserEntry, mode: 'on-demand' })`, keeps `output: 'static'`, marks endpoint
+routes `prerender = false`, and configures a supported adapter. Do not use the removed historical
+`output: 'hybrid'` value. The integration checks final build output, but does not add an adapter,
+endpoint, sidecar, or hosting configuration. The
 feature-detected WebMCP adapter is separate from Astro and is unavailable in hosts that do not
 implement the draft API.
 
@@ -55,6 +57,24 @@ See [E01 Astro](../examples/e01-album-catalog/project/README.md),
 [E04 Worker sidecar](../examples/e04-worker-sidecar/project/README.md),
 [UAN-007 evidence](evidence/UAN-007-astro.md), and
 [UAN-008 evidence](evidence/UAN-008-worker-sidecar.md).
+
+## Same-origin on-demand endpoints
+
+E02 mounts `createHttpHandler` and `createMcpHandler` in application-owned Astro endpoint files.
+The ordinary catalog JSON route and both agent transports reuse one contract and lookup handler;
+HTTP and MCP calls also reuse one authorization policy and the package executor's input/output
+validation. E02 retains the official Node adapter already configured by its before-state fixture in
+standalone mode; Agent Native does not install or configure it. Home, catalog, and unrelated about
+pages remain prerendered and their links remain ordinary HTML navigation. The public sample
+capability's metadata is anonymously discoverable through OpenAPI and MCP, while its local fixture
+resolver requires a bearer token for execution on either transport.
+
+Run `npm run example:e02` to pack the package, generate a standalone fixture lockfile, install with
+`npm ci`, build, and invoke the production server. A file under `public/` remains inert bytes even
+when this adapter answers POST; a JSON-looking static file is not an HTTP or MCP endpoint. Init
+detection rejects protocol paths masquerading as static files and reports on-demand/server output
+without an adapter. Production TLS, identity, rate limiting, deployment, and other Astro adapters
+remain application/operator responsibilities.
 
 Cloudflare's primary references are the [Wrangler configuration guide](https://developers.cloudflare.com/workers/wrangler/configuration/)
 and [local development command](https://developers.cloudflare.com/workers/wrangler/commands/#dev).

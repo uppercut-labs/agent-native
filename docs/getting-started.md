@@ -22,6 +22,13 @@ reads project files as data; it does not import the site's config or business
 modules. A project with multiple apps, competing lockfiles, dynamic config, or
 an unsupported host receives an unresolved action instead of a guessed edit.
 
+Detection also distinguishes pure static output from `prerender = false` on-demand routes. It
+records whether the Astro config has a server adapter, diagnoses `server-adapter-missing`, and
+rejects static files placed at known HTTP/MCP protocol paths. Existing on-demand projects are
+manual-integration cases: init does not rewrite their adapter or endpoint routes. Select a sidecar
+for a pure static site, or review same-origin endpoints and a supported adapter explicitly. Never
+rewrite an Astro 7 project to the removed historical `output: 'hybrid'` mode.
+
 After installing this source package into a disposable Astro project, a caller
 can inspect the plan and then explicitly approve the same choices:
 
