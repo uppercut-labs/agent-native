@@ -60,3 +60,5 @@ surfaceExposure: { mcp: { destructive: ['account:delete@1'] } }
 ~~~
 
 The adapter filters out definitions without one unique server binding and requires current token scopes plus a matching, unexpired, unrevoked grant before consulting `discoverProtected`; that callback only narrows discovery. The shared executor still checks every call. Exposure is also checked at the call boundary so a stale listing cannot retain destructive access.
+
+For the optional interactive MCP Apps presentation, use the isolated [/mcp-apps](mcp-apps.md) adapter and its E09 SDK conformance fixture. It keeps the regular text/structured tool result for hosts without MCP Apps rendering.
