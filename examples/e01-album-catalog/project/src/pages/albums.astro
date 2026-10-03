@@ -8,7 +8,7 @@ import { CATALOG_REVISION, publicAlbums } from '../catalog-contract.mjs';
     <h1>Albums</h1>
     <p data-sidecar-status aria-live="polite">Static catalog revision: {CATALOG_REVISION}. Sidecar is not configured.</p>
     <p data-agent-status aria-live="polite">The catalog works with or without browser agent support.</p>
-    <form data-album-lookup>
+    <form data-album-lookup data-astro-reload>
       <label for="album-slug">Find an album by slug</label>
       <input id="album-slug" name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" required />
       <button type="submit">Find album</button>
