@@ -38,7 +38,6 @@ async function fileBytes(directory) {
 
 const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-native-portability-'));
 try {
-  run(['run', 'build'], repositoryRoot, true);
   const pack = JSON.parse(
     run(['pack', '--json', '--pack-destination', temporaryRoot], repositoryRoot, true),
   )[0];

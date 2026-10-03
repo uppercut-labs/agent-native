@@ -68,7 +68,6 @@ async function copyProjectFiles(sourceRoot, targetRoot) {
   }
 }
 
-runNpm(['run', 'build'], repositoryRoot);
 await rm(exportRoot, { recursive: true, force: true });
 await mkdir(vendorRoot, { recursive: true });
 runNpm(['pack', '--pack-destination', vendorRoot], repositoryRoot);

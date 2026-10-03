@@ -108,6 +108,7 @@
     "test": "npm run build && npm run build:test-fixtures && node --test test/*.test.mjs",
     "build:test-fixtures": "tsc -p tsconfig.sdk-proof.json --noEmit false",
     "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
     "build:browser-proof": "tsc -p tsconfig.browser-proof.json",
     "example:e01": "node scripts/check-e01-baseline.mjs && node scripts/check-example.mjs e01-album-catalog",
     "example:e02": "node scripts/check-example.mjs e02-astro-on-demand-catalog",
