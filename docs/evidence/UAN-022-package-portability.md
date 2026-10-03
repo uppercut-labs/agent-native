@@ -27,6 +27,22 @@ The new npm run check:portability builds and packs the package, checks all expor
 
 Node 24 typecheck and build, scoped Biome format, git diff check and production npm audit (zero reported vulnerabilities) passed. No full local root test suite was repeated for this slice.
 
+## Packed CLI and direct-license inventory (2026-10-03)
+
+The same fresh core/browser consumer now runs the package's CLI adapter in an application-owned process with no optional peers. A small fixture declares a read-only `smoke:greet@1` capability using the core schema port, then calls `runCapabilityCli`. On research macOS Node 24.18.0, the packed check passed `--help`, `--version`, a successful local typed-flag invocation, and an invalid-input exit-2 envelope. The local invocation measured about 30 ms wall time including Node process startup on this host; it is an observation, not a cross-platform budget. The package is a library with no `bin` entry, so there is no global `agent-native` command to test. E05 remains the representative application-owned local/remote CLI with Hono and explicit MCP/Zod peers.
+
+The check reported about 128 KB of tarball data and 555 KB of installed files for this fresh consumer; exact bytes change as included documentation changes. The installed package has zero hard runtime dependencies; MCP server, MCP Apps, Astro and Zod remained absent. Exact direct license metadata from the npm registry for this candidate's pinned optional peers:
+
+| Package | Version | Registry license |
+| --- | --- | --- |
+| @uppercut-labs/agent-native | 0.0.0 local tarball | MIT (`LICENSE` in tarball) |
+| @modelcontextprotocol/server | 2.3.0 | Apache-2.0 |
+| @modelcontextprotocol/ext-apps | 2.0.3 | MIT |
+| astro | 7.3.5 tested; peer range 7.x | MIT |
+| zod | 4.6.5 | MIT |
+
+This is a direct-package inventory, not a license review of every transitive dependency. The core/browser consumer installs no optional peer, so its runtime license set is the Agent Native tarball. Applications selecting framework/MCP/Zod integrations must inventory their actual resolved dependency tree.
+
 ## Remaining qualification
 
-Windows and Linux CLI runs, cold doctor/invocation timing, independent client bundle budgets, dependency license inventory and outside-repository npm release installation remain open. One macOS snapshot is insufficient to set cross-platform performance thresholds. No npm publication or commercial host support is claimed.
+Windows packed CLI remains unverified. Linux packed CLI will run in the Node 22/24 CI matrix once this change is integrated; the result must be checked there. Cold doctor timing, independent client bundle budgets, transitive dependency license review and outside-repository npm release installation remain open. One macOS timing sample is insufficient to set cross-platform performance thresholds. No npm publication or commercial host support is claimed.

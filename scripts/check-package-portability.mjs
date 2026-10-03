@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { copyFile, mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -86,6 +87,31 @@ try {
     ],
     consumerRoot,
   );
+  const smokePath = path.join(consumerRoot, 'packed-cli-smoke.mjs');
+  await copyFile(path.join(repositoryRoot, 'test/fixtures/packed-cli-smoke.mjs'), smokePath);
+  function runPackedCli(args, expectedStatus) {
+    const started = performance.now();
+    const result = spawnSync(process.execPath, [smokePath, ...args], {
+      cwd: consumerRoot,
+      encoding: 'utf8',
+      windowsHide: true,
+    });
+    if (result.error) throw result.error;
+    assert.equal(result.status, expectedStatus, result.stderr + result.stdout);
+    return { stdout: result.stdout, stderr: result.stderr, elapsedMs: performance.now() - started };
+  }
+  const help = runPackedCli(['--help'], 0);
+  assert.match(help.stdout, /greet/);
+  const version = runPackedCli(['--version'], 0);
+  assert.equal(version.stdout.trim(), `@uppercut-labs/agent-native ${manifest.version}`);
+  const invoked = runPackedCli(['greet', '--mode', 'local', '--name', 'Portability'], 0);
+  const result = JSON.parse(invoked.stdout);
+  assert.equal(result.schemaVersion, 'uan.cli-result/v1');
+  assert.equal(result.result.value.greeting, 'Hello, Portability!');
+  assert.match(invoked.stderr, /target=local capability=smoke:greet@1/);
+  const invalid = runPackedCli(['greet', '--mode', 'local'], 2);
+  assert.equal(JSON.parse(invalid.stdout).result.reason, 'invalid-input');
+
   const installedBytes = await fileBytes(modulesRoot);
   // A fresh Node 24 macOS pack measured 503,177 file bytes; this permits about 4x growth.
   assert.ok(installedBytes <= 2_000_000, `Core/browser install grew to ${installedBytes} bytes`);
@@ -94,7 +120,9 @@ try {
       pack.size +
       ' tarball bytes, ' +
       installedBytes +
-      ' installed file bytes, no optional adapters.\n',
+      ' installed file bytes, no optional adapters; packed CLI help/version/invoke/invalid passed (' +
+      Math.round(invoked.elapsedMs) +
+      ' ms local invocation).\n',
   );
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
