@@ -17,10 +17,11 @@ const supportedExamples = new Set([
   'e04-worker-sidecar',
   'e07-playlist-permissions',
   'e09-album-explorer',
+  'e11-diagnostics-fault-lab',
 ]);
 if (exampleId === undefined || !supportedExamples.has(exampleId)) {
   throw new Error(
-    'Choose a supported example id: e01-album-catalog, e02-astro-on-demand-catalog, e03-next-reading-list, e08-reusable-versioned-pack, e10-existing-functions-retrofit, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls, e04-worker-sidecar, e07-playlist-permissions or e09-album-explorer.',
+    'Choose a supported example id: e01-album-catalog, e02-astro-on-demand-catalog, e03-next-reading-list, e08-reusable-versioned-pack, e10-existing-functions-retrofit, e12-shared-unit-converter, e05-node-cli, e06-browser-only-theme-controls, e04-worker-sidecar, e07-playlist-permissions, e09-album-explorer or e11-diagnostics-fault-lab.',
   );
 }
 
