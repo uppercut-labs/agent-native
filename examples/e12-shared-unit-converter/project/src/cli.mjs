@@ -8,7 +8,6 @@ const code = await runCapabilityCli(
     registry,
     authorization: publicReadAuthorization,
     caller: { kind: 'anonymous' },
-    packageVersion: '0.0.0',
   },
   {
     writeStdout(value) {

@@ -31,13 +31,13 @@ import {
   evaluateCapabilityDiscovery,
   isDestructiveCapabilityExposed,
 } from './discovery.js';
+import { PACKAGE_VERSION } from './package-version.js';
 
 const DEFAULT_ENDPOINT = '/mcp';
 const DEFAULT_MAX_REQUEST_BYTES = 32 * 1024;
 const MAX_REQUEST_BYTES = 1024 * 1024;
 const DEFAULT_DEADLINE_MS = 10_000;
 const MAX_DEADLINE_MS = 300_000;
-const SERVER_VERSION = '0.0.0';
 
 export type McpExecutionContext = {
   readonly caller: ExecutionCaller;
@@ -238,7 +238,7 @@ async function defineServer(
   deadlineMs: number,
   appRegistration?: McpAppRegistration,
 ): Promise<McpServer> {
-  const server = new McpServer({ name: 'uppercut-agent-native', version: SERVER_VERSION });
+  const server = new McpServer({ name: 'uppercut-agent-native', version: PACKAGE_VERSION });
   if (requestInfo === undefined) return server;
   const visibleAppResources = new Map<string, McpAppResourceDefinition>();
 

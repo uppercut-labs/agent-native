@@ -16,7 +16,6 @@ const code = await runCapabilityCli(
     authorization: createAuthorization(),
     caller: { kind: 'anonymous' },
     credentialProfiles: profiles,
-    packageVersion: '0.0.0',
   },
   {
     writeStdout(value) {

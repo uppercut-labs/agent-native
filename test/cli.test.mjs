@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as z from 'zod';
 import { bindCapability, createCapabilityRegistry, defineCapability } from '../dist/index.js';
@@ -47,6 +48,16 @@ async function invoke(registry, argv, authorization = { authorize: () => true },
   );
   return { code, stdout, stderr };
 }
+
+test('default CLI version and help match the package manifest', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const registry = fixture(async (input) => input);
+  const version = await invoke(registry, ['--version']);
+  const help = await invoke(registry, ['--help']);
+  assert.equal(version.code, 0);
+  assert.equal(version.stdout, manifest.name + ' ' + manifest.version + '\n');
+  assert.ok(help.stdout.includes(manifest.version + ' | CLI result'));
+});
 
 test('invalid flags and structured input fail before the local handler', async () => {
   let calls = 0;

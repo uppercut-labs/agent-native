@@ -4,6 +4,7 @@ import { executeCapability } from './core/executor.js';
 import type { CapabilityRegistry } from './core/registry.js';
 import { cloneJsonValue } from './core/schema.js';
 import { httpInvocationPath, httpQueryParameters } from './http.js';
+import { PACKAGE_VERSION } from './package-version.js';
 import {
   evaluateCapabilityDiscovery,
   isDestructiveCapabilityExposed,
@@ -452,7 +453,7 @@ export async function runCapabilityCli(
   options: CapabilityCliOptions,
   streams: CliStreams,
 ): Promise<number> {
-  const packageVersion = options.packageVersion ?? '0.0.0';
+  const packageVersion = options.packageVersion ?? PACKAGE_VERSION;
   let definitionsByCommand: ReadonlyMap<string, CapabilityDefinition<unknown, unknown>>;
   try {
     definitionsByCommand = cliDefinitionMap(options.registry);

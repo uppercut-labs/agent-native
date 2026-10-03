@@ -103,10 +103,12 @@
   "scripts": {
     "format": "biome format --write .",
     "format:check": "biome format .",
+    "pretypecheck": "node scripts/check-package-version.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.browser.json && tsc --noEmit -p tsconfig.sdk-proof.json",
     "lint": "biome lint .",
     "test": "npm run build && npm run build:test-fixtures && node --test test/*.test.mjs",
     "build:test-fixtures": "tsc -p tsconfig.sdk-proof.json --noEmit false",
+    "prebuild": "node scripts/check-package-version.mjs",
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "build:browser-proof": "tsc -p tsconfig.browser-proof.json",

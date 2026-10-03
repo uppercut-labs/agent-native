@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { canonicalCapabilityId } from '../dist/core/contracts.js';
@@ -131,6 +132,10 @@ test('official SDK client discovers and calls a public capability over real HTTP
 
   try {
     await client.connect(transport);
+    const manifest = JSON.parse(
+      await readFile(new URL('../package.json', import.meta.url), 'utf8'),
+    );
+    assert.equal(client.getServerVersion()?.version, manifest.version);
     assert.equal(client.getNegotiatedProtocolVersion(), '2025-11-25');
     const discovery = await client.listTools();
     const tool = mcpToolName(lookupIdentity);
