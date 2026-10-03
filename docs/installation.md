@@ -1,6 +1,54 @@
 # Installing only the surfaces you use
 
-Agent Native is an unreleased preview at version 0.0.0. These commands describe the required peer dependencies for a future npm installation; current examples install a local tarball.
+Agent Native `0.1.0` is a preview for Node.js 22 or newer. Once the version is visible on npmjs.com, install the package and only the peers your application imports:
+
+```sh
+npm install @uppercut-labs/agent-native@0.1.0
+```
+
+The public package has no global `agent-native` executable. Applications call its APIs or expose their own CLI runner. The repository examples independently install local tarballs so their checks stay tied to a source commit.
+
+## First local capability
+
+Add Zod for the schema adapter, then save the following as `quickstart.mjs` in your application:
+
+```sh
+npm install zod@4.6.5
+```
+
+```js
+import { bindCapability, createCapabilityRegistry, defineCapability, executeCapability } from '@uppercut-labs/agent-native';
+import { fromZod } from '@uppercut-labs/agent-native/schema/zod';
+import * as z from 'zod';
+
+const greet = defineCapability({
+  identity: { namespace: 'demo', name: 'greet', majorVersion: 1 },
+  description: 'Greet one person.',
+  input: fromZod(z.object({ name: z.string().min(1) })),
+  output: fromZod(z.object({ message: z.string() })),
+  risk: 'read',
+  access: { kind: 'public' },
+});
+const registry = createCapabilityRegistry(
+  [greet],
+  [bindCapability(greet, {
+    id: 'local-greet',
+    targets: ['local'],
+    execute: async ({ name }) => ({ message: 'Hello, ' + name + '!' }),
+  })],
+);
+const result = await executeCapability(registry, {
+  identity: greet.identity,
+  runtime: 'local',
+  input: { name: 'World' },
+  caller: { kind: 'anonymous' },
+  authorization: { authorize: ({ access, risk }) => access.kind === 'public' && risk === 'read' },
+});
+if (result.kind !== 'success') throw new Error(result.reason);
+console.log(result.value);
+```
+
+Run `node quickstart.mjs`; it prints `{ message: 'Hello, World!' }`. Every invocation supplies an authorization port, including public reads.
 
 The root, contracts, composition, registry, executor, browser, HTTP, CLI and init subpaths need no runtime dependency from the package. Optional integrations are explicit:
 
@@ -22,5 +70,4 @@ Use Node.js 22 or newer. From the repository root, run `npm ci` followed by
 a core/browser consumer without optional peers, verifies imports and the packed
 CLI, and checks every declared export in the tarball. A missing
 `@modelcontextprotocol/server` error from `/mcp` means the application needs
-that peer; install it only for that server integration. The package remains
-unpublished, so use the local tarball examples until an npm version is released.
+that peer; install it only for that server integration. The independent repository examples continue to use local tarballs.

@@ -1,6 +1,6 @@
 # Support and limitations
 
-Agent Native is an **unreleased preview** at version `0.0.0`; the package manifest is private. The current site documents source behavior and local fixtures, not an npm installation or production deployment.
+Agent Native `0.1.0` is a preview package. The repository documents local fixtures and narrowly verified hosts; publication of the package does not certify a production deployment.
 
 ## Fixture-tested surfaces
 
@@ -8,11 +8,11 @@ The repository contains local examples for static Astro (E01), Astro on-demand (
 
 The local MCP checks use official SDK client/server packages. The browser draft checks use a simulated WebMCP API. E09 exercises the official MCP Apps protocol components locally, but a commercial host's iframe behavior and prompts remain unverified.
 
-## Still open before release
+## Outside current preview support
 
-- All twelve independent example exports and their source-backed guide snippets are wired into the root CI command. A green local export or CI run does not supply real-host evidence.
+- All twelve independent example exports and source-backed guide snippets run in CI, but this does not supply real-host evidence.
 - Provider deployment, real commercial MCP Apps hosts, native browser agents, physical devices, and outsider installation are not yet certified.
 - OAuth issuance, durable production grant storage, application record policy, deployment ownership, and hosting remain application responsibilities.
-- The package is not published to npm. No installation command in these docs claims that it is.
+- The package has no global executable. Applications call the programmatic APIs or own their CLI runner; see [installation](installation.md).
 
 See [installation](installation.md), [doctor and troubleshooting](doctor-and-troubleshooting.md), [framework support](frameworks.md), [fixture compatibility](compatibility.md), and the individual [adapter surfaces](surfaces.md) for narrower statements. Report documentation problems through the repository's [GitHub issues](https://github.com/uppercut-labs/agent-native/issues); this link uses the actual public repository issue route.

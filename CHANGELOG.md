@@ -1,8 +1,8 @@
 # Changelog
 
-All notable changes will be recorded here. Agent Native has no published npm release.
+All notable changes will be recorded here.
 
-## Unreleased
+## 0.1.0 - 2026-10-03
 
 ### Added
 
@@ -19,6 +19,6 @@ All notable changes will be recorded here. Agent Native has no published npm rel
 
 ### Compatibility and migration
 
-This is a preview API at `0.0.0`. No earlier npm version exists, so there is no npm upgrade or migration path to promise. Composition across capability major versions and reviewed migrations are fixture-tested in E08; they do not imply package-level semantic version stability. See [composition and versioning](docs/composition-and-versioning.md), [compatibility](docs/compatibility.md), and [support limits](docs/support-and-limitations.md).
+This is a preview API at `0.1.0`. No earlier npm version exists, so there is no npm upgrade or migration path to promise. Composition across capability major versions and reviewed migrations are fixture-tested in E08; they do not imply package-level semantic version stability. See [composition and versioning](docs/composition-and-versioning.md), [compatibility](docs/compatibility.md), and [support limits](docs/support-and-limitations.md).
 
-The package remains `private: true`. A future release note will record the exact version, tarball digest, verified hosts, changes since this preview, and any breaking changes after release acceptance.
+The 0.1.0 artifact has no package-level executable. Provider deployment, commercial MCP hosts, and native WebMCP remain outside this preview's verified scope. Release evidence records the exact source commit, tarball digest, registry state, and verified hosts separately.
