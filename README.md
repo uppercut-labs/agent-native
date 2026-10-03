@@ -1,18 +1,21 @@
 # Uppercut Agent Native
 
-Uppercut Agent Native is an early implementation of typed capability contracts with local and HTTP execution. The package working name is `@uppercut-labs/agent-native`; its manifest remains
-`private: true` at version `0.0.0`, so it cannot be published accidentally.
+Uppercut Agent Native is an experimental package for typed capability contracts with local,
+HTTP, CLI, MCP, browser, and Astro static-site surfaces. The package working name is
+`@uppercut-labs/agent-native`; its manifest remains `private: true` at version `0.0.0`, so it
+cannot be published accidentally.
 
 ## Current scope
 
 UAN-001 established the strict TypeScript baseline, Zod adapter, JSON Schema projection checks,
 and stable diagnostic observations. UAN-002 adds immutable capability definitions, explicit
 runtime bindings, a checked registry, per-invocation authorization, and shared input/output
-validation. E01 and E12 are independently installable Node examples of this execution slice; E05 is a fresh-install CLI fixture covering local and HTTP execution parity.
+validation. E01 exercises shared album lookup and a static Astro site integration; E12 is a
+shared unit-converter example; E05 covers local and HTTP execution through the CLI.
 
-Run `npm run example:e01`, `npm run example:e12`, or `npm run example:e05` to export each example with the package tarball,
-generate its lockfile, install it independently, and run its tests and CLI. E01 proves the album
-domain slice only; it is not the Astro retrofit. E12 returns `30.48 cm` for its fixed fixture through the versioned generated CLI.
+Run `npm run example:e01`, `npm run example:e12`, or `npm run example:e05` to build and pack the
+package, install it independently into each example, and run its tests and runnable surface. E01
+also verifies a pre-existing multi-page static Astro fixture before and after integration.
 
 The root, `./contracts`, `./registry`, and `./executor` entrypoints use only portable core modules.
 They do not import Zod, Node, DOM, framework, provider, or server modules. `npm run check` compiles
@@ -35,11 +38,20 @@ Protected capability schemas and routes are omitted from this initial HTTP proje
 
 ## Browser tools
 
-The isolated @uppercut-labs/agent-native/browser entrypoint feature-detects the current WebMCP
+The isolated `@uppercut-labs/agent-native/browser` entrypoint feature-detects the current WebMCP
 document.modelContext API and owns registrations with an AbortSignal. It projects only definitions
 with browser bindings; public reads are exposed by default, while protected tools require an explicit
-projection policy and are still authorized on every call. The E06 WebMCP API fixture is simulated;
-no native browser host is claimed. See the browser guide (docs/browser.md).
+projection policy and are still authorized on every call. The WebMCP API fixture is simulated; no
+native browser host is claimed. See [the browser guide](docs/browser.md).
+
+## Astro static sites
+
+The isolated `@uppercut-labs/agent-native/astro` integration injects an application-owned browser
+entry with Astro's page-script hook, verifies static output, and installs no server adapter. E01 is
+pinned to Astro 7.3.5 and retains its existing pages, assets, and navigation. WebMCP remains
+feature-detected and optional; the human catalog search works without it. See
+[static-site guidance](docs/static-sites.md), [framework support](docs/frameworks.md), and
+[UAN-007 evidence](docs/evidence/UAN-007-astro.md).
 
 ## Remote MCP
 
@@ -76,10 +88,10 @@ npm run check
 The schema spike checks album lookup and unit conversion input/output shapes with Zod 4, then
 validates exported draft-2020-12 schemas independently with Ajv. JSON Schema projection throws for
 transforms that cannot be represented faithfully. The official MCP server SDK is a runtime
-dependency of the isolated MCP adapter; the contract core does not import it. The official MCP
-client SDK is pinned for the local protocol fixture only.
+dependency of the isolated MCP adapter; the official MCP client SDK is pinned for the local protocol
+fixture only.
 
 ## Status
 
-Not published. MIT is the selected license. The UAN-002 local acceptance and limitations are in
+Not published. MIT is the selected license. UAN-002 local acceptance and limitations are in
 `evidence/UAN-002.md`; pinned tool versions and upstream references are in `VERSION-EVIDENCE.md`.
