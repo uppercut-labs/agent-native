@@ -213,7 +213,7 @@ test('Astro integration injects a bundled page entry and rejects server output',
   assert.equal(serverInjected, false);
   assert.throws(
     () => serverIntegration.hooks['astro:config:done']({ buildOutput: 'server', logger }),
-    /requires output: "static"/,
+    /Use output: "static", or set mode: "on-demand"/,
   );
 });
 
