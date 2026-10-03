@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +15,12 @@ import {
 } from '../src/catalog.mjs';
 
 const cliPath = fileURLToPath(new URL('../src/cli.mjs', import.meta.url));
+const packageManifest = JSON.parse(
+  await readFile(
+    new URL('../node_modules/@uppercut-labs/agent-native/package.json', import.meta.url),
+    'utf8',
+  ),
+);
 const identity = 'example.catalog:album.lookup@1';
 process.env.E05_TOKEN = 'fixture-secret-token';
 
@@ -149,7 +155,7 @@ test('local and authenticated remote invocation return the same logical result',
 test('help is generated from identity and schema and describes target/version', async () => {
   const help = await runCli(['--help']);
   assert.equal(help.code, 0);
-  assert.match(help.stdout, /agent-native 0\.0\.0/);
+  assert.ok(help.stdout.startsWith(`@uppercut-labs/agent-native ${packageManifest.version} | `));
   assert.match(help.stdout, /Local executes .* remote invokes/s);
   assert.match(help.stdout, /example\.catalog:album\.lookup@1/);
   assert.match(help.stdout, /--slug <string>/);
