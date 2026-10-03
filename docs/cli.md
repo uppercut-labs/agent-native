@@ -28,6 +28,18 @@ number, integer, boolean, and enum properties accept typed flags; nested objects
 Capability identity must match the complete `namespace:name@major` form. There is no fallback to a
 different version or binding.
 
+Definitions may replace that invocation name with an established command and explicit aliases:
+
+```ts
+surfaces: {
+  cli: { command: 'content-search', aliases: ['search'] },
+}
+```
+
+Commands and aliases are lowercase slugs and must be unique across the registry. They resolve to
+the same canonical capability identity used for execution and result envelopes; an override does
+not change the contract identity.
+
 Every invocation names `--mode local` or `--mode remote`. Local mode uses the shared executor and
 requires the configured authorization port; an optional `--binding-id` selects one exact local
 binding. Remote mode requires both `--profile NAME` and a configured own-property credential entry.

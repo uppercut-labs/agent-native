@@ -4,13 +4,13 @@ Agent Native is an **unreleased preview** at version `0.0.0`; the package manife
 
 ## Fixture-tested surfaces
 
-The repository contains local examples for static Astro (E01), Astro on-demand (E02), Next App Router (E03), a Worker sidecar (E04), Node/Hono with CLI (E05), browser-only fallback (E06), protected grants (E07), reusable composition (E08), MCP Apps (E09), and shared unit conversion (E12). Open each guide's source links and evidence notes for the pinned environment and exact scope. A fixture result applies to the commit and tools used for that run; it does not imply universal compatibility.
+The repository contains local examples for static Astro (E01), Astro on-demand (E02), Next App Router (E03), a Worker sidecar (E04), Node/Hono with CLI (E05), browser-only fallback (E06), protected grants (E07), reusable composition (E08), MCP Apps (E09), existing function retrofit (E10), and shared unit conversion (E12). Open each guide's source links and evidence notes for the pinned environment and exact scope. A fixture result applies to the commit and tools used for that run; it does not imply universal compatibility.
 
 The local MCP checks use official SDK client/server packages. The browser draft checks use a simulated WebMCP API. E09 exercises the official MCP Apps protocol components locally, but a commercial host's iframe behavior and prompts remain unverified.
 
 ## Still open before release
 
-- E10 and E11 after-state integrations, exact generated references, all twelve independently exported examples, and source-backed snippets are later ticket work. Their before-state fixtures are already checked in.
+- E11 after-state diagnostics, exact generated references, all twelve independently exported examples, and source-backed snippets are later ticket work. E10 now has a local after-state fixture; its before-state files remain checked in.
 - Provider deployment, real commercial MCP Apps hosts, native browser agents, physical devices, and outsider installation are not yet certified.
 - OAuth issuance, durable production grant storage, application record policy, deployment ownership, and hosting remain application responsibilities.
 - The package is not published to npm. No installation command in these docs claims that it is.

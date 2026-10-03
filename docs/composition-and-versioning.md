@@ -28,7 +28,7 @@ locations.
 ## Contract migration reports
 
 `compareCapabilityDefinitions(previous, next)` returns a structural report over input and output
-JSON Schema plus risk and access metadata. Reports identify paths and before/after values for
+JSON Schema plus risk, access, and HTTP/CLI surface metadata. Reports identify paths and before/after values for
 property additions/removals, likely one-to-one property renames, required-field changes, defaults,
 unit annotations such as `x-unit`, and other represented schema values. Rename detection is a
 structural aid, not proof of author intent.

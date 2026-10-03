@@ -12,8 +12,26 @@ executor remain independent of HTTP, Node, and framework modules.
 
 The default base path is `/agent-native/v1`. Public, read-only capabilities receive a deterministic
 `POST /agent-native/v1/capabilities/{namespace}/{name}/v{major}/invoke` route. The endpoint is a
-generic capability invocation, not a generated REST resource API. There is no GET invocation route.
-A GET to a visible invocation path receives `405` with `Allow: POST`.
+generic capability invocation, not a generated REST resource API. By default there is no GET
+invocation route; a GET to a visible invocation path receives `405` with `Allow: POST`.
+
+A definition may preserve an established read route with a contract-level override:
+
+```ts
+surfaces: {
+  http: {
+    path: '/api/content/search',
+    method: 'GET',
+    query: { query: 'q' },
+  },
+}
+```
+
+The `query` map runs from input property to query parameter. GET conversion supports string,
+number, integer, boolean, string enum, and arrays of those scalar values; nested objects and other
+lossy conversions fail when the HTTP adapter is created. GET overrides are rejected for write or
+destructive capabilities. Paths must be absolute and unique across visible definitions. The same
+override drives routing and OpenAPI parameters.
 
 The adapter uses the shared executor for schema validation, authorization, binding selection, and
 output validation. Its default authorization policy permits only definitions explicitly marked as
