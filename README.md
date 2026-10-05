@@ -57,8 +57,9 @@ for the frozen signatures and limitations.
 The isolated `@uppercut-labs/agent-native/harness` export defines provider-neutral
 sessions, turns, feature negotiation, bounded normalized events, and stable failures.
 Harness control is a sibling of capability execution and preserves its authorization
-boundary. This initial slice is fake-adapter tested; provider runtimes and a local MCP
-bridge remain future work. See [programmatic harness contracts](docs/programmatic-harness.md).
+boundary. The Node-only `/harness/mcp-bridge` export serves an application-supplied
+MCP handler on loopback with managed cleanup. Contracts and bridge are tested;
+provider runtimes remain future work. See [programmatic harness contracts](docs/programmatic-harness.md).
 
 ## HTTP and OpenAPI
 

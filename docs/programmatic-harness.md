@@ -2,14 +2,47 @@
 
 The isolated `@uppercut-labs/agent-native/harness` export defines a provider-neutral
 Session -> Turns control plane without runtime dependencies. This initial slice
-includes fake-adapter acceptance; provider adapters and the MCP bridge are future work.
+includes fake-adapter acceptance and a Node-only loopback MCP bridge; provider adapters are future work.
 It does not launch a provider or claim real-provider acceptance.
 
 Harness control and capability execution are sibling planes. Starting an agent
 never grants permission to invoke application capabilities. The existing
 [capability executor](capabilities-and-bindings.md) and [MCP authorization](mcp.md)
-remain authoritative. A future local bridge must bind only to loopback; cloud
+remain authoritative. The local bridge binds only to loopback; cloud
 configuration must explicitly supply a reachable authenticated endpoint.
+
+## Local MCP bridge
+
+Import `startHarnessMcpBridge` from `@uppercut-labs/agent-native/harness/mcp-bridge`
+in Node 22 or later. Supply your existing application MCP handler:
+
+```ts
+const bridge = await startHarnessMcpBridge({ handler: applicationMcpHandler });
+try {
+  // Supply bridge.url to the local adapter's MCP configuration.
+} finally {
+  await bridge.close();
+}
+```
+
+The bridge listens on `127.0.0.1` with an ephemeral port by default, at `/mcp`.
+It refuses other bind hosts, validates the Host and any Origin header, preserves
+Authorization and handler responses, and streams responses including SSE.
+It does not mint credentials or grant capability access. Local processes can reach
+loopback: the supplied handler remains responsible for application authorization.
+Anonymous MCP initialization may succeed while protected discovery/calls remain denied.
+
+`port` may select a port from 0-65535. `maxRequestBytes` defaults to 32768 (1-1048576);
+`deadlineMs` defaults to 30000 (1-300000), including response streaming. Oversized
+requests receive 413; deadlines abort the request and return 504 before headers,
+or close an already streaming response. Handler errors produce fixed diagnostics
+and 500 or stream closure, without logging raw exceptions. Handlers must honor
+the request's AbortSignal to release their own work. Idempotent `close()` aborts
+active requests and closes only this listener and its connections.
+
+This Node-only export is isolated from `/harness`, root and browser imports and
+does not import the MCP SDK. Cloud agents require a caller-supplied reachable,
+authenticated endpoint; this helper never creates a tunnel or public listener.
 
 ## Lifecycle
 

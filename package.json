@@ -101,6 +101,10 @@
     "./mcp-apps": {
       "types": "./dist/mcp-apps.d.ts",
       "import": "./dist/mcp-apps.js"
+    },
+    "./harness/mcp-bridge": {
+      "types": "./dist/harness-mcp-bridge.d.ts",
+      "import": "./dist/harness-mcp-bridge.js"
     }
   },
   "scripts": {
