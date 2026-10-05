@@ -11,6 +11,7 @@ sources. `npm run docs:check` fails if this page drifts. Agent Native
 | --- | --- | --- |
 | `@uppercut-labs/agent-native` | `./dist/index.d.ts` | `./dist/index.js` |
 | `@uppercut-labs/agent-native/contracts` | `./dist/core/contracts.d.ts` | `./dist/core/contracts.js` |
+| `@uppercut-labs/agent-native/harness` | `./dist/harness.d.ts` | `./dist/harness.js` |
 | `@uppercut-labs/agent-native/composition` | `./dist/core/composition.d.ts` | `./dist/core/composition.js` |
 | `@uppercut-labs/agent-native/registry` | `./dist/registry.d.ts` | `./dist/registry.js` |
 | `@uppercut-labs/agent-native/executor` | `./dist/core/executor.d.ts` | `./dist/core/executor.js` |

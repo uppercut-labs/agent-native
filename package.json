@@ -34,6 +34,10 @@
       "types": "./dist/core/contracts.d.ts",
       "import": "./dist/core/contracts.js"
     },
+    "./harness": {
+      "types": "./dist/harness.d.ts",
+      "import": "./dist/harness.js"
+    },
     "./composition": {
       "types": "./dist/core/composition.d.ts",
       "import": "./dist/core/composition.js"

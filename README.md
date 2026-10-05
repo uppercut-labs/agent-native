@@ -52,6 +52,14 @@ application-owned `GrantStorePort`; production identity, persistence and resourc
 host responsibilities. See [the capability and binding guide](docs/capabilities-and-bindings.md)
 for the frozen signatures and limitations.
 
+## Programmatic harness contracts
+
+The isolated `@uppercut-labs/agent-native/harness` export defines provider-neutral
+sessions, turns, feature negotiation, bounded normalized events, and stable failures.
+Harness control is a sibling of capability execution and preserves its authorization
+boundary. This initial slice is fake-adapter tested; provider runtimes and a local MCP
+bridge remain future work. See [programmatic harness contracts](docs/programmatic-harness.md).
+
 ## HTTP and OpenAPI
 
 The separate `@uppercut-labs/agent-native/http` entrypoint provides a framework-neutral Web

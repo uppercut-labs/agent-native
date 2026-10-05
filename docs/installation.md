@@ -54,6 +54,7 @@ The root, contracts, composition, registry, executor, browser, HTTP, CLI and ini
 
 | Imported subpath | Install alongside Agent Native |
 | --- | --- |
+| harness | No runtime dependency; neutral contracts only |
 | schema/zod | zod@4.6.5 |
 | mcp or next | @modelcontextprotocol/server@2.3.0 |
 | mcp-apps | @modelcontextprotocol/server@2.3.0 and @modelcontextprotocol/ext-apps@2.0.3 |

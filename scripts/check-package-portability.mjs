@@ -118,7 +118,7 @@ try {
       process.execPath,
       '--input-type=module',
       '-e',
-      "await import('@uppercut-labs/agent-native'); await import('@uppercut-labs/agent-native/browser');",
+      "await import('@uppercut-labs/agent-native'); await import('@uppercut-labs/agent-native/browser'); await import('@uppercut-labs/agent-native/harness');",
     ],
     consumerRoot,
   );
