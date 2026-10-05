@@ -118,11 +118,14 @@ try {
       process.execPath,
       '--input-type=module',
       '-e',
-      "await import('@uppercut-labs/agent-native'); await import('@uppercut-labs/agent-native/browser');",
+      "await import('@uppercut-labs/agent-native'); await import('@uppercut-labs/agent-native/browser'); await import('@uppercut-labs/agent-native/harness'); await import('@uppercut-labs/agent-native/harness/mcp-bridge'); await import('@uppercut-labs/agent-native/harness/codex');",
     ],
     consumerRoot,
   );
   const smokePath = path.join(consumerRoot, 'packed-cli-smoke.mjs');
+  const codexSmokePath = path.join(consumerRoot, 'packed-codex-smoke.mjs');
+  await copyFile(path.join(repositoryRoot, 'test/fixtures/packed-codex-smoke.mjs'), codexSmokePath);
+  run([process.execPath, codexSmokePath], consumerRoot);
   await copyFile(path.join(repositoryRoot, 'test/fixtures/packed-cli-smoke.mjs'), smokePath);
   function runPackedCli(args, expectedStatus) {
     const started = performance.now();

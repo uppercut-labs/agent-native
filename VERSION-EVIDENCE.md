@@ -1,5 +1,9 @@
 # UAN-001 version evidence
 
+The later [Codex harness evidence](docs/evidence/codex-harness.md) pins the local
+CLI 0.145.0 app-server/managed-login route and real Luna proof checked 2026-10-04.
+The baseline below remains its original contract-only record.
+
 Checked 2026-10-02 against the package registries and official project documentation. These
 versions are pinned exactly in `package.json` and `package-lock.json`; this baseline does not
 claim protocol or host support.

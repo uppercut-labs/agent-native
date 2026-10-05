@@ -1,6 +1,6 @@
 # Uppercut Agent Native
 
-Uppercut Agent Native `0.1.0` is an experimental package for typed capability contracts with local,
+Uppercut Agent Native `0.1.1` is an experimental package for typed capability contracts with local,
 HTTP, CLI, MCP, Node/Hono, browser, and Astro static/on-demand surfaces. It is distributed as
 `@uppercut-labs/agent-native` under the MIT license. See [installation](docs/installation.md)
 for the first programmatic capability.
@@ -51,6 +51,17 @@ multiple matching bindings require a `bindingId`. Durable grants are available t
 application-owned `GrantStorePort`; production identity, persistence and resource policy remain
 host responsibilities. See [the capability and binding guide](docs/capabilities-and-bindings.md)
 for the frozen signatures and limitations.
+
+## Programmatic harness contracts
+
+The isolated `@uppercut-labs/agent-native/harness` export defines provider-neutral
+sessions, turns, feature negotiation, bounded normalized events, and stable failures.
+Harness control is a sibling of capability execution and preserves its authorization
+boundary. The Node-only `/harness/mcp-bridge` export serves an application-supplied
+MCP handler on loopback with managed cleanup. The isolated `/harness/codex` adapter
+controls an installed Codex app-server using managed ChatGPT sign-in; its local
+Luna two-turn/resume proof passed. Cursor adapters remain future work. See
+[harness contracts](docs/programmatic-harness.md) and [Codex lifecycle](docs/harness-codex.md).
 
 ## HTTP and OpenAPI
 
@@ -136,7 +147,7 @@ official MCP client SDK is pinned for the local protocol fixture only. See [UAN-
 
 ## Status
 
-Version `0.1.0` is a preview under MIT. UAN-002 local acceptance and limitations are in
+Version `0.1.1` is a preview under MIT. UAN-002 local acceptance and limitations are in
 [UAN-002 evidence](https://github.com/uppercut-labs/agent-native/blob/main/evidence/UAN-002.md); pinned tool versions and upstream references are in [VERSION-EVIDENCE.md](https://github.com/uppercut-labs/agent-native/blob/main/VERSION-EVIDENCE.md).
 The current init acceptance and limits are in [UAN-009 evidence](docs/evidence/UAN-009-init.md).
 The local trusted-auth and grant acceptance is in [UAN-010 evidence](docs/evidence/UAN-010-auth.md).

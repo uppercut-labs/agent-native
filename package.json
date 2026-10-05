@@ -1,6 +1,6 @@
 {
   "name": "@uppercut-labs/agent-native",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "description": "Experimental typed capability contracts with local, HTTP, CLI, and MCP adapters.",
   "repository": {
@@ -33,6 +33,10 @@
     "./contracts": {
       "types": "./dist/core/contracts.d.ts",
       "import": "./dist/core/contracts.js"
+    },
+    "./harness": {
+      "types": "./dist/harness.d.ts",
+      "import": "./dist/harness.js"
     },
     "./composition": {
       "types": "./dist/core/composition.d.ts",
@@ -97,6 +101,14 @@
     "./mcp-apps": {
       "types": "./dist/mcp-apps.d.ts",
       "import": "./dist/mcp-apps.js"
+    },
+    "./harness/mcp-bridge": {
+      "types": "./dist/harness-mcp-bridge.d.ts",
+      "import": "./dist/harness-mcp-bridge.js"
+    },
+    "./harness/codex": {
+      "types": "./dist/harness-codex.d.ts",
+      "import": "./dist/harness-codex.js"
     }
   },
   "scripts": {
@@ -126,7 +138,8 @@
     "example:e11": "node scripts/check-example.mjs e11-diagnostics-fault-lab",
     "docs:build": "node docs-site/build.mjs",
     "docs:check": "node --test docs-site/coverage-check.test.mjs docs-site/source-regions.test.mjs docs-site/reference.test.mjs && npm run docs:build && node docs-site/check.mjs",
-    "check:portability": "node scripts/check-package-portability.mjs"
+    "check:portability": "node scripts/check-package-portability.mjs",
+    "proof:codex": "npm run build && node scripts/check-codex-harness.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

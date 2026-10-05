@@ -3,7 +3,7 @@
 This page is generated from [package.json](../package.json) and the
 [CLI parser](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts). Run `node docs-site/reference.mjs` after changing those
 sources. `npm run docs:check` fails if this page drifts. Agent Native
-`0.1.0` is a preview; verify registry availability before npm installation.
+`0.1.1` is a preview; verify registry availability before npm installation.
 
 ## Typed package entrypoints
 
@@ -11,6 +11,7 @@ sources. `npm run docs:check` fails if this page drifts. Agent Native
 | --- | --- | --- |
 | `@uppercut-labs/agent-native` | `./dist/index.d.ts` | `./dist/index.js` |
 | `@uppercut-labs/agent-native/contracts` | `./dist/core/contracts.d.ts` | `./dist/core/contracts.js` |
+| `@uppercut-labs/agent-native/harness` | `./dist/harness.d.ts` | `./dist/harness.js` |
 | `@uppercut-labs/agent-native/composition` | `./dist/core/composition.d.ts` | `./dist/core/composition.js` |
 | `@uppercut-labs/agent-native/registry` | `./dist/registry.d.ts` | `./dist/registry.js` |
 | `@uppercut-labs/agent-native/executor` | `./dist/core/executor.d.ts` | `./dist/core/executor.js` |
@@ -27,6 +28,8 @@ sources. `npm run docs:check` fails if this page drifts. Agent Native
 | `@uppercut-labs/agent-native/init` | `./dist/init.d.ts` | `./dist/init.js` |
 | `@uppercut-labs/agent-native/auth` | `./dist/auth.d.ts` | `./dist/auth.js` |
 | `@uppercut-labs/agent-native/mcp-apps` | `./dist/mcp-apps.d.ts` | `./dist/mcp-apps.js` |
+| `@uppercut-labs/agent-native/harness/mcp-bridge` | `./dist/harness-mcp-bridge.d.ts` | `./dist/harness-mcp-bridge.js` |
+| `@uppercut-labs/agent-native/harness/codex` | `./dist/harness-codex.d.ts` | `./dist/harness-codex.js` |
 
 The package's optional peers are listed in [installation](installation.md). Import only
 the subpath needed by the application. A package-level executable is not shipped.
