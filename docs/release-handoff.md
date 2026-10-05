@@ -1,6 +1,6 @@
 # Release and provider handoff
 
-This handoff covers the `0.1.0` preview candidate. The public source is [uppercut-labs/agent-native](https://github.com/uppercut-labs/agent-native); `@uppercut-labs/agent-native` is its npm name and MIT is its license. Check the registry before claiming publication. See [UAN-024 release evidence](evidence/UAN-024-release-readiness.md) for the earlier `0.0.0` preparation snapshot.
+This handoff covers the `0.1.1` preview candidate. The public source is [uppercut-labs/agent-native](https://github.com/uppercut-labs/agent-native); `@uppercut-labs/agent-native` is its npm name and MIT is its license. Check the registry before claiming publication. See [UAN-024 release evidence](evidence/UAN-024-release-readiness.md) for the earlier `0.0.0` preparation snapshot.
 
 ## Package release sequence
 

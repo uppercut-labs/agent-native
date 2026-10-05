@@ -1,10 +1,27 @@
 # Installing only the surfaces you use
 
-Agent Native `0.1.0` is a preview for Node.js 22 or newer. Once the version is visible on npmjs.com, install the package and only the peers your application imports:
+Agent Native `0.1.1` is a preview for Node.js 22 or newer. Once the version is visible on npmjs.com, install the package and only the peers your application imports:
 
 ```sh
-npm install @uppercut-labs/agent-native@0.1.0
+npm install @uppercut-labs/agent-native@0.1.1
 ```
+
+If 0.1.1 is not available from your npm registry, use its public GitHub release
+archive. In a disposable directory, download and verify the release files before
+installing the archive into the intended project:
+
+```sh
+curl --fail --location --output uppercut-labs-agent-native-0.1.1.tgz \
+  https://github.com/uppercut-labs/agent-native/releases/download/v0.1.1/uppercut-labs-agent-native-0.1.1.tgz
+curl --fail --location --output uppercut-labs-agent-native-0.1.1.tgz.sha256 \
+  https://github.com/uppercut-labs/agent-native/releases/download/v0.1.1/uppercut-labs-agent-native-0.1.1.tgz.sha256
+shasum -a 256 -c uppercut-labs-agent-native-0.1.1.tgz.sha256
+npm install ./uppercut-labs-agent-native-0.1.1.tgz
+```
+
+On Linux, `sha256sum -c` can replace `shasum -a 256 -c`. Stop if verification
+fails. The checksum detects an altered download; it is not an npm provenance
+attestation. Both release files are hosted with the tagged public source.
 
 The public package has no global `agent-native` executable. Applications call its APIs or expose their own CLI runner. The repository examples independently install local tarballs so their checks stay tied to a source commit.
 

@@ -2,6 +2,12 @@
 
 All notable changes will be recorded here.
 
+## 0.1.1 - 2026-10-04
+
+- Add isolated provider-neutral harness contracts and an owned loopback MCP bridge.
+- Add a local Codex app-server adapter using managed ChatGPT sign-in, explicit model selection, cross-process resume, targeted cancellation and bounded cleanup.
+- Add synthetic failure/permission tests, packed-consumer checks and an opt-in two-turn file proof. Cursor, cloud and programmatic Codex MCP configuration remain outside this release.
+
 ## 0.1.0 - 2026-10-03
 
 ### Added

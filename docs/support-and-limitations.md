@@ -1,6 +1,6 @@
 # Support and limitations
 
-Agent Native `0.1.0` is a preview package. The repository documents local fixtures and narrowly verified hosts; publication of the package does not certify a production deployment.
+Agent Native `0.1.1` is a preview package. The repository documents local fixtures and narrowly verified hosts; publication of the package does not certify a production deployment.
 
 ## Fixture-tested surfaces
 

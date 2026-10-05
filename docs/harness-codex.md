@@ -3,8 +3,8 @@
 The isolated `@uppercut-labs/agent-native/harness/codex` export controls an installed
 Codex CLI app-server over stdio. It needs Node 22+ built-ins and a caller-installed
 Codex executable, with no provider SDK dependency. Importing the export or creating
-the adapter starts no process or inference. These additions are available in the
-source/tarball under review; a new npm release is not yet established.
+the adapter starts no process or inference. These additions require version 0.1.1. Use the versioned installation route in
+[installation](installation.md); 0.1.0 does not include this adapter.
 
 ## Authentication and model selection
 

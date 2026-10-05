@@ -1,6 +1,6 @@
 {
   "name": "@uppercut-labs/agent-native",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "description": "Experimental typed capability contracts with local, HTTP, CLI, and MCP adapters.",
   "repository": {
