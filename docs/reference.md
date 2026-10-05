@@ -29,6 +29,7 @@ sources. `npm run docs:check` fails if this page drifts. Agent Native
 | `@uppercut-labs/agent-native/auth` | `./dist/auth.d.ts` | `./dist/auth.js` |
 | `@uppercut-labs/agent-native/mcp-apps` | `./dist/mcp-apps.d.ts` | `./dist/mcp-apps.js` |
 | `@uppercut-labs/agent-native/harness/mcp-bridge` | `./dist/harness-mcp-bridge.d.ts` | `./dist/harness-mcp-bridge.js` |
+| `@uppercut-labs/agent-native/harness/codex` | `./dist/harness-codex.d.ts` | `./dist/harness-codex.js` |
 
 The package's optional peers are listed in [installation](installation.md). Import only
 the subpath needed by the application. A package-level executable is not shipped.

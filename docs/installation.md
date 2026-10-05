@@ -56,6 +56,7 @@ The root, contracts, composition, registry, executor, browser, HTTP, CLI and ini
 | --- | --- |
 | harness | No runtime dependency; neutral contracts only |
 | harness/mcp-bridge | Node 22+ built-ins; no MCP SDK dependency |
+| harness/codex | Node 22+ and an installed Codex CLI with ChatGPT sign-in; no provider SDK dependency |
 | schema/zod | zod@4.6.5 |
 | mcp or next | @modelcontextprotocol/server@2.3.0 |
 | mcp-apps | @modelcontextprotocol/server@2.3.0 and @modelcontextprotocol/ext-apps@2.0.3 |

@@ -1,5 +1,9 @@
 # Remote MCP over Streamable HTTP
 
+For an application-owned local harness endpoint, see the
+[loopback bridge](harness-mcp-bridge.md). Harness control does not grant capability
+permissions; discovery and execution still use the policies below.
+
 The MCP subpath needs the official server SDK as an explicit optional peer in the host project:
 
 ~~~sh

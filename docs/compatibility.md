@@ -12,6 +12,7 @@ fixtures; it is not a claim for all releases of a runtime or every client.
 | Node/Hono | `npm run example:e05` | Hono 4.13.12 and Node adapter 2.1.3 on loopback |
 | Browser-only WebMCP | `npm run example:e06` | Simulated `document.modelContext`; ordinary button fallback |
 | MCP Apps | `npm run example:e09` | Official ext-apps App/AppBridge fixture and local MCP client; no commercial host claim |
+| Codex local harness | `npm run proof:codex -- --model gpt-5.6-luna` (explicit inference opt-in) | CLI 0.145.0, managed ChatGPT login, two file writes and same-thread resume across processes; [evidence](evidence/codex-harness.md) |
 
 Use Node.js 22 or newer and `npm ci` at the repository root before a listed command.
 Each command packs the package into an independent exported project; the root

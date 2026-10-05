@@ -58,8 +58,10 @@ The isolated `@uppercut-labs/agent-native/harness` export defines provider-neutr
 sessions, turns, feature negotiation, bounded normalized events, and stable failures.
 Harness control is a sibling of capability execution and preserves its authorization
 boundary. The Node-only `/harness/mcp-bridge` export serves an application-supplied
-MCP handler on loopback with managed cleanup. Contracts and bridge are tested;
-provider runtimes remain future work. See [programmatic harness contracts](docs/programmatic-harness.md).
+MCP handler on loopback with managed cleanup. The isolated `/harness/codex` adapter
+controls an installed Codex app-server using managed ChatGPT sign-in; its local
+Luna two-turn/resume proof passed. Cursor adapters remain future work. See
+[harness contracts](docs/programmatic-harness.md) and [Codex lifecycle](docs/harness-codex.md).
 
 ## HTTP and OpenAPI
 
