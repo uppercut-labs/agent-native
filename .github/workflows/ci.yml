@@ -25,4 +25,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      - if: matrix.node == '24'
+        run: npm run check:isolated-examples
       - run: npm pack --dry-run --json

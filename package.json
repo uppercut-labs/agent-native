@@ -139,7 +139,8 @@
     "docs:build": "node docs-site/build.mjs",
     "docs:check": "node --test docs-site/coverage-check.test.mjs docs-site/source-regions.test.mjs docs-site/reference.test.mjs && npm run docs:build && node docs-site/check.mjs",
     "check:portability": "node scripts/check-package-portability.mjs",
-    "proof:codex": "npm run build && node scripts/check-codex-harness.mjs"
+    "proof:codex": "npm run build && node scripts/check-codex-harness.mjs",
+    "check:isolated-examples": "node scripts/check-isolated-exports.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
