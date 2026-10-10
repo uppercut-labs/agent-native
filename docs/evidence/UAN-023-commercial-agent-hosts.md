@@ -11,9 +11,12 @@ The Antigravity CLI (`agy`, Google) ran with model `gemini-3.8-flash-low`. Its H
 | Manual | 1.2.14 | Host listed `cap_15_example.catalog_12_album.lookup_v1`, called it through `call_mcp_tool` with `{"slug":"first-light"}`, received `{"result":{"kind":"found",…}}` and answered `First Light` |
 | `node test/uan023-agent-host.mjs agy` | 1.3.3 (auto-updated) | Same found call and answer. A second prompt sent the invalid slug `Not A Slug!` unchanged; the tool returned an error and no album |
 
-## Claude Code: connection and discovery verified, invocation blocked
+## Claude Code: tool invocation verified
 
-Claude Code 2.1.286 ran with an isolated `--mcp-config` and `--strict-mcp-config`. It reported the server `connected` and exposed exactly one tool, `mcp__albums__cap_15_example_catalog_12_album_lookup_v1`. That tool name is Claude Code's own sanitized projection. The standalone CLI's sign-in had expired ("OAuth session expired and could not be refreshed"), so no model turn ran. Claude Code tool invocation therefore remains unverified. After signing in, `node test/uan023-agent-host.mjs claude` repeats the same found and invalid cases.
+Claude Code 2.1.286 ran with an isolated `--mcp-config` and `--strict-mcp-config`, the tool allowlist limited to the probe server, and model `haiku`.
+
+- **Connection:** an earlier attempt that day reported the server `connected` and exposed exactly one tool, `mcp__albums__cap_15_example_catalog_12_album_lookup_v1`. That tool name is Claude Code's own sanitized projection. That attempt stopped before any model turn because the standalone CLI sign-in had expired.
+- **Invocation:** with the operator's Claude OAuth token supplied through `CLAUDE_CODE_OAUTH_TOKEN`, `node test/uan023-agent-host.mjs claude` passed. The host called the tool with `{"slug":"first-light"}` and answered `First Light`. The unchanged invalid slug `Not A Slug!` returned a tool result with `is_error: true` and no album.
 
 ## Reproduce
 
@@ -21,6 +24,7 @@ Claude Code 2.1.286 ran with an isolated `--mcp-config` and `--strict-mcp-config
 npm ci
 npm run example:e04
 node test/uan023-agent-host.mjs agy
+CLAUDE_MODEL=haiku node test/uan023-agent-host.mjs claude
 ```
 
 The script starts the sidecar on a free loopback port. For Antigravity it registers a temporary `uan-albums-probe` MCP server, runs the two prompts, asserts the actual tool calls from the host's `stream-json` events, and always removes the server and stops the Worker. It uses model inference on the operator's account, so it is not part of `npm run check`.
