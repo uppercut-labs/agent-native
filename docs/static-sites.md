@@ -28,7 +28,9 @@ available and displays a status message.
 
 E01 remains a static Astro site. E04 is a separate Cloudflare Worker that serves the shared public
 album contract over HTTP/OpenAPI and MCP; it is not an Astro server adapter and does not create a
-same-origin route automatically.
+same-origin route automatically. E04's application-owned CLI (`src/cli.mjs`) uses the same
+registry and calls the sidecar remotely. E09 renders the same contract as an MCP Apps view.
+Together they give the flagship browser, HTTP, MCP, CLI and MCP Apps surfaces from one definition.
 
 Run npm run example:e01 to build and verify the static fixture. Run npm run example:e04 to export
 and install E04, run negative-path tests, build/scan the Worker bundle with Wrangler dry-run, and

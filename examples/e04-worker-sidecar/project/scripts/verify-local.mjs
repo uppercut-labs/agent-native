@@ -180,8 +180,50 @@ try {
     result: { kind: 'found', album: { slug: 'blue-hour', title: 'Blue Hour' } },
   });
   assert.equal(result.isError, undefined);
+
+  const capabilityId = 'example.catalog:album.lookup@1';
+  const runCli = (args, env = {}) =>
+    spawnSync(process.execPath, ['src/cli.mjs', ...args], {
+      encoding: 'utf8',
+      env: { ...process.env, ...env },
+    });
+  const sidecarProfile = {
+    UAN_PROFILE_SIDECAR_URL: origin,
+    UAN_PROFILE_SIDECAR_TOKEN: 'unused-for-public-read',
+  };
+  const cliFound = runCli(
+    ['--mode', 'remote', '--profile', 'sidecar', capabilityId, '--slug', 'first-light'],
+    sidecarProfile,
+  );
+  assert.equal(cliFound.status, 0, cliFound.stderr);
+  const cliEnvelope = JSON.parse(cliFound.stdout);
+  assert.equal(cliEnvelope.schemaVersion, 'uan.cli-result/v1');
+  assert.deepEqual(cliEnvelope.result.value, {
+    kind: 'found',
+    album: { slug: 'first-light', title: 'First Light' },
+  });
+  assert.equal(cliFound.stdout.includes('unused-for-public-read'), false);
+  assert.equal(cliFound.stderr.includes('unused-for-public-read'), false);
+  const cliNoProfile = runCli([
+    '--mode',
+    'remote',
+    '--profile',
+    'sidecar',
+    capabilityId,
+    '--slug',
+    'first-light',
+  ]);
+  assert.notEqual(cliNoProfile.status, 0);
+  assert.equal(JSON.parse(cliNoProfile.stdout).result.reason, 'credential-profile-unavailable');
+  const cliInvalid = runCli(
+    ['--mode', 'remote', '--profile', 'sidecar', capabilityId, '--slug', ''],
+    sidecarProfile,
+  );
+  assert.notEqual(cliInvalid.status, 0);
+  assert.equal(JSON.parse(cliInvalid.stdout).result.reason, 'invalid-input');
+
   process.stdout.write(
-    'PASS local workerd bundle scan, Host/Origin/CORS negatives, HTTP/OpenAPI, and official MCP 2025-11-25 client roundtrip.\n',
+    'PASS local workerd bundle scan, Host/Origin/CORS negatives, HTTP/OpenAPI, official MCP 2025-11-25 client roundtrip, and shared-contract remote CLI.\n',
   );
 } finally {
   await client.close().catch(() => {});

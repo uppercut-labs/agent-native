@@ -4,7 +4,7 @@ This sample runs E01's public album capability in a separate Cloudflare Worker s
 
 ## Local verification
 
-From the Agent Native repository root, run npm run example:e04. The script packages and installs a standalone fixture, runs the negative-path tests, inspects the Worker bundle with Wrangler's dry-run build, and starts Wrangler locally on workerd. It exercises health, OpenAPI, HTTP invocation, exact-origin CORS, denied Host/Origin requests, and the official MCP SDK client. The MCP test is a server-side client with no browser Origin; it negotiated MCP protocol 2025-11-25.
+From the Agent Native repository root, run npm run example:e04. The script packages and installs a standalone fixture, runs the negative-path tests, inspects the Worker bundle with Wrangler's dry-run build, and starts Wrangler locally on workerd. It exercises health, OpenAPI, HTTP invocation, exact-origin CORS, denied Host/Origin requests, and the official MCP SDK client. It also runs `src/cli.mjs`, an application-owned CLI that reuses the same shared E01 contract and registry. The CLI makes a remote call to the sidecar's generated HTTP route, and the verifier checks a found album, a missing credential profile and invalid input. That CLI runs in Node and is not part of the Worker bundle. The MCP test is a server-side client with no browser Origin; it negotiated MCP protocol 2025-11-25.
 
 The pins are Wrangler 4.147.0, MCP SDK 2.3.0, Zod 4.6.5, and Node >=22.12. To run the local Worker manually from the exported fixture, use npm run start. The Astro static build remains separate and is verified by npm run example:e01.
 
