@@ -4,6 +4,7 @@ import {
   defineCapability,
   executeCapability,
 } from '@uppercut-labs/agent-native';
+import { createHttpHandler } from '@uppercut-labs/agent-native/http';
 import { fromZod } from '@uppercut-labs/agent-native/schema/zod';
 import * as z from 'zod';
 
@@ -53,9 +54,15 @@ export const browserConversionBinding = bindCapability(convertDistanceCapability
   execute: convertDistance,
 });
 
+export const serverConversionBinding = bindCapability(convertDistanceCapability, {
+  id: 'server-converter',
+  targets: ['server'],
+  execute: convertDistance,
+});
+
 export const registry = createCapabilityRegistry(
   [convertDistanceCapability],
-  [localConversionBinding, browserConversionBinding],
+  [localConversionBinding, browserConversionBinding, serverConversionBinding],
 );
 
 /** @type {import('@uppercut-labs/agent-native').AuthorizationPort} */
@@ -75,3 +82,10 @@ export function runConversion(input, runtime = 'local') {
     authorization: publicReadAuthorization,
   });
 }
+
+export const conversionHttpHandler = createHttpHandler(registry, {
+  resolveExecutionContext: () => ({
+    caller: { kind: 'anonymous' },
+    authorization: publicReadAuthorization,
+  }),
+});

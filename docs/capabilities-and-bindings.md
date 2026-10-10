@@ -89,5 +89,5 @@ export const localConversionBinding = bindCapability(convertDistanceCapability, 
 });
 ~~~
 
-[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e12-shared-unit-converter/project/src/converter.mjs#L43)
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e12-shared-unit-converter/project/src/converter.mjs#L44)
 <!-- /source -->
