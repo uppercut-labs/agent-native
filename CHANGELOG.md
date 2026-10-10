@@ -2,6 +2,11 @@
 
 All notable changes will be recorded here.
 
+## Unreleased
+
+- Browser WebMCP tools now carry the draft's `consequentialHint` for destructive capabilities instead of MCP's `destructiveHint`, which Chrome ignored.
+- Add a reproducible native Chrome 155 WebMCP probe for E06 and E01, plus cross-platform license and advisory evidence.
+
 ## 0.1.1 - 2026-10-04
 
 - Add isolated provider-neutral harness contracts and an owned loopback MCP bridge.

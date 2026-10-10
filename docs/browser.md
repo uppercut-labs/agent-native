@@ -29,13 +29,18 @@ tool callback. Revoked callbacks also reject retained references after a resync 
 
 The normal human interface should work when WebMCP is absent. E06 demonstrates this with a
 page-local theme action and no server fallback. E12 uses the same converter function through local
-and browser bindings. The lifecycle fixture uses a simulated API and is labeled as such; no actual
-browser agent or native host was tested.
+and browser bindings. The lifecycle fixtures use a simulated API and are labeled as such. On
+2026-10-10, the built E06 and E01 pages also passed against native WebMCP in Chrome 155 with the
+opt-in `WebMCP` feature. That run covered host-side tool listing and invocation, invalid input,
+`pagehide` cleanup and Astro client navigation. See the
+[native Chrome evidence](evidence/UAN-023-native-webmcp-chrome.md). No shipping browser agent was tested.
 
 The API shape follows the current WebMCP draft at https://webmachinelearning.github.io/webmcp/.
 That draft exposes Document.modelContext.registerTool() in secure contexts, and the registration
-options accept an AbortSignal. This package does not claim support for a particular browser
-release or agent host.
+options accept an AbortSignal. Tool annotations follow the draft: read capabilities set
+`readOnlyHint` and destructive capabilities set `consequentialHint`. The only verified browser is
+Chrome 155 with WebMCP enabled through `chrome://flags/#enable-webmcp-testing` or an origin
+trial. Default Chrome does not expose the API, and no agent host is certified.
 
 ## Verify the browser-only binding
 
@@ -61,4 +66,5 @@ The simulated lifecycle test checks registration, protected invocation, disposal
 ordinary button fallback. A server invocation fails with `binding-unavailable`; use a
 separate server binding only if the application actually implements one. See the
 [E06 standalone instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/e06-browser-only-theme-controls/project/README.md).
-No native WebMCP host result is implied by this fixture.
+The simulated fixture alone implies no native result; `node test/uan023-native-webmcp.mjs`
+repeats E06 and E01 in a locally installed Chrome with the feature enabled.

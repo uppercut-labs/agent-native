@@ -18,5 +18,6 @@ shared browser-safe registry in `src/catalog-shared.mjs`. Server HTTP code remai
 From the package repository root, run `npm run example:e01`. This builds and checks the before-state
 site, packs and installs the package into an exported standalone project, runs simulated lifecycle
 and Astro hook tests, and builds/checks the final static output. The WebMCP API is simulated in tests;
-no real browser host or agent was used. Unsupported WebMCP keeps the ordinary HTML album lookup
+the repository's test/uan023-native-webmcp.mjs probe also runs the built albums page in Chrome 155
+with its opt-in WebMCP feature, including client navigation. No browser agent was used. Unsupported WebMCP keeps the ordinary HTML album lookup
 available with an explanatory status message.

@@ -6,12 +6,12 @@ Agent Native `0.1.1` is a preview package. The repository documents local fixtur
 
 The repository contains local examples for static Astro (E01), Astro on-demand (E02), Next App Router (E03), a Worker sidecar (E04), Node/Hono with CLI (E05), browser-only fallback (E06), protected grants (E07), reusable composition (E08), MCP Apps (E09), existing function retrofit (E10), diagnostics fault lab (E11), and shared unit conversion (E12). Open each guide's source links and evidence notes for the pinned environment and exact scope. A fixture result applies to the commit and tools used for that run; it does not imply universal compatibility.
 
-The local MCP checks use official SDK client/server packages. The browser draft checks use a simulated WebMCP API. E09 exercises the official MCP Apps protocol components locally, but a commercial host's iframe behavior and prompts remain unverified.
+The local MCP checks use official SDK client/server packages. The browser draft checks use a simulated WebMCP API, and E01/E06 also passed in [native Chrome 155 WebMCP](evidence/UAN-023-native-webmcp-chrome.md) with the opt-in feature enabled. E09 exercises the official MCP Apps protocol components locally, but a commercial host's iframe behavior and prompts remain unverified.
 
 ## Outside current preview support
 
 - All twelve independent example exports and source-backed guide snippets run in CI, but this does not supply real-host evidence.
-- Provider deployment, real commercial MCP Apps hosts, native browser agents, physical devices, and outsider installation are not yet certified.
+- Provider deployment, real commercial MCP Apps hosts, shipping browser agents, default-enabled browser WebMCP, physical devices, and outsider installation are not yet certified.
 - OAuth issuance, durable production grant storage, application record policy, deployment ownership, and hosting remain application responsibilities.
 - The package has no global executable. Applications call the programmatic APIs or own their CLI runner; see [installation](installation.md).
 

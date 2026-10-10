@@ -296,7 +296,9 @@ test('browser destructive discovery needs app surface exposure even when caller 
   });
   assert.equal(explicitlyExposed.registered.length, 1);
   const tool = doc.modelContext.tools.get(explicitlyExposed.registered[0]);
-  assert.equal(tool.annotations.destructiveHint, true);
+  assert.equal(tool.annotations.consequentialHint, true);
+  assert.equal(tool.annotations.readOnlyHint, false);
+  assert.equal('destructiveHint' in tool.annotations, false);
   exposure.browser.destructive.length = 0;
   const staleCall = await tool.execute(
     { accountId: 'account-a' },

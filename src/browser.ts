@@ -214,7 +214,7 @@ class BrowserAdapter implements BrowserCapabilityAdapter {
               inputSchema,
               annotations: {
                 readOnlyHint: definition.risk === 'read',
-                destructiveHint: definition.risk === 'destructive',
+                consequentialHint: definition.risk === 'destructive',
               },
               execute: async (input, execution) => {
                 const linked = linkAbortSignals([controller.signal, execution.signal]);

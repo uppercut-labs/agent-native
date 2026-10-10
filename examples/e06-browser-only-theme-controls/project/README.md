@@ -15,7 +15,9 @@ browser assets. The generated project is examples/e06-browser-only-theme-control
 npm run dev there to serve the ordinary page locally.
 
 The WebMCP fixture is simulated: it uses a fake API object to exercise registration, invocation,
-disposal, authorization and unsupported-browser behavior. No real browser host was used and this
-example does not claim native WebMCP interoperability. The tool shape follows the current
+disposal, authorization and unsupported-browser behavior. Separately, the repository's
+test/uan023-native-webmcp.mjs probe runs this built page in Chrome 155 with its opt-in WebMCP
+feature. That run listed and invoked the tool through Chrome and removed it on pagehide. No shipping
+browser agent was used. The tool shape follows the current
 WebMCP draft at https://webmachinelearning.github.io/webmcp/. The server projection deliberately
 fails with binding-unavailable; this page-local operation has no remote implementation.

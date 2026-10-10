@@ -76,8 +76,10 @@ Protected capability schemas and routes are omitted from this initial HTTP proje
 The isolated `@uppercut-labs/agent-native/browser` entrypoint feature-detects the current WebMCP
 document.modelContext API and owns registrations with an AbortSignal. It projects only definitions
 with browser bindings; public reads are exposed by default, while protected tools require an explicit
-projection policy and are still authorized on every call. The WebMCP API fixture is simulated; no
-native browser host is claimed. See [the browser guide](docs/browser.md).
+projection policy and are still authorized on every call. Unit and example fixtures use a simulated
+API. E01 and E06 also passed against native WebMCP in Chrome 155 with its opt-in `WebMCP` feature; no
+shipping browser agent is claimed. See [the browser guide](docs/browser.md) and the
+[native Chrome evidence](docs/evidence/UAN-023-native-webmcp-chrome.md).
 
 ## Astro sites
 
