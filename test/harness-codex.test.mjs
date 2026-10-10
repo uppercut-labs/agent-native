@@ -105,7 +105,9 @@ test('Codex rejects alternate auth, missing runtime and malformed or timed-out h
     ['malformed', 'provider-failed'],
     ['hang-init', 'timeout'],
   ]) {
-    const context = await setup(mode, { requestTimeoutMs: 150 });
+    // Only the hanging handshake exercises the request deadline. The other modes answer
+    // promptly and keep the default budget so a slow fixture start cannot turn them into timeouts.
+    const context = await setup(mode, mode === 'hang-init' ? { requestTimeoutMs: 150 } : {});
     try {
       await assert.rejects(
         context.adapter.openSession({ target: 'local', workspace: context.workspace }),
