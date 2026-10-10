@@ -54,7 +54,8 @@ function collectChild(args, env) {
 }
 
 async function waitForListening(run) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  // 5 s covers a cold Node start on a loaded machine; callers always kill the child on failure.
+  for (let attempt = 0; attempt < 500; attempt += 1) {
     const match = run.stderr().match(/listening=(http:\/\/127\.0\.0\.1:\d+)/);
     if (match) return match[1];
     if (run.child.exitCode !== null) throw new Error('server exited before listening');
@@ -131,9 +132,17 @@ test('bounded request and host shutdown settle without an unhandled rejection', 
 
 test('server handles SIGTERM and reports port conflict without stacks or secrets', async () => {
   const signalRun = collectChild([], { ...process.env, PORT: '0', E05_TOKEN: token });
-  await waitForListening(signalRun);
-  signalRun.child.kill('SIGTERM');
-  const signaled = await signalRun.exited;
+  let signaled;
+  try {
+    await waitForListening(signalRun);
+    signalRun.child.kill('SIGTERM');
+    signaled = await signalRun.exited;
+  } finally {
+    // Never leave an orphaned server holding the test runner open.
+    if (signalRun.child.exitCode === null && signalRun.child.signalCode === null) {
+      signalRun.child.kill('SIGKILL');
+    }
+  }
   assert.equal(signaled.code, 0);
   assert.equal(signaled.signal, null);
   assert.equal(signaled.stdout, '');
@@ -147,7 +156,9 @@ test('server handles SIGTERM and reports port conflict without stacks or secrets
       PORT: occupiedPort,
       E05_TOKEN: token,
     });
+    const guard = setTimeout(() => conflictRun.child.kill('SIGKILL'), 10_000);
     const conflict = await conflictRun.exited;
+    clearTimeout(guard);
     assert.equal(conflict.code, 1);
     assert.equal(conflict.stdout, '');
     assert.equal(conflict.stderr, 'server_error=address-in-use\n');

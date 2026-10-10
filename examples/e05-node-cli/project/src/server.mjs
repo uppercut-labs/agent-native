@@ -80,7 +80,6 @@ export function stopServer(server, graceMs = 500) {
 async function main() {
   try {
     const running = await startServer({ port: process.env.PORT });
-    process.stderr.write(`listening=${running.origin}\n`);
     let stopping = false;
     const shutdown = async (signal) => {
       if (stopping) return;
@@ -95,6 +94,9 @@ async function main() {
     };
     process.once('SIGINT', () => void shutdown('SIGINT'));
     process.once('SIGTERM', () => void shutdown('SIGTERM'));
+    // Announce readiness only after the signal handlers exist, so a supervisor that signals
+    // immediately after `listening=` always gets a clean shutdown.
+    process.stderr.write(`listening=${running.origin}\n`);
   } catch (error) {
     process.stderr.write(`server_error=${serverErrorCode(error)}\n`);
     process.exitCode = 1;
