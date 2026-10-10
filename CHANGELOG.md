@@ -2,6 +2,12 @@
 
 All notable changes will be recorded here.
 
+## 0.1.3 - 2026-10-10
+
+- The packaged host evidence now records that Claude Code 2.1.286, in addition to Antigravity CLI, invoked the flagship E04 tool over remote MCP. It also records the verified 0.1.2 npm publication.
+- The E05 example server installs its SIGINT/SIGTERM handlers before announcing `listening=`. Previously, a supervisor that signaled immediately after readiness could kill it uncleanly. The example is not part of the npm package.
+- The package's own source and API are unchanged from 0.1.2.
+
 ## 0.1.2 - 2026-10-10
 
 - Browser WebMCP tools now carry the draft's `consequentialHint` for destructive capabilities instead of MCP's `destructiveHint`, which Chrome ignored.

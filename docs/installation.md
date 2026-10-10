@@ -1,22 +1,22 @@
 # Installing only the surfaces you use
 
-Agent Native `0.1.2` is a preview for Node.js 22 or newer. Once the version is visible on npmjs.com, install the package and only the peers your application imports:
+Agent Native `0.1.3` is a preview for Node.js 22 or newer. Once the version is visible on npmjs.com, install the package and only the peers your application imports:
 
 ```sh
-npm install @uppercut-labs/agent-native@0.1.2
+npm install @uppercut-labs/agent-native@0.1.3
 ```
 
-If 0.1.2 is not available from your npm registry, use its public GitHub release
+If 0.1.3 is not available from your npm registry, use its public GitHub release
 archive. In a disposable directory, download and verify the release files before
 installing the archive into the intended project:
 
 ```sh
-curl --fail --location --output uppercut-labs-agent-native-0.1.2.tgz \
-  https://github.com/uppercut-labs/agent-native/releases/download/v0.1.2/uppercut-labs-agent-native-0.1.2.tgz
-curl --fail --location --output uppercut-labs-agent-native-0.1.2.tgz.sha256 \
-  https://github.com/uppercut-labs/agent-native/releases/download/v0.1.2/uppercut-labs-agent-native-0.1.2.tgz.sha256
-shasum -a 256 -c uppercut-labs-agent-native-0.1.2.tgz.sha256
-npm install ./uppercut-labs-agent-native-0.1.2.tgz
+curl --fail --location --output uppercut-labs-agent-native-0.1.3.tgz \
+  https://github.com/uppercut-labs/agent-native/releases/download/v0.1.3/uppercut-labs-agent-native-0.1.3.tgz
+curl --fail --location --output uppercut-labs-agent-native-0.1.3.tgz.sha256 \
+  https://github.com/uppercut-labs/agent-native/releases/download/v0.1.3/uppercut-labs-agent-native-0.1.3.tgz.sha256
+shasum -a 256 -c uppercut-labs-agent-native-0.1.3.tgz.sha256
+npm install ./uppercut-labs-agent-native-0.1.3.tgz
 ```
 
 On Linux, `sha256sum -c` can replace `shasum -a 256 -c`. Stop if verification
