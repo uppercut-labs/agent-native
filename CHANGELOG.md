@@ -6,6 +6,9 @@ All notable changes will be recorded here.
 
 - Browser WebMCP tools now carry the draft's `consequentialHint` for destructive capabilities instead of MCP's `destructiveHint`, which Chrome ignored.
 - Add a reproducible native Chrome 155 WebMCP probe for E06 and E01, plus cross-platform license and advisory evidence.
+- E04 gains an application-owned remote CLI built on the shared flagship contract. E12 adds a server binding with HTTP parity tests.
+- Add `npm run check:isolated-examples`, which installs and tests every exported example from outside the repository. CI runs it on Node 24.
+- Apply the TypeScript house style to `src`. The changes are explicit annotations, `let` for mutable state with readonly types elsewhere, no non-null assertions, `assertNever` exhaustiveness, `noImplicitReturns`, and interfaces for behavior contracts. Biome no longer enforces `useConst`/`useLiteralKeys`. No exported signatures change.
 
 ## 0.1.1 - 2026-10-04
 
