@@ -2,11 +2,13 @@
 
 All notable changes will be recorded here.
 
-## Unreleased
+## 0.1.2 - 2026-10-10
 
 - Browser WebMCP tools now carry the draft's `consequentialHint` for destructive capabilities instead of MCP's `destructiveHint`, which Chrome ignored.
 - Add a reproducible native Chrome 155 WebMCP probe for E06 and E01, plus cross-platform license and advisory evidence.
 - E04 gains an application-owned remote CLI built on the shared flagship contract. E12 adds a server binding with HTTP parity tests.
+- Add an opt-in commercial agent-host probe (`test/uan023-agent-host.mjs`). Antigravity CLI invoked the flagship E04 tool over remote MCP.
+- The Codex harness handshake test now applies its 150 ms request deadline only to the hanging-handshake case, so a slow fixture start can no longer fail the auth and malformed cases.
 - Add `npm run check:isolated-examples`, which installs and tests every exported example from outside the repository. CI runs it on Node 24.
 - Apply the TypeScript house style to `src`. The changes are explicit annotations, `let` for mutable state with readonly types elsewhere, no non-null assertions, `assertNever` exhaustiveness, `noImplicitReturns`, and interfaces for behavior contracts. Biome no longer enforces `useConst`/`useLiteralKeys`. No exported signatures change.
 

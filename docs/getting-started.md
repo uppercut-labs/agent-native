@@ -1,7 +1,7 @@
 # Existing Astro site: experimental init
 
 The `@uppercut-labs/agent-native/init` entrypoint is available in the
-`0.1.1` preview package. There is no `agent-native init` executable yet. Use the E01 fixture to try the current
+`0.1.2` preview package. There is no `agent-native init` executable yet. Use the E01 fixture to try the current
 programmatic flow from a local package tarball:
 
 ```sh
