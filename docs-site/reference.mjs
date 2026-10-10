@@ -26,7 +26,7 @@ export function renderReference(manifest, cliSource, sources = {}) {
     throw new Error('CLI parser shape changed; update the reference generator');
   }
   const expectedRules = [
-    'let timeoutMs = 10_000',
+    'let timeoutMs: number = 10_000',
     'parsed < 1 || parsed > 300_000',
     "value !== 'local' && value !== 'remote'",
     '/^[a-z][a-z0-9-]{0,31}$/.test(value)',

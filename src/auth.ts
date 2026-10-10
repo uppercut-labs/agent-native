@@ -69,7 +69,9 @@ function validPrincipal(principal: TrustedPrincipal): boolean {
     typeof principal.audience === 'string' &&
     principal.audience.length > 0 &&
     Array.isArray(principal.scopes) &&
-    principal.scopes.every((scope) => typeof scope === 'string' && scope.length > 0) &&
+    principal.scopes.every(
+      (scope: string): boolean => typeof scope === 'string' && scope.length > 0,
+    ) &&
     Number.isSafeInteger(principal.expiresAt) &&
     principal.expiresAt > 0
   );
@@ -112,16 +114,16 @@ export async function hasGrantForScopes(options: {
   readonly requiredScopes: readonly string[];
   readonly now?: () => number;
 }): Promise<boolean> {
-  const { principal } = options;
+  const { principal }: { readonly principal: TrustedPrincipal } = options;
   if (!validPrincipal(principal)) return false;
-  const now = options.now ?? (() => Math.floor(Date.now() / 1000));
-  const currentTime = now();
+  const now: () => number = options.now ?? ((): number => Math.floor(Date.now() / 1000));
+  const currentTime: number = now();
   if (
     !Number.isSafeInteger(currentTime) ||
     currentTime < 0 ||
     principal.expiresAt <= currentTime ||
     principal.audience !== options.audience ||
-    !options.requiredScopes.every((scope) => principal.scopes.includes(scope))
+    !options.requiredScopes.every((scope: string): boolean => principal.scopes.includes(scope))
   )
     return false;
   const query: GrantQuery = {
@@ -133,9 +135,9 @@ export async function hasGrantForScopes(options: {
     audience: options.audience,
     policyRevision: options.policyRevision,
   };
-  const grants = await options.store.find(query);
+  const grants: readonly PersistedGrant[] = await options.store.find(query);
   return grants.some(
-    (grant) =>
+    (grant: PersistedGrant): boolean =>
       queryMatches(grant, query) &&
       grant.revokedAt === null &&
       Number.isSafeInteger(grant.expiresAt) &&
@@ -143,7 +145,7 @@ export async function hasGrantForScopes(options: {
       Number.isSafeInteger(grant.issuedAt) &&
       grant.issuedAt <= currentTime &&
       Array.isArray(grant.scopes) &&
-      options.requiredScopes.every((scope) => grant.scopes.includes(scope)),
+      options.requiredScopes.every((scope: string): boolean => grant.scopes.includes(scope)),
   );
 }
 
@@ -151,8 +153,8 @@ export function createGrantAuthorization(options: GrantAuthorizationOptions): Au
   requiredString(options.applicationId, 'applicationId');
   requiredString(options.audience, 'audience');
   requiredString(options.policyRevision, 'policyRevision');
-  const now = options.now ?? (() => Math.floor(Date.now() / 1000));
-  const principal = options.principal;
+  const now: () => number = options.now ?? ((): number => Math.floor(Date.now() / 1000));
+  const principal: TrustedPrincipal | null = options.principal;
   if (principal !== null && !validPrincipal(principal))
     throw new TypeError('trusted principal is invalid');
 
@@ -166,9 +168,10 @@ export function createGrantAuthorization(options: GrantAuthorizationOptions): Au
         options.authorizeResource === undefined
       )
         return false;
-      const caller = authenticatedCaller(request.caller);
+      const caller: { readonly subject: string; readonly scopes: readonly string[] } | null =
+        authenticatedCaller(request.caller);
       if (caller === null) return false;
-      const expectedSubject = JSON.stringify([
+      const expectedSubject: string = JSON.stringify([
         principal.issuer,
         principal.subject,
         principal.tenantId,
@@ -176,10 +179,10 @@ export function createGrantAuthorization(options: GrantAuthorizationOptions): Au
       if (
         caller.subject !== expectedSubject ||
         caller.scopes.length !== principal.scopes.length ||
-        !principal.scopes.every((scope) => caller.scopes.includes(scope))
+        !principal.scopes.every((scope: string): boolean => caller.scopes.includes(scope))
       )
         return false;
-      const hasGrant = await hasGrantForScopes({
+      const hasGrant: boolean = await hasGrantForScopes({
         principal,
         applicationId: options.applicationId,
         audience: options.audience,

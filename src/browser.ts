@@ -1,12 +1,17 @@
+import { assertNever } from './core/assert-never.js';
 import { canonicalCapabilityId, type CapabilityDefinition } from './core/contracts.js';
 import {
   executeCapability,
   type AuthorizationPort,
+  type AuthorizationRequest,
   type ExecutionCaller,
+  type ExecutionFailureKind,
+  type ExecutionResult,
 } from './core/executor.js';
-import type { CapabilityRegistry } from './core/registry.js';
+import type { CapabilityBinding, CapabilityRegistry } from './core/registry.js';
 import {
   evaluateCapabilityDiscovery,
+  type DiscoveryDecision,
   isDestructiveCapabilityExposed,
   type CapabilitySurfaceExposure,
 } from './discovery.js';
@@ -23,9 +28,9 @@ export type WebMcpTool = {
   ) => unknown | Promise<unknown>;
 };
 
-export type WebMcpModelContext = {
+export interface WebMcpModelContext {
   registerTool(tool: WebMcpTool, options?: { readonly signal?: AbortSignal }): Promise<void>;
-};
+}
 
 export type BrowserDocumentLike = Pick<Document, 'defaultView'> & {
   readonly modelContext?: WebMcpModelContext;
@@ -62,27 +67,34 @@ export type BrowserSyncReport = {
   readonly skipped: readonly BrowserSkippedTool[];
 };
 
-export type BrowserCapabilityAdapter = {
+export interface BrowserCapabilityAdapter {
   readonly supported: boolean;
   sync(registry: CapabilityRegistry, options?: BrowserAdapterOptions): Promise<BrowserSyncReport>;
   dispose(): void;
-};
+}
 
-const adapters = new WeakMap<object, BrowserCapabilityAdapter>();
+type SafeError = { readonly ok: false; readonly error: string };
+
+type ExecuteSuccess = { ok: true; capabilityId: string; value: unknown };
+
+type AbortListener = { readonly signal: AbortSignal; readonly listener: () => void };
+
+let adapters: WeakMap<object, BrowserCapabilityAdapter> = new WeakMap();
 
 function defaultContext(): BrowserExecutionContext {
   return {
     caller: { kind: 'anonymous' },
     authorization: {
-      authorize: (request) => request.access.kind === 'public' && request.risk === 'read',
+      authorize: (request: AuthorizationRequest): boolean =>
+        request.access.kind === 'public' && request.risk === 'read',
     },
   };
 }
 
 function toolName(definition: CapabilityDefinition<unknown, unknown>): string | undefined {
-  const namespace = definition.identity.namespace;
-  const name = definition.identity.name;
-  const result =
+  const namespace: string = definition.identity.namespace;
+  const name: string = definition.identity.name;
+  const result: string =
     'uan.' +
     namespace.length +
     '.' +
@@ -97,15 +109,29 @@ function toolName(definition: CapabilityDefinition<unknown, unknown>): string | 
   return result;
 }
 
-function safeError(reason: string): { readonly ok: false; readonly error: string } {
-  const error =
-    reason === 'invalid-input'
-      ? 'Capability input is invalid.'
-      : reason === 'unauthorized'
-        ? 'Capability is not authorized.'
-        : reason === 'deadline-exceeded'
-          ? 'Capability execution was cancelled.'
-          : 'Capability execution is unavailable.';
+function safeErrorMessage(reason: ExecutionFailureKind): string {
+  switch (reason) {
+    case 'invalid-input':
+      return 'Capability input is invalid.';
+    case 'unauthorized':
+      return 'Capability is not authorized.';
+    case 'deadline-exceeded':
+      return 'Capability execution was cancelled.';
+    case 'invalid-identity':
+    case 'capability-missing':
+    case 'binding-unavailable':
+    case 'binding-ambiguous':
+    case 'authorization-error':
+    case 'invalid-output':
+    case 'handler-failed':
+      return 'Capability execution is unavailable.';
+    default:
+      return assertNever(reason);
+  }
+}
+
+function safeError(reason: ExecutionFailureKind): SafeError {
+  const error: string = safeErrorMessage(reason);
   return { ok: false, error };
 }
 
@@ -113,10 +139,10 @@ function linkAbortSignals(signals: readonly AbortSignal[]): {
   readonly signal: AbortSignal;
   dispose(): void;
 } {
-  const controller = new AbortController();
-  const listeners: Array<{ readonly signal: AbortSignal; readonly listener: () => void }> = [];
+  let controller: AbortController = new AbortController();
+  let listeners: AbortListener[] = [];
   for (const signal of signals) {
-    const listener = () => controller.abort(signal.reason);
+    const listener: () => void = (): void => controller.abort(signal.reason);
     if (signal.aborted) {
       listener();
       break;
@@ -126,7 +152,7 @@ function linkAbortSignals(signals: readonly AbortSignal[]): {
   }
   return {
     signal: controller.signal,
-    dispose() {
+    dispose(): void {
       for (const { signal, listener } of listeners) {
         signal.removeEventListener('abort', listener);
       }
@@ -138,7 +164,7 @@ class BrowserAdapter implements BrowserCapabilityAdapter {
   readonly supported: boolean;
   private controller: AbortController | undefined;
   private tail: Promise<void> = Promise.resolve();
-  private disposed = false;
+  private disposed: boolean = false;
   private readonly onPageHide: EventListener;
   private readonly lifecycleTarget:
     | Pick<Window, 'addEventListener' | 'removeEventListener'>
@@ -147,7 +173,7 @@ class BrowserAdapter implements BrowserCapabilityAdapter {
   constructor(private readonly document: BrowserDocumentLike) {
     this.supported = typeof document.modelContext?.registerTool === 'function';
     this.lifecycleTarget = document.defaultView ?? undefined;
-    this.onPageHide = () => this.dispose();
+    this.onPageHide = (): void => this.dispose();
     this.lifecycleTarget?.addEventListener('pagehide', this.onPageHide, { once: true });
   }
 
@@ -156,121 +182,132 @@ class BrowserAdapter implements BrowserCapabilityAdapter {
     options: BrowserAdapterOptions = {},
   ): Promise<BrowserSyncReport> {
     if (this.disposed) throw new Error('Browser capability adapter has been disposed.');
-    const modelContext = this.document.modelContext;
+    const modelContext: WebMcpModelContext | undefined = this.document.modelContext;
     if (!this.supported || modelContext === undefined) {
       return Promise.resolve({ supported: false, registered: [], skipped: [] });
     }
 
     this.controller?.abort();
-    const controller = new AbortController();
+    let controller: AbortController = new AbortController();
     this.controller = controller;
-    const pending = this.tail.then(async () => {
-      if (this.disposed || this.controller !== controller) {
-        return { supported: true, registered: [], skipped: [] };
-      }
-      const registered: string[] = [];
-      const skipped: BrowserSkippedTool[] = [];
-      for (const definition of registry.definitions) {
-        const capabilityId = canonicalCapabilityId(definition.identity);
-        const bindings = registry.bindings.filter(
-          (binding) => binding.capabilityId === capabilityId && binding.targets.includes('browser'),
-        );
-        if (bindings.length === 0) {
-          skipped.push({ capabilityId, reason: 'no-browser-binding' });
-          continue;
+    const pending: Promise<BrowserSyncReport> = this.tail.then(
+      async (): Promise<BrowserSyncReport> => {
+        if (this.disposed || this.controller !== controller) {
+          return { supported: true, registered: [], skipped: [] };
         }
-        if (bindings.length !== 1) {
-          skipped.push({ capabilityId, reason: 'ambiguous-browser-binding' });
-          continue;
-        }
-        const binding = bindings[0];
-        if (binding === undefined) continue;
-
-        const tool = toolName(definition);
-        if (tool === undefined) {
-          skipped.push({ capabilityId, reason: 'name-too-long' });
-          continue;
-        }
-
-        const discovery = await evaluateCapabilityDiscovery(
-          definition,
-          'browser',
-          options.surfaceExposure,
-          options.canExpose,
-        );
-        const exposed = discovery.visible;
-        if (!exposed) {
-          skipped.push({ capabilityId, reason: 'policy-denied' });
-          continue;
-        }
-
-        try {
-          const inputSchema = definition.input.toJSONSchema();
-          await modelContext.registerTool(
-            {
-              name: tool,
-              title: capabilityId,
-              description: definition.description,
-              inputSchema,
-              annotations: {
-                readOnlyHint: definition.risk === 'read',
-                consequentialHint: definition.risk === 'destructive',
-              },
-              execute: async (input, execution) => {
-                const linked = linkAbortSignals([controller.signal, execution.signal]);
-                try {
-                  if (linked.signal.aborted) return safeError('deadline-exceeded');
-                  if (
-                    !isDestructiveCapabilityExposed(definition, 'browser', options.surfaceExposure)
-                  ) {
-                    return safeError('unauthorized');
-                  }
-                  let context: BrowserExecutionContext;
-                  try {
-                    context = (await options.resolveExecutionContext?.()) ?? defaultContext();
-                  } catch {
-                    return safeError('authorization-error');
-                  }
-                  if (linked.signal.aborted) return safeError('deadline-exceeded');
-                  const result = await executeCapability(registry, {
-                    identity: definition.identity,
-                    runtime: 'browser',
-                    bindingId: binding.id,
-                    input,
-                    caller: context.caller,
-                    authorization: context.authorization,
-                    signal: linked.signal,
-                  });
-                  if (result.kind === 'failure') return safeError(result.reason);
-                  return {
-                    ok: true,
-                    capabilityId: result.capabilityId,
-                    value: result.value,
-                  };
-                } finally {
-                  linked.dispose();
-                }
-              },
-            },
-            { signal: controller.signal },
+        let registered: string[] = [];
+        let skipped: BrowserSkippedTool[] = [];
+        for (const definition of registry.definitions) {
+          const capabilityId: string = canonicalCapabilityId(definition.identity);
+          const bindings: readonly CapabilityBinding[] = registry.bindings.filter(
+            (binding: CapabilityBinding): boolean =>
+              binding.capabilityId === capabilityId && binding.targets.includes('browser'),
           );
-          registered.push(tool);
-        } catch {
-          if (!controller.signal.aborted) {
-            skipped.push({ capabilityId, reason: 'registration-failed' });
+          if (bindings.length === 0) {
+            skipped.push({ capabilityId, reason: 'no-browser-binding' });
+            continue;
           }
-          break;
+          if (bindings.length !== 1) {
+            skipped.push({ capabilityId, reason: 'ambiguous-browser-binding' });
+            continue;
+          }
+          const binding: CapabilityBinding | undefined = bindings[0];
+          if (binding === undefined) continue;
+
+          const tool: string | undefined = toolName(definition);
+          if (tool === undefined) {
+            skipped.push({ capabilityId, reason: 'name-too-long' });
+            continue;
+          }
+
+          const discovery: DiscoveryDecision = await evaluateCapabilityDiscovery(
+            definition,
+            'browser',
+            options.surfaceExposure,
+            options.canExpose,
+          );
+          const exposed: boolean = discovery.visible;
+          if (!exposed) {
+            skipped.push({ capabilityId, reason: 'policy-denied' });
+            continue;
+          }
+
+          try {
+            const inputSchema: Readonly<Record<string, unknown>> = definition.input.toJSONSchema();
+            await modelContext.registerTool(
+              {
+                name: tool,
+                title: capabilityId,
+                description: definition.description,
+                inputSchema,
+                annotations: {
+                  readOnlyHint: definition.risk === 'read',
+                  consequentialHint: definition.risk === 'destructive',
+                },
+                execute: async (
+                  input: unknown,
+                  execution: { readonly signal: AbortSignal },
+                ): Promise<SafeError | ExecuteSuccess> => {
+                  const linked: { readonly signal: AbortSignal; dispose(): void } =
+                    linkAbortSignals([controller.signal, execution.signal]);
+                  try {
+                    if (linked.signal.aborted) return safeError('deadline-exceeded');
+                    if (
+                      !isDestructiveCapabilityExposed(
+                        definition,
+                        'browser',
+                        options.surfaceExposure,
+                      )
+                    ) {
+                      return safeError('unauthorized');
+                    }
+                    let context: BrowserExecutionContext;
+                    try {
+                      context = (await options.resolveExecutionContext?.()) ?? defaultContext();
+                    } catch {
+                      return safeError('authorization-error');
+                    }
+                    if (linked.signal.aborted) return safeError('deadline-exceeded');
+                    const result: ExecutionResult = await executeCapability(registry, {
+                      identity: definition.identity,
+                      runtime: 'browser',
+                      bindingId: binding.id,
+                      input,
+                      caller: context.caller,
+                      authorization: context.authorization,
+                      signal: linked.signal,
+                    });
+                    if (result.kind === 'failure') return safeError(result.reason);
+                    return {
+                      ok: true,
+                      capabilityId: result.capabilityId,
+                      value: result.value,
+                    };
+                  } finally {
+                    linked.dispose();
+                  }
+                },
+              },
+              { signal: controller.signal },
+            );
+            registered.push(tool);
+          } catch {
+            if (!controller.signal.aborted) {
+              skipped.push({ capabilityId, reason: 'registration-failed' });
+            }
+            break;
+          }
+          if (this.controller !== controller) break;
         }
-        if (this.controller !== controller) break;
-      }
-      if (this.controller !== controller) {
-        return { supported: true, registered: [], skipped: [] };
-      }
-      return { supported: true, registered, skipped };
-    });
+        if (this.controller !== controller) {
+          return { supported: true, registered: [], skipped: [] };
+        }
+        return { supported: true, registered, skipped };
+      },
+    );
     this.tail = pending.then(
-      () => undefined,
-      () => undefined,
+      (): undefined => undefined,
+      (): undefined => undefined,
     );
     return pending;
   }
@@ -288,9 +325,9 @@ class BrowserAdapter implements BrowserCapabilityAdapter {
 export function createBrowserCapabilityAdapter(
   document: BrowserDocumentLike,
 ): BrowserCapabilityAdapter {
-  const current = adapters.get(document);
+  const current: BrowserCapabilityAdapter | undefined = adapters.get(document);
   if (current !== undefined) return current;
-  const adapter = new BrowserAdapter(document);
+  const adapter: BrowserAdapter = new BrowserAdapter(document);
   adapters.set(document, adapter);
   return adapter;
 }

@@ -1,6 +1,10 @@
 import { isAbsolute } from 'node:path';
 import type { AstroIntegration } from 'astro';
 
+type AstroHooks = AstroIntegration['hooks'];
+type ConfigSetupOptions = Parameters<NonNullable<AstroHooks['astro:config:setup']>>[0];
+type ConfigDoneOptions = Parameters<NonNullable<AstroHooks['astro:config:done']>>[0];
+
 export type AgentNativeAstroOptions = {
   /** Absolute path to an application-owned browser entry module. */
   readonly browserEntry: string;
@@ -23,7 +27,7 @@ export function agentNativeAstro(options: AgentNativeAstroOptions): AstroIntegra
   return {
     name: '@uppercut-labs/agent-native',
     hooks: {
-      'astro:config:setup': ({ config, injectScript, logger }) => {
+      'astro:config:setup': ({ config, injectScript, logger }: ConfigSetupOptions): void => {
         if (config.output === 'server' && options.mode !== 'on-demand') {
           logger.warn(
             'Agent Native Astro integration supports static output only; browser bootstrap was not injected.',
@@ -38,7 +42,7 @@ export function agentNativeAstro(options: AgentNativeAstroOptions): AstroIntegra
             : 'Agent Native browser bootstrap enabled for static output.',
         );
       },
-      'astro:config:done': ({ buildOutput, logger }) => {
+      'astro:config:done': ({ buildOutput, logger }: ConfigDoneOptions): void => {
         if (buildOutput !== 'static' && options.mode !== 'on-demand') {
           logger.warn(
             'Agent Native Astro integration is static-only; this integration does not provide a server adapter or server capability endpoint.',

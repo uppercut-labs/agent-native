@@ -63,9 +63,9 @@ export class CapabilityDefinitionError extends TypeError {
   }
 }
 
-const IDENTITY_SLUG_PATTERN = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
-const CLI_COMMAND_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const QUERY_PARAMETER_PATTERN = /^[A-Za-z0-9._~-]+$/;
+const IDENTITY_SLUG_PATTERN: RegExp = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
+const CLI_COMMAND_PATTERN: RegExp = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const QUERY_PARAMETER_PATTERN: RegExp = /^[A-Za-z0-9._~-]+$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -81,12 +81,14 @@ function validateHttpPath(path: unknown): asserts path is string {
     path.includes('#') ||
     path.includes('\\') ||
     path.includes('//') ||
-    path.split('/').some((part) => part === '.' || part === '..') ||
+    path.split('/').some((part: string): boolean => part === '.' || part === '..') ||
     !path
       .slice(1)
       .split('/')
-      .every((segment) =>
-        Array.from(segment).every((character) => /[A-Za-z0-9._~-]/.test(character)),
+      .every((segment: string): boolean =>
+        Array.from(segment).every((character: string): boolean =>
+          /[A-Za-z0-9._~-]/.test(character),
+        ),
       )
   ) {
     throw new TypeError(
@@ -95,17 +97,20 @@ function validateHttpPath(path: unknown): asserts path is string {
   }
 }
 
-function validateSurfaces(surfaces: CapabilitySurfaceOverrides | undefined, risk: CapabilityRisk) {
+function validateSurfaces(
+  surfaces: CapabilitySurfaceOverrides | undefined,
+  risk: CapabilityRisk,
+): void {
   if (surfaces === undefined) return;
   if (!isRecord(surfaces)) throw new TypeError('surfaces must be an object');
-  if (Object.keys(surfaces).some((key) => key !== 'http' && key !== 'cli')) {
+  if (Object.keys(surfaces).some((key: string): boolean => key !== 'http' && key !== 'cli')) {
     throw new TypeError('surfaces contains an unsupported adapter override');
   }
   if (surfaces.http !== undefined) {
     if (!isRecord(surfaces.http)) throw new TypeError('surfaces.http must be an object');
     if (
       Object.keys(surfaces.http).some(
-        (key) => key !== 'path' && key !== 'method' && key !== 'query',
+        (key: string): boolean => key !== 'path' && key !== 'method' && key !== 'query',
       )
     ) {
       throw new TypeError('surfaces.http contains an unsupported option');
@@ -124,7 +129,7 @@ function validateSurfaces(surfaces: CapabilitySurfaceOverrides | undefined, risk
       if (!isRecord(surfaces.http.query)) {
         throw new TypeError('surfaces.http.query must map input fields to query parameters');
       }
-      const parameters = new Set<string>();
+      let parameters: Set<string> = new Set<string>();
       for (const [field, parameter] of Object.entries(surfaces.http.query)) {
         if (
           field.length === 0 ||
@@ -142,7 +147,11 @@ function validateSurfaces(surfaces: CapabilitySurfaceOverrides | undefined, risk
   }
   if (surfaces.cli !== undefined) {
     if (!isRecord(surfaces.cli)) throw new TypeError('surfaces.cli must be an object');
-    if (Object.keys(surfaces.cli).some((key) => key !== 'command' && key !== 'aliases')) {
+    if (
+      Object.keys(surfaces.cli).some(
+        (key: string): boolean => key !== 'command' && key !== 'aliases',
+      )
+    ) {
       throw new TypeError('surfaces.cli contains an unsupported option');
     }
     if (!CLI_COMMAND_PATTERN.test(surfaces.cli.command)) {
@@ -152,12 +161,12 @@ function validateSurfaces(surfaces: CapabilitySurfaceOverrides | undefined, risk
       surfaces.cli.aliases !== undefined &&
       (!Array.isArray(surfaces.cli.aliases) ||
         surfaces.cli.aliases.some(
-          (alias) => typeof alias !== 'string' || !CLI_COMMAND_PATTERN.test(alias),
+          (alias: string): boolean => typeof alias !== 'string' || !CLI_COMMAND_PATTERN.test(alias),
         ))
     ) {
       throw new TypeError('surfaces.cli.aliases must contain lowercase command slugs');
     }
-    const names = [surfaces.cli.command, ...(surfaces.cli.aliases ?? [])];
+    const names: readonly string[] = [surfaces.cli.command, ...(surfaces.cli.aliases ?? [])];
     if (new Set(names).size !== names.length) {
       throw new TypeError('surfaces.cli command and aliases must be unique');
     }
@@ -168,7 +177,7 @@ function freezeSurfaces(
   surfaces: CapabilitySurfaceOverrides | undefined,
 ): CapabilitySurfaceOverrides | undefined {
   if (surfaces === undefined) return undefined;
-  const http =
+  const http: CapabilityHttpSurface | undefined =
     surfaces.http === undefined
       ? undefined
       : Object.freeze({
@@ -178,7 +187,7 @@ function freezeSurfaces(
             ? {}
             : { query: Object.freeze({ ...surfaces.http.query }) }),
         });
-  const cli =
+  const cli: CapabilityCliSurface | undefined =
     surfaces.cli === undefined
       ? undefined
       : Object.freeze({
@@ -199,7 +208,7 @@ export function isCapabilityDefinition(
   if (!isRecord(value) || !isRecord(value['identity']) || !isRecord(value['access'])) {
     return false;
   }
-  const identity = value['identity'];
+  const identity: Readonly<Record<string, unknown>> = value['identity'];
   if (
     typeof identity['namespace'] !== 'string' ||
     typeof identity['name'] !== 'string' ||
@@ -220,7 +229,7 @@ export function isCapabilityDefinition(
   } catch {
     return false;
   }
-  const access = value['access'];
+  const access: Readonly<Record<string, unknown>> = value['access'];
   if (access['kind'] === 'public') {
     if (value['risk'] !== 'read' || Object.keys(access).length !== 1) {
       return false;
@@ -230,7 +239,8 @@ export function isCapabilityDefinition(
     !Array.isArray(access['scopes']) ||
     access['scopes'].length === 0 ||
     access['scopes'].some(
-      (scope: unknown) => typeof scope !== 'string' || !/^[a-z][a-z0-9:._-]{0,63}$/.test(scope),
+      (scope: unknown): boolean =>
+        typeof scope !== 'string' || !/^[a-z][a-z0-9:._-]{0,63}$/.test(scope),
     )
   ) {
     return false;
@@ -315,7 +325,9 @@ export function defineCapability<Input, Output>(
   if (options.access.kind === 'protected') {
     if (
       options.access.scopes.length === 0 ||
-      options.access.scopes.some((scope) => !/^[a-z][a-z0-9:._-]{0,63}$/.test(scope))
+      options.access.scopes.some(
+        (scope: string): boolean => !/^[a-z][a-z0-9:._-]{0,63}$/.test(scope),
+      )
     ) {
       throw new TypeError('protected access requires one or more valid scopes');
     }
@@ -358,7 +370,7 @@ export function defineCapability<Input, Output>(
     options.access.kind === 'public'
       ? Object.freeze({ kind: 'public' })
       : Object.freeze({ kind: 'protected', scopes: Object.freeze([...options.access.scopes]) });
-  const surfaces = freezeSurfaces(options.surfaces);
+  const surfaces: CapabilitySurfaceOverrides | undefined = freezeSurfaces(options.surfaces);
   return Object.freeze({
     identity,
     description: options.description.trim(),

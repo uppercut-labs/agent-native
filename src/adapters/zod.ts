@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { cloneJsonValue, type SchemaPort } from '../core/schema.js';
+import { cloneJsonValue, type JsonValue, type SchemaPort } from '../core/schema.js';
 
 function isReadonlyArray(value: unknown): value is readonly unknown[] {
   return Array.isArray(value);
@@ -11,7 +11,7 @@ export function fromZod<Schema extends z.ZodType>(schema: Schema): SchemaPort<z.
       return schema.parse(input);
     },
     toJSONSchema(): Readonly<Record<string, unknown>> {
-      const converted = cloneJsonValue(
+      const converted: JsonValue = cloneJsonValue(
         z.toJSONSchema(schema, { unrepresentable: 'throw' }),
         'JSON Schema',
       );

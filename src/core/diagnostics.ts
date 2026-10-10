@@ -35,7 +35,7 @@ export function createDiagnosticObservation(
   }
 
   const evidenceRefs: readonly string[] = Object.freeze([...(options.evidenceRefs ?? [])]);
-  if (evidenceRefs.some((reference) => !/^[A-Z][A-Z0-9._-]*$/.test(reference))) {
+  if (evidenceRefs.some((reference: string): boolean => !/^[A-Z][A-Z0-9._-]*$/.test(reference))) {
     throw new TypeError('evidenceRefs must use stable opaque identifiers');
   }
 

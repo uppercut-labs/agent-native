@@ -47,7 +47,7 @@ export async function evaluateCapabilityDiscovery(
     return { visible: false, reason: 'surface-not-exposed' };
   }
 
-  const publicRead = definition.risk === 'read' && definition.access.kind === 'public';
+  const publicRead: boolean = definition.risk === 'read' && definition.access.kind === 'public';
   if (authorize === undefined) {
     return publicRead ? { visible: true } : { visible: false, reason: 'authorization-unavailable' };
   }

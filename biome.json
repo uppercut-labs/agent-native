@@ -29,7 +29,13 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended"
+      "preset": "recommended",
+      "style": {
+        "useConst": "off"
+      },
+      "complexity": {
+        "useLiteralKeys": "off"
+      }
     }
   },
   "javascript": {

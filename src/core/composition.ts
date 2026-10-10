@@ -4,8 +4,8 @@ import {
   canonicalCapabilityId,
 } from './contracts.js';
 
-const SLUG_PATTERN = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
-const MCP_NAME_LIMIT = 128;
+const SLUG_PATTERN: RegExp = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
+const MCP_NAME_LIMIT: number = 128;
 
 export type CapabilityPackIdentity = {
   readonly authority: string;
@@ -168,7 +168,7 @@ function assertPackOwnership(
   definitions: readonly CapabilityDefinition<unknown, unknown>[],
   source: string,
 ): void {
-  const namespace = packNamespace(identity);
+  const namespace: string = packNamespace(identity);
   for (const definition of definitions) {
     if (definition.identity.namespace !== namespace) {
       throw new CapabilityCompositionError(
@@ -189,29 +189,35 @@ function verifiedLifecyclePolicy(policy: CapabilityLifecyclePolicy): CapabilityL
 export function defineCapabilityPack(options: CapabilityPackOptions): CapabilityPack {
   assertSource(options.source, 'pack source');
   assertPackOwnership(options.identity, options.definitions, options.source);
-  const lifecycle =
+  const lifecycle: CapabilityLifecyclePolicy | undefined =
     options.lifecycle === undefined ? undefined : verifiedLifecyclePolicy(options.lifecycle);
-  const reviewedMigrations: CapabilityMigration[] = [];
-  const families = new Map<string, CapabilityDefinition<unknown, unknown>[]>();
+  let reviewedMigrations: CapabilityMigration[] = [];
+  let families: Map<string, CapabilityDefinition<unknown, unknown>[]> = new Map<
+    string,
+    CapabilityDefinition<unknown, unknown>[]
+  >();
   for (const definition of options.definitions) {
-    const key = `${definition.identity.namespace}:${definition.identity.name}`;
-    const family = families.get(key) ?? [];
+    const key: string = `${definition.identity.namespace}:${definition.identity.name}`;
+    let family: CapabilityDefinition<unknown, unknown>[] = families.get(key) ?? [];
     family.push(definition);
     families.set(key, family);
   }
   for (const family of families.values()) {
     if (family.length < 2) continue;
-    const ordered = family.sort(
-      (left, right) => left.identity.majorVersion - right.identity.majorVersion,
+    const ordered: readonly CapabilityDefinition<unknown, unknown>[] = family.sort(
+      (
+        left: CapabilityDefinition<unknown, unknown>,
+        right: CapabilityDefinition<unknown, unknown>,
+      ): number => left.identity.majorVersion - right.identity.majorVersion,
     );
-    for (let index = 1; index < ordered.length; index += 1) {
-      const previous = ordered[index - 1];
-      const next = ordered[index];
+    for (let index: number = 1; index < ordered.length; index += 1) {
+      const previous: CapabilityDefinition<unknown, unknown> | undefined = ordered[index - 1];
+      const next: CapabilityDefinition<unknown, unknown> | undefined = ordered[index];
       if (previous === undefined || next === undefined) continue;
-      const fromId = canonicalCapabilityId(previous.identity);
-      const toId = canonicalCapabilityId(next.identity);
-      const migration = options.migrations?.find(
-        (entry) => entry.fromId === fromId && entry.toId === toId,
+      const fromId: string = canonicalCapabilityId(previous.identity);
+      const toId: string = canonicalCapabilityId(next.identity);
+      const migration: CapabilityMigration | undefined = options.migrations?.find(
+        (entry: CapabilityMigration): boolean => entry.fromId === fromId && entry.toId === toId,
       );
       if (migration === undefined) {
         throw new CapabilityMigrationError(
@@ -219,7 +225,7 @@ export function defineCapabilityPack(options: CapabilityPackOptions): Capability
           `pack ${options.source} requires a reviewed migration for ${fromId} -> ${toId}`,
         );
       }
-      const reviewed = defineCapabilityMigration({
+      const reviewed: CapabilityMigration = defineCapabilityMigration({
         previous,
         next,
         semanticReview: migration.semanticReview,
@@ -233,8 +239,8 @@ export function defineCapabilityPack(options: CapabilityPackOptions): Capability
       reviewedMigrations.push(reviewed);
     }
     for (const definition of ordered) {
-      const id = canonicalCapabilityId(definition.identity);
-      const state = lifecycle?.get(id);
+      const id: string = canonicalCapabilityId(definition.identity);
+      const state: CapabilityLifecycleEntry | undefined = lifecycle?.get(id);
       if (state === undefined || state.state === 'removed') {
         throw new CapabilityMigrationError(
           'invalid-lifecycle',
@@ -259,8 +265,8 @@ export function defineCapabilityPack(options: CapabilityPackOptions): Capability
 }
 
 function fnv1a64(value: string): string {
-  let hash = 0xcbf29ce484222325n;
-  for (let index = 0; index < value.length; index += 1) {
+  let hash: bigint = 0xcbf29ce484222325n;
+  for (let index: number = 0; index < value.length; index += 1) {
     hash ^= BigInt(value.charCodeAt(index));
     hash = BigInt.asUintN(64, hash * 0x100000001b3n);
   }
@@ -275,30 +281,30 @@ function readonlyMap<Key, Value>(source: Map<Key, Value>): ReadonlyMap<Key, Valu
   let view: ReadonlyMap<Key, Value>;
   view = Object.freeze({
     size: source.size,
-    get(key: Key) {
+    get(key: Key): Value | undefined {
       return source.get(key);
     },
-    has(key: Key) {
+    has(key: Key): boolean {
       return source.has(key);
     },
-    entries() {
+    entries(): MapIterator<[Key, Value]> {
       return source.entries();
     },
-    keys() {
+    keys(): MapIterator<Key> {
       return source.keys();
     },
-    values() {
+    values(): MapIterator<Value> {
       return source.values();
     },
     forEach(
       callback: (value: Value, key: Key, map: ReadonlyMap<Key, Value>) => void,
       thisArg?: unknown,
-    ) {
-      source.forEach((value, key) => {
+    ): void {
+      source.forEach((value: Value, key: Key): void => {
         callback.call(thisArg, value, key, view);
       });
     },
-    [Symbol.iterator]() {
+    [Symbol.iterator](): MapIterator<[Key, Value]> {
       return source[Symbol.iterator]();
     },
   });
@@ -314,7 +320,7 @@ function stableValue(value: unknown): string {
   if (!isRecord(value)) return JSON.stringify(value) ?? 'undefined';
   return `{${Object.keys(value)
     .sort()
-    .map((key) => `${JSON.stringify(key)}:${stableValue(value[key])}`)
+    .map((key: string): string => `${JSON.stringify(key)}:${stableValue(value[key])}`)
     .join(',')}}`;
 }
 
@@ -322,24 +328,32 @@ function schemaChanges(
   area: 'input' | 'output',
   before: Readonly<Record<string, unknown>>,
   after: Readonly<Record<string, unknown>>,
-  path = '$',
+  path: string = '$',
 ): CapabilityContractChange[] {
-  const changes: CapabilityContractChange[] = [];
-  const beforeProperties = isRecord(before['properties']) ? before['properties'] : {};
-  const afterProperties = isRecord(after['properties']) ? after['properties'] : {};
-  const removed = Object.keys(beforeProperties).filter((key) => !(key in afterProperties));
-  const added = Object.keys(afterProperties).filter((key) => !(key in beforeProperties));
-  const pairedAdded = new Set<string>();
-  const pairedRemoved = new Set<string>();
+  let changes: CapabilityContractChange[] = [];
+  const beforeProperties: Readonly<Record<string, unknown>> = isRecord(before['properties'])
+    ? before['properties']
+    : {};
+  const afterProperties: Readonly<Record<string, unknown>> = isRecord(after['properties'])
+    ? after['properties']
+    : {};
+  const removed: readonly string[] = Object.keys(beforeProperties).filter(
+    (key: string): boolean => !(key in afterProperties),
+  );
+  const added: readonly string[] = Object.keys(afterProperties).filter(
+    (key: string): boolean => !(key in beforeProperties),
+  );
+  let pairedAdded: Set<string> = new Set<string>();
+  let pairedRemoved: Set<string> = new Set<string>();
 
   for (const oldName of removed) {
-    const candidates = added.filter(
-      (newName) =>
+    const candidates: readonly string[] = added.filter(
+      (newName: string): boolean =>
         !pairedAdded.has(newName) &&
         stableValue(beforeProperties[oldName]) === stableValue(afterProperties[newName]),
     );
     if (candidates.length === 1) {
-      const newName = candidates[0];
+      const newName: string | undefined = candidates[0];
       if (newName !== undefined) {
         pairedRemoved.add(oldName);
         pairedAdded.add(newName);
@@ -381,14 +395,14 @@ function schemaChanges(
     }
   }
 
-  const beforeRequired = new Set(
+  const beforeRequired: ReadonlySet<string> = new Set(
     Array.isArray(before['required'])
-      ? before['required'].filter((value): value is string => typeof value === 'string')
+      ? before['required'].filter((value: unknown): value is string => typeof value === 'string')
       : [],
   );
-  const afterRequired = new Set(
+  const afterRequired: ReadonlySet<string> = new Set(
     Array.isArray(after['required'])
-      ? after['required'].filter((value): value is string => typeof value === 'string')
+      ? after['required'].filter((value: unknown): value is string => typeof value === 'string')
       : [],
   );
   for (const name of afterRequired) {
@@ -432,7 +446,13 @@ function schemaChanges(
     );
   }
 
-  const handled = new Set(['properties', 'required', 'title', 'description', '$schema']);
+  const handled: ReadonlySet<string> = new Set([
+    'properties',
+    'required',
+    'title',
+    'description',
+    '$schema',
+  ]);
   for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
     if (handled.has(key) || stableValue(before[key]) === stableValue(after[key])) continue;
     changes.push({
@@ -451,9 +471,9 @@ export function compareCapabilityDefinitions(
   previous: CapabilityDefinition<unknown, unknown>,
   next: CapabilityDefinition<unknown, unknown>,
 ): CapabilityContractChangeReport {
-  const fromId = canonicalCapabilityId(previous.identity);
-  const toId = canonicalCapabilityId(next.identity);
-  const changes = [
+  const fromId: string = canonicalCapabilityId(previous.identity);
+  const toId: string = canonicalCapabilityId(next.identity);
+  let changes: CapabilityContractChange[] = [
     ...schemaChanges('input', previous.input.toJSONSchema(), next.input.toJSONSchema()),
     ...schemaChanges('output', previous.output.toJSONSchema(), next.output.toJSONSchema()),
   ];
@@ -491,10 +511,11 @@ export function compareCapabilityDefinitions(
     fromId,
     toId,
     schemaEquivalent: changes.every(
-      (change) => change.area === 'risk' || change.area === 'access' || change.area === 'surface',
+      (change: CapabilityContractChange): boolean =>
+        change.area === 'risk' || change.area === 'access' || change.area === 'surface',
     ),
     changes: Object.freeze(changes),
-    breaking: changes.some((change) => change.breaking),
+    breaking: changes.some((change: CapabilityContractChange): boolean => change.breaking),
   });
 }
 
@@ -505,8 +526,8 @@ function assertSemanticReview(review: CapabilitySemanticReview): CapabilitySeman
       'a major migration requires a substantive semantic note and named reviewer',
     );
   }
-  const note = typeof review.note === 'string' ? review.note.trim() : '';
-  const reviewedBy = typeof review.reviewedBy === 'string' ? review.reviewedBy.trim() : '';
+  const note: string = typeof review.note === 'string' ? review.note.trim() : '';
+  const reviewedBy: string = typeof review.reviewedBy === 'string' ? review.reviewedBy.trim() : '';
   if (
     note.length < 12 ||
     reviewedBy.length < 3 ||
@@ -523,7 +544,7 @@ function assertSemanticReview(review: CapabilitySemanticReview): CapabilitySeman
 export function defineCapabilityMigration(
   options: CapabilityMigrationOptions,
 ): CapabilityMigration {
-  const { previous, next } = options;
+  const { previous, next }: CapabilityMigrationOptions = options;
   if (
     previous.identity.namespace !== next.identity.namespace ||
     previous.identity.name !== next.identity.name ||
@@ -534,8 +555,8 @@ export function defineCapabilityMigration(
       'a major migration must connect an older major to a newer major of the same namespace and name',
     );
   }
-  const semanticReview = assertSemanticReview(options.semanticReview);
-  const contract = compareCapabilityDefinitions(previous, next);
+  const semanticReview: CapabilitySemanticReview = assertSemanticReview(options.semanticReview);
+  const contract: CapabilityContractChangeReport = compareCapabilityDefinitions(previous, next);
   return Object.freeze({
     fromId: contract.fromId,
     toId: contract.toId,
@@ -548,7 +569,7 @@ export function assertCompatibleCapabilityReplacement(
   previous: CapabilityDefinition<unknown, unknown>,
   next: CapabilityDefinition<unknown, unknown>,
 ): CapabilityContractChangeReport {
-  const report = compareCapabilityDefinitions(previous, next);
+  const report: CapabilityContractChangeReport = compareCapabilityDefinitions(previous, next);
   if (report.fromId !== report.toId) {
     throw new CapabilityMigrationError(
       'invalid-migration',
@@ -567,7 +588,7 @@ export function assertCompatibleCapabilityReplacement(
 export function defineCapabilityLifecyclePolicy(
   entries: readonly CapabilityLifecycleEntry[],
 ): CapabilityLifecyclePolicy {
-  const byId = new Map<string, CapabilityLifecycleEntry>();
+  let byId: Map<string, CapabilityLifecycleEntry> = new Map<string, CapabilityLifecycleEntry>();
   for (const entry of entries) {
     if (
       !isRecord(entry) ||
@@ -583,8 +604,8 @@ export function defineCapabilityLifecyclePolicy(
       );
     }
     if (entry.state !== 'supported') {
-      const note = typeof entry.note === 'string' ? entry.note.trim() : '';
-      const reviewedBy =
+      const note: string = typeof entry.note === 'string' ? entry.note.trim() : '';
+      const reviewedBy: string =
         entry.state === 'removed' && typeof entry.reviewedBy === 'string'
           ? entry.reviewedBy.trim()
           : '';
@@ -597,10 +618,10 @@ export function defineCapabilityLifecyclePolicy(
     }
     byId.set(entry.capabilityId, Object.freeze({ ...entry }));
   }
-  const frozenEntries = Object.freeze([...byId.values()]);
+  const frozenEntries: readonly CapabilityLifecycleEntry[] = Object.freeze([...byId.values()]);
   return Object.freeze({
     entries: frozenEntries,
-    get(capabilityId: string) {
+    get(capabilityId: string): CapabilityLifecycleEntry | undefined {
       return byId.get(capabilityId);
     },
   });
@@ -618,41 +639,56 @@ export function validateCapabilityPackMigration(
       'pack migration must compare the same authority and namespace',
     );
   }
-  const previousLifecycle = verifiedLifecyclePolicy(options.previousLifecycle);
-  const nextLifecycle = verifiedLifecyclePolicy(options.nextLifecycle);
-  const previous = new Map(
-    options.previous.definitions.map((definition) => [
-      canonicalCapabilityId(definition.identity),
-      definition,
-    ]),
+  const previousLifecycle: CapabilityLifecyclePolicy = verifiedLifecyclePolicy(
+    options.previousLifecycle,
   );
-  const next = new Map(
-    options.next.definitions.map((definition) => [
-      canonicalCapabilityId(definition.identity),
-      definition,
-    ]),
+  const nextLifecycle: CapabilityLifecyclePolicy = verifiedLifecyclePolicy(options.nextLifecycle);
+  const previous: ReadonlyMap<string, CapabilityDefinition<unknown, unknown>> = new Map(
+    options.previous.definitions.map(
+      (
+        definition: CapabilityDefinition<unknown, unknown>,
+      ): readonly [string, CapabilityDefinition<unknown, unknown>] => [
+        canonicalCapabilityId(definition.identity),
+        definition,
+      ],
+    ),
   );
-  const migrations = new Map(
-    options.migrations.map((migration) => [`${migration.fromId}->${migration.toId}`, migration]),
+  const next: ReadonlyMap<string, CapabilityDefinition<unknown, unknown>> = new Map(
+    options.next.definitions.map(
+      (
+        definition: CapabilityDefinition<unknown, unknown>,
+      ): readonly [string, CapabilityDefinition<unknown, unknown>] => [
+        canonicalCapabilityId(definition.identity),
+        definition,
+      ],
+    ),
   );
-  const contractChanges: CapabilityContractChangeReport[] = [];
-  const added: string[] = [];
-  const removed: string[] = [];
+  const migrations: ReadonlyMap<string, CapabilityMigration> = new Map(
+    options.migrations.map(
+      (migration: CapabilityMigration): readonly [string, CapabilityMigration] => [
+        `${migration.fromId}->${migration.toId}`,
+        migration,
+      ],
+    ),
+  );
+  let contractChanges: CapabilityContractChangeReport[] = [];
+  let added: string[] = [];
+  let removed: string[] = [];
 
   for (const [id, definition] of previous) {
-    const priorState = previousLifecycle.get(id);
+    const priorState: CapabilityLifecycleEntry | undefined = previousLifecycle.get(id);
     if (priorState === undefined || priorState.state === 'removed') {
       throw new CapabilityMigrationError(
         'invalid-lifecycle',
         `previous definition ${id} requires an explicit supported or deprecated lifecycle state`,
       );
     }
-    const replacement = next.get(id);
+    const replacement: CapabilityDefinition<unknown, unknown> | undefined = next.get(id);
     if (replacement !== undefined) {
       contractChanges.push(assertCompatibleCapabilityReplacement(definition, replacement));
       continue;
     }
-    const nextState = nextLifecycle.get(id);
+    const nextState: CapabilityLifecycleEntry | undefined = nextLifecycle.get(id);
     if (priorState?.state !== 'deprecated' || nextState?.state !== 'removed') {
       throw new CapabilityMigrationError(
         'implicit-removal',
@@ -663,7 +699,7 @@ export function validateCapabilityPackMigration(
   }
 
   for (const [id, definition] of next) {
-    const state = nextLifecycle.get(id);
+    const state: CapabilityLifecycleEntry | undefined = nextLifecycle.get(id);
     if (state === undefined || state.state === 'removed') {
       throw new CapabilityMigrationError(
         'invalid-lifecycle',
@@ -672,24 +708,31 @@ export function validateCapabilityPackMigration(
     }
     if (previous.has(id)) continue;
     added.push(id);
-    const candidate = [...previous.entries()]
+    const candidate: [string, CapabilityDefinition<unknown, unknown>] | undefined = [
+      ...previous.entries(),
+    ]
       .filter(
-        ([, old]) =>
+        ([, old]: [string, CapabilityDefinition<unknown, unknown>]): boolean =>
           old.identity.namespace === definition.identity.namespace &&
           old.identity.name === definition.identity.name &&
           old.identity.majorVersion < definition.identity.majorVersion,
       )
-      .sort(([, left], [, right]) => right.identity.majorVersion - left.identity.majorVersion)[0];
+      .sort(
+        (
+          [, left]: [string, CapabilityDefinition<unknown, unknown>],
+          [, right]: [string, CapabilityDefinition<unknown, unknown>],
+        ): number => right.identity.majorVersion - left.identity.majorVersion,
+      )[0];
     if (candidate !== undefined) {
-      const [oldId, oldDefinition] = candidate;
-      const migration = migrations.get(`${oldId}->${id}`);
+      const [oldId, oldDefinition]: [string, CapabilityDefinition<unknown, unknown>] = candidate;
+      const migration: CapabilityMigration | undefined = migrations.get(`${oldId}->${id}`);
       if (migration === undefined) {
         throw new CapabilityMigrationError(
           'missing-semantic-review',
           `major migration ${oldId} -> ${id} requires an explicit semantic review`,
         );
       }
-      const reviewed = defineCapabilityMigration({
+      const reviewed: CapabilityMigration = defineCapabilityMigration({
         previous: oldDefinition,
         next: definition,
         semanticReview: migration.semanticReview,
@@ -706,10 +749,10 @@ export function validateCapabilityPackMigration(
 }
 
 export function capabilitySurfaceNames(identity: CapabilityIdentity): CapabilitySurfaceNames {
-  const canonical = canonicalCapabilityId(identity);
-  const encoded = lengthEncoded(identity);
-  const fullMcpName = `cap_${encoded}`;
-  const mcp =
+  const canonical: string = canonicalCapabilityId(identity);
+  const encoded: string = lengthEncoded(identity);
+  const fullMcpName: string = `cap_${encoded}`;
+  const mcp: string =
     fullMcpName.length <= MCP_NAME_LIMIT
       ? fullMcpName
       : `cap_${fullMcpName.slice(4, 101)}_fnv1a64_${fnv1a64(canonical)}`;
@@ -725,14 +768,18 @@ function surfaceMap(
   definitions: readonly CapabilityDefinition<unknown, unknown>[],
   sources: ReadonlyMap<string, string>,
 ): ReadonlyMap<string, CapabilitySurfaceNames> {
-  const result = new Map<string, CapabilitySurfaceNames>();
-  const owners = new Map<string, { readonly id: string; readonly source: string }>();
+  let result: Map<string, CapabilitySurfaceNames> = new Map<string, CapabilitySurfaceNames>();
+  let owners: Map<string, { readonly id: string; readonly source: string }> = new Map<
+    string,
+    { readonly id: string; readonly source: string }
+  >();
   for (const definition of definitions) {
-    const id = canonicalCapabilityId(definition.identity);
-    const names = capabilitySurfaceNames(definition.identity);
+    const id: string = canonicalCapabilityId(definition.identity);
+    const names: CapabilitySurfaceNames = capabilitySurfaceNames(definition.identity);
     for (const [surface, name] of Object.entries(names)) {
-      const key = `${surface}:${name}`;
-      const previous = owners.get(key);
+      const key: string = `${surface}:${name}`;
+      const previous: { readonly id: string; readonly source: string } | undefined =
+        owners.get(key);
       if (previous !== undefined && previous.id !== id) {
         throw new CapabilityCompositionError(
           'surface-collision',
@@ -755,11 +802,14 @@ export function createCapabilitySurfaceMap(
 export function composeCapabilityPacks(
   imports: readonly CapabilityPackImport[],
 ): CapabilityComposition {
-  const definitions: CapabilityDefinition<unknown, unknown>[] = [];
-  const byId = new Map<string, CapabilityDefinition<unknown, unknown>>();
-  const sources = new Map<string, string>();
-  const aliases = new Map<string, string>();
-  const aliasSources = new Map<string, string>();
+  let definitions: CapabilityDefinition<unknown, unknown>[] = [];
+  let byId: Map<string, CapabilityDefinition<unknown, unknown>> = new Map<
+    string,
+    CapabilityDefinition<unknown, unknown>
+  >();
+  let sources: Map<string, string> = new Map<string, string>();
+  let aliases: Map<string, string> = new Map<string, string>();
+  let aliasSources: Map<string, string> = new Map<string, string>();
 
   for (const imported of imports) {
     assertSource(imported.source, 'import source');
@@ -772,8 +822,8 @@ export function composeCapabilityPacks(
       );
     }
     for (const definition of imported.pack.definitions) {
-      const id = canonicalCapabilityId(definition.identity);
-      const previousSource = sources.get(id);
+      const id: string = canonicalCapabilityId(definition.identity);
+      const previousSource: string | undefined = sources.get(id);
       if (previousSource !== undefined) {
         throw new CapabilityCompositionError(
           'duplicate-identity',
@@ -789,7 +839,7 @@ export function composeCapabilityPacks(
   for (const imported of imports) {
     if (imported.aliasPolicy.kind === 'none') continue;
     for (const alias of imported.aliasPolicy.aliases) {
-      const source = alias.source?.trim() || imported.source;
+      const source: string = alias.source?.trim() || imported.source;
       if (!SLUG_PATTERN.test(alias.name)) {
         throw new CapabilityCompositionError(
           'alias-collision',
@@ -802,7 +852,7 @@ export function composeCapabilityPacks(
           `alias ${alias.name} from ${source} targets missing capability ${alias.capabilityId}`,
         );
       }
-      const previousSource = aliasSources.get(alias.name);
+      const previousSource: string | undefined = aliasSources.get(alias.name);
       if (previousSource !== undefined) {
         throw new CapabilityCompositionError(
           'alias-collision',
@@ -814,15 +864,15 @@ export function composeCapabilityPacks(
     }
   }
 
-  const names = surfaceMap(definitions, sources);
+  const names: ReadonlyMap<string, CapabilitySurfaceNames> = surfaceMap(definitions, sources);
   return Object.freeze({
     definitions: Object.freeze(definitions),
     aliases: readonlyMap(aliases),
     surfaceNames: readonlyMap(new Map(names)),
-    resolve(name: string) {
+    resolve(name: string): CapabilityDefinition<unknown, unknown> | undefined {
       return byId.get(aliases.get(name) ?? name);
     },
-    select(identity: CapabilityIdentity) {
+    select(identity: CapabilityIdentity): CapabilityDefinition<unknown, unknown> | undefined {
       return byId.get(canonicalCapabilityId(identity));
     },
   });

@@ -13,7 +13,7 @@ export type JsonValue =
 
 export function cloneJsonValue(
   value: unknown,
-  label = 'value',
+  label: string = 'value',
   seen: Set<object> = new Set(),
 ): JsonValue {
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
@@ -24,20 +24,22 @@ export function cloneJsonValue(
   if (typeof value !== 'object') {
     throw new TypeError(`${label} contains a value that cannot be represented as JSON`);
   }
-  const prototype = Object.getPrototypeOf(value) as unknown;
+  const prototype: unknown = Object.getPrototypeOf(value) as unknown;
   if (prototype !== Object.prototype && prototype !== null && !Array.isArray(value)) {
     throw new TypeError(`${label} contains a non-JSON object`);
   }
-  if (Reflect.ownKeys(value).some((key) => typeof key === 'symbol')) {
+  if (Reflect.ownKeys(value).some((key: string | symbol): boolean => typeof key === 'symbol')) {
     throw new TypeError(`${label} contains a symbol property`);
   }
   if (seen.has(value)) throw new TypeError(`${label} contains a circular reference`);
   seen.add(value);
   let result: JsonValue;
   if (Array.isArray(value)) {
-    result = Object.freeze(value.map((item) => cloneJsonValue(item, label, seen)));
+    result = Object.freeze(
+      value.map((item: unknown): JsonValue => cloneJsonValue(item, label, seen)),
+    );
   } else {
-    const copy: Record<string, JsonValue> = Object.create(null);
+    let copy: Record<string, JsonValue> = Object.create(null);
     for (const [key, item] of Object.entries(value)) {
       copy[key] = cloneJsonValue(item, label, seen);
     }

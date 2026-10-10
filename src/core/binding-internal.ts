@@ -6,7 +6,7 @@ export type BindingRecord = {
   readonly handler: (input: unknown, context: BindingExecutionContext) => Promise<unknown>;
 };
 
-const bindingRecords: WeakMap<CapabilityBinding, BindingRecord> = new WeakMap();
+let bindingRecords: WeakMap<CapabilityBinding, BindingRecord> = new WeakMap();
 
 export function setBindingRecord(binding: CapabilityBinding, record: BindingRecord): void {
   bindingRecords.set(binding, record);
@@ -21,7 +21,7 @@ export async function invokeBindingHandler(
   input: unknown,
   context: BindingExecutionContext,
 ): Promise<unknown> {
-  const record = bindingRecords.get(binding);
+  const record: BindingRecord | undefined = bindingRecords.get(binding);
   if (record === undefined) {
     throw new TypeError('binding was not created by bindCapability');
   }

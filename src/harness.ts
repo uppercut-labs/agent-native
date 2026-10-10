@@ -112,7 +112,7 @@ export function assertHarnessSupport(
   }
 }
 
-export const HARNESS_STATUS_MESSAGE_LIMIT = 240;
+export const HARNESS_STATUS_MESSAGE_LIMIT: 240 = 240;
 
 function checkedSession(session: HarnessSessionRef): HarnessSessionRef {
   if (
@@ -134,7 +134,10 @@ function isBoundedText(value: string, limit: number): boolean {
     typeof value === 'string' &&
     value.length > 0 &&
     value.length <= limit &&
-    [...value].every((character) => character.charCodeAt(0) > 31 && character.charCodeAt(0) !== 127)
+    [...value].every(
+      (character: string): boolean =>
+        character.charCodeAt(0) > 31 && character.charCodeAt(0) !== 127,
+    )
   );
 }
 
@@ -155,11 +158,16 @@ export function createHarnessStatusEvent(event: HarnessStatusEvent): HarnessStat
   });
 }
 
+// Runtime validator default for untrusted input; also proves compile-time exhaustiveness.
+function invalidHarnessEvent(_event: never): never {
+  throw new HarnessError('invalid-request');
+}
+
 export function createHarnessEvent(event: HarnessEvent): HarnessEvent {
-  const session = checkedSession(event.session);
+  const session: HarnessSessionRef = checkedSession(event.session);
   if (event.type === 'session-started') return Object.freeze({ type: event.type, session });
   if (!isBoundedText(event.turnId, 128)) throw new HarnessError('invalid-request');
-  const ref = { session, turnId: event.turnId };
+  const ref: { session: HarnessSessionRef; turnId: string } = { session, turnId: event.turnId };
   switch (event.type) {
     case 'progress':
     case 'tool':
@@ -186,6 +194,6 @@ export function createHarnessEvent(event: HarnessEvent): HarnessEvent {
         quantity: event.quantity,
       });
     default:
-      throw new HarnessError('invalid-request');
+      return invalidHarnessEvent(event);
   }
 }

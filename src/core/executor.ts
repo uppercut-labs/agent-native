@@ -6,7 +6,12 @@ import type {
 } from './contracts.js';
 import { canonicalCapabilityId, isValidCapabilityIdentity } from './contracts.js';
 import { invokeBindingHandler } from './binding-internal.js';
-import type { CapabilityRegistry, ExecutionSignal, RuntimeTarget } from './registry.js';
+import type {
+  CapabilityBinding,
+  CapabilityRegistry,
+  ExecutionSignal,
+  RuntimeTarget,
+} from './registry.js';
 import { createDiagnosticObservation, type DiagnosticObservation } from './diagnostics.js';
 
 export type ExecutionCaller =
@@ -86,7 +91,7 @@ function findDefinition(
   capabilityId: string,
 ): CapabilityDefinition<unknown, unknown> | undefined {
   return registry.definitions.find(
-    (definition: CapabilityDefinition<unknown, unknown>) =>
+    (definition: CapabilityDefinition<unknown, unknown>): boolean =>
       canonicalCapabilityId(definition.identity) === capabilityId,
   );
 }
@@ -107,20 +112,23 @@ export async function executeCapability(
     return failure('capability-missing', 'capability-missing');
   }
 
-  const availableBindings = registry.bindings.filter(
-    (binding) => binding.capabilityId === capabilityId && binding.targets.includes(request.runtime),
+  const availableBindings: readonly CapabilityBinding[] = registry.bindings.filter(
+    (binding: CapabilityBinding): boolean =>
+      binding.capabilityId === capabilityId && binding.targets.includes(request.runtime),
   );
-  const selectedBindings =
+  const selectedBindings: readonly CapabilityBinding[] =
     request.bindingId === undefined
       ? availableBindings
-      : availableBindings.filter((binding) => binding.id === request.bindingId);
+      : availableBindings.filter(
+          (binding: CapabilityBinding): boolean => binding.id === request.bindingId,
+        );
   if (selectedBindings.length === 0) {
     return failure('binding-unavailable', 'binding-unavailable');
   }
   if (selectedBindings.length > 1) {
     return failure('binding-ambiguous', 'binding-ambiguous');
   }
-  const binding = selectedBindings[0];
+  const binding: CapabilityBinding | undefined = selectedBindings[0];
   if (binding === undefined) {
     return failure('binding-unavailable', 'binding-unavailable');
   }

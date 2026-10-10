@@ -9,7 +9,12 @@ import {
   type HarnessEvent,
   type HarnessFailureReason,
   type HarnessSessionRef,
+  type OpenHarnessSessionRequest,
   type ProgrammaticHarnessAdapter,
+  type ResumeHarnessSessionRequest,
+  type RunHarnessTurnRequest,
+  type CancelHarnessTurnRequest,
+  type CloseHarnessSessionRequest,
 } from './harness.js';
 
 export type CodexHarnessOptions = {
@@ -52,12 +57,14 @@ function identifier(value: unknown): string {
   return value;
 }
 function bounded(value: number | undefined, fallback: number, maximum: number): number {
-  const result = value ?? fallback;
+  const result: number = value ?? fallback;
   if (!Number.isSafeInteger(result) || result < 1 || result > maximum) {
     throw new CodexHarnessError('invalid-request');
   }
   return result;
 }
+
+type ApprovalDecision = { decision: string } | { action: string; content: null };
 
 type Pending = {
   resolve(value: JsonObject): void;
@@ -68,11 +75,11 @@ type Pending = {
 // Raw protocol values are short-lived and never returned as normalized harness events.
 class AppServer {
   readonly child: ChildProcessWithoutNullStreams;
-  readonly pending = new Map<number, Pending>();
+  readonly pending: Map<number, Pending> = new Map<number, Pending>();
   onNotification: ((method: string, params: JsonObject) => void) | undefined;
   onFailure: ((error: CodexHarnessError) => void) | undefined;
-  private nextId = 0;
-  private buffer = '';
+  private nextId: number = 0;
+  private buffer: string = '';
   private failure: CodexHarnessError | undefined;
   private closing: Promise<void> | undefined;
   private readonly exited: Promise<void>;
@@ -87,25 +94,25 @@ class AppServer {
       [...(options.executableArgs ?? []), 'app-server', '--listen', 'stdio://'],
       { cwd: workspace, stdio: 'pipe', shell: false, windowsHide: true },
     );
-    this.exited = new Promise((resolve) =>
-      this.child.once('close', () => {
+    this.exited = new Promise<void>((resolve: () => void): void => {
+      this.child.once('close', (): void => {
         this.fail('provider-failed');
         resolve();
-      }),
-    );
-    this.child.on('error', () => this.fail('provider-unavailable'));
-    this.child.stdin.on('error', () => this.fail('provider-failed'));
+      });
+    });
+    this.child.on('error', (): void => this.fail('provider-unavailable'));
+    this.child.stdin.on('error', (): void => this.fail('provider-failed'));
     this.child.stderr.resume();
     this.child.stdout.setEncoding('utf8');
-    this.child.stdout.on('data', (chunk: string) => {
+    this.child.stdout.on('data', (chunk: string): void => {
       this.buffer += chunk;
       if (this.buffer.length > 2_097_152) {
         this.fail('provider-failed');
         return;
       }
-      let newline = this.buffer.indexOf('\n');
+      let newline: number = this.buffer.indexOf('\n');
       while (newline !== -1 && !this.failure) {
-        const line = this.buffer.slice(0, newline);
+        const line: string = this.buffer.slice(0, newline);
         this.buffer = this.buffer.slice(newline + 1);
         try {
           this.receive(JSON.parse(line));
@@ -127,8 +134,8 @@ class AppServer {
     if (typeof value['method'] === 'string') {
       if (value['id'] !== undefined) {
         // This noninteractive adapter never grants server-initiated permissions.
-        const method = value['method'];
-        const result =
+        const method: string = value['method'];
+        const result: ApprovalDecision | undefined =
           method === 'item/commandExecution/requestApproval' ||
           method === 'item/fileChange/requestApproval'
             ? { decision: 'decline' }
@@ -147,7 +154,7 @@ class AppServer {
       return;
     }
     if (typeof value['id'] !== 'number') throw new CodexHarnessError('provider-failed');
-    const pending = this.pending.get(value['id']);
+    const pending: Pending | undefined = this.pending.get(value['id']);
     if (!pending) return;
     clearTimeout(pending.timer);
     this.pending.delete(value['id']);
@@ -158,16 +165,18 @@ class AppServer {
 
   request(method: string, params: JsonObject): Promise<JsonObject> {
     if (this.failure) return Promise.reject(this.failure);
-    const id = ++this.nextId;
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => this.fail('timeout'), this.timeoutMs);
-      this.pending.set(id, { resolve, reject, timer });
-      try {
-        this.send({ id, method, params });
-      } catch {
-        this.fail('provider-failed');
-      }
-    });
+    const id: number = ++this.nextId;
+    return new Promise<JsonObject>(
+      (resolve: (value: JsonObject) => void, reject: (error: CodexHarnessError) => void): void => {
+        const timer: NodeJS.Timeout = setTimeout((): void => this.fail('timeout'), this.timeoutMs);
+        this.pending.set(id, { resolve, reject, timer });
+        try {
+          this.send({ id, method, params });
+        } catch {
+          this.fail('provider-failed');
+        }
+      },
+    );
   }
 
   async initialize(): Promise<void> {
@@ -175,7 +184,7 @@ class AppServer {
       clientInfo: { name: 'agent_native_harness', version: '0.1.0' },
     });
     this.send({ method: 'initialized', params: {} });
-    const account = await this.request('account/read', { refreshToken: false });
+    const account: JsonObject = await this.request('account/read', { refreshToken: false });
     if (
       account['requiresOpenaiAuth'] !== true ||
       !object(account['account']) ||
@@ -195,8 +204,8 @@ class AppServer {
     }
     this.pending.clear();
     this.onFailure?.(this.failure);
-    queueMicrotask(() => {
-      void this.close().catch(() => console.error('Codex app-server cleanup failed.'));
+    queueMicrotask((): void => {
+      void this.close().catch((): void => console.error('Codex app-server cleanup failed.'));
     });
   }
 
@@ -208,13 +217,13 @@ class AppServer {
   private async stop(): Promise<void> {
     this.fail('session-closed');
     this.child.stdin.end();
-    const timeout = bounded(this.options.shutdownTimeoutMs, 2000, 10_000);
-    const wait = async () => {
+    const timeout: number = bounded(this.options.shutdownTimeoutMs, 2000, 10_000);
+    const wait: () => Promise<boolean> = async (): Promise<boolean> => {
       let timer: ReturnType<typeof setTimeout> | undefined;
-      const closed = await Promise.race([
-        this.exited.then(() => true),
-        new Promise<boolean>((resolve) => {
-          timer = setTimeout(() => resolve(false), timeout);
+      const closed: boolean = await Promise.race([
+        this.exited.then((): boolean => true),
+        new Promise<boolean>((resolve: (value: boolean) => void): void => {
+          timer = setTimeout((): void => resolve(false), timeout);
         }),
       ]);
       if (timer) clearTimeout(timer);
@@ -246,13 +255,13 @@ class EventQueue {
   }
   async next(): Promise<HarnessEvent> {
     while (this.events.length === 0 && !this.error) {
-      await new Promise<void>((resolve) => {
+      await new Promise<void>((resolve: () => void): void => {
         this.wake = resolve;
       });
       this.wake = undefined;
     }
     if (this.error) throw this.error;
-    const event = this.events.shift();
+    const event: HarnessEvent | undefined = this.events.shift();
     if (!event) throw new CodexHarnessError('provider-failed');
     return event;
   }
@@ -266,7 +275,7 @@ type SessionState = {
 };
 
 export function createCodexHarnessAdapter(input: CodexHarnessOptions): ProgrammaticHarnessAdapter {
-  const options = Object.freeze({
+  const options: Readonly<CodexHarnessOptions> = Object.freeze({
     ...input,
     ...(input.executableArgs === undefined
       ? {}
@@ -281,10 +290,10 @@ export function createCodexHarnessAdapter(input: CodexHarnessOptions): Programma
   ) {
     throw new CodexHarnessError('invalid-request');
   }
-  const requestTimeout = bounded(options.requestTimeoutMs, 30_000, 300_000);
-  const turnTimeout = bounded(options.turnTimeoutMs, 180_000, 3_600_000);
+  const requestTimeout: number = bounded(options.requestTimeoutMs, 30_000, 300_000);
+  const turnTimeout: number = bounded(options.turnTimeoutMs, 180_000, 3_600_000);
   bounded(options.shutdownTimeoutMs, 2000, 10_000);
-  const sessions = new Map<string, SessionState>();
+  let sessions: Map<string, SessionState> = new Map();
   const descriptor: HarnessDescriptor = Object.freeze({
     provider: 'codex',
     targets: Object.freeze(['local'] as const),
@@ -294,17 +303,17 @@ export function createCodexHarnessAdapter(input: CodexHarnessOptions): Programma
     if (typeof path !== 'string' || !isAbsolute(path))
       throw new CodexHarnessError('invalid-request');
     try {
-      const canonical = await realpath(path);
+      const canonical: string = await realpath(path);
       if (!(await stat(canonical)).isDirectory()) throw new CodexHarnessError('invalid-request');
       return canonical;
     } catch {
       throw new CodexHarnessError('invalid-request');
     }
   }
-  function stateFor(session: HarnessSessionRef, allowClosed = false): SessionState {
+  function stateFor(session: HarnessSessionRef, allowClosed: boolean = false): SessionState {
     if (session.provider !== 'codex' || session.target !== 'local')
       throw new CodexHarnessError('session-not-found');
-    const state = sessions.get(session.sessionId);
+    const state: SessionState | undefined = sessions.get(session.sessionId);
     if (!state) throw new CodexHarnessError('session-not-found');
     if (state.closed && !allowClosed) throw new CodexHarnessError('session-closed');
     return state;
@@ -319,29 +328,29 @@ export function createCodexHarnessAdapter(input: CodexHarnessOptions): Programma
     };
   }
   async function startServer(workspace: string): Promise<AppServer> {
-    const server = new AppServer(options, requestTimeout, workspace);
+    let server: AppServer = new AppServer(options, requestTimeout, workspace);
     try {
       await server.initialize();
       return server;
-    } catch (error) {
+    } catch (error: unknown) {
       await server.close();
       throw error;
     }
   }
   return {
-    async describe() {
+    async describe(): Promise<HarnessDescriptor> {
       return descriptor;
     },
-    async openSession(request) {
+    async openSession(request: OpenHarnessSessionRequest): Promise<HarnessSessionRef> {
       assertHarnessSupport(descriptor, request.target);
       if (request.target !== 'local') throw new CodexHarnessError('unsupported-target');
-      const workspace = await workspaceFor(request.workspace);
-      const server = await startServer(workspace);
+      const workspace: string = await workspaceFor(request.workspace);
+      let server: AppServer = await startServer(workspace);
       try {
-        const result = await server.request('thread/start', threadParams(workspace));
+        const result: JsonObject = await server.request('thread/start', threadParams(workspace));
         if (!object(result['thread']) || result['thread']['cwd'] !== workspace)
           throw new CodexHarnessError('provider-failed');
-        const session = createHarnessEvent({
+        const session: HarnessSessionRef = createHarnessEvent({
           type: 'session-started',
           session: {
             provider: 'codex',
@@ -352,30 +361,30 @@ export function createCodexHarnessAdapter(input: CodexHarnessOptions): Programma
         if (sessions.has(session.sessionId)) throw new CodexHarnessError('provider-failed');
         sessions.set(session.sessionId, { workspace, server, closed: false });
         return session;
-      } catch (error) {
+      } catch (error: unknown) {
         await server.close();
         throw error;
       }
     },
-    async resumeSession(request) {
+    async resumeSession(request: ResumeHarnessSessionRequest): Promise<HarnessSessionRef> {
       assertHarnessSupport(descriptor, request.target, 'resume');
       if (request.target !== 'local') throw new CodexHarnessError('unsupported-target');
-      const workspace = await workspaceFor(request.workspace);
-      let state = sessions.get(request.session.sessionId);
+      const workspace: string = await workspaceFor(request.workspace);
+      let state: SessionState | undefined = sessions.get(request.session.sessionId);
       if (request.session.provider !== 'codex' || request.session.target !== 'local')
         throw new CodexHarnessError('session-not-found');
       if (state && state.workspace !== workspace) throw new CodexHarnessError('invalid-request');
       if (state?.active) throw new CodexHarnessError('turn-active');
-      const newServer = !state || state.closed;
-      const server = state && !state.closed ? state.server : await startServer(workspace);
+      const newServer: boolean = !state || state.closed;
+      let server: AppServer = state && !state.closed ? state.server : await startServer(workspace);
       try {
-        const existing = await server.request('thread/read', {
+        const existing: JsonObject = await server.request('thread/read', {
           threadId: request.session.sessionId,
           includeTurns: false,
         });
         if (!object(existing['thread']) || existing['thread']['cwd'] !== workspace)
           throw new CodexHarnessError('invalid-request');
-        const result = await server.request('thread/resume', {
+        const result: JsonObject = await server.request('thread/resume', {
           ...threadParams(workspace),
           threadId: request.session.sessionId,
         });
@@ -389,28 +398,31 @@ export function createCodexHarnessAdapter(input: CodexHarnessOptions): Programma
         state = { workspace, server, closed: false };
         sessions.set(request.session.sessionId, state);
         return createHarnessEvent({ type: 'session-started', session: request.session }).session;
-      } catch (error) {
+      } catch (error: unknown) {
         if (newServer) await server.close();
         throw error;
       }
     },
-    async *runTurn({ session, prompt }) {
-      const state = stateFor(session);
+    async *runTurn({
+      session,
+      prompt,
+    }: RunHarnessTurnRequest): AsyncGenerator<HarnessEvent, void, undefined> {
+      let state: SessionState = stateFor(session);
       if (state.active) throw new CodexHarnessError('turn-active');
       if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 65_536)
         throw new CodexHarnessError('invalid-request');
-      const active: NonNullable<SessionState['active']> = { queue: new EventQueue() };
+      let active: NonNullable<SessionState['active']> = { queue: new EventQueue() };
       state.active = active;
       let timer: ReturnType<typeof setTimeout> | undefined;
-      let terminal = false;
+      let terminal: boolean = false;
       let providerTerminalId: string | undefined;
-      state.server.onFailure = (error) => active.queue.fail(error);
-      state.server.onNotification = (method, params) => {
+      state.server.onFailure = (error: CodexHarnessError): void => active.queue.fail(error);
+      state.server.onNotification = (method: string, params: JsonObject): void => {
         if (params['threadId'] !== session.sessionId) return;
-        const turn = params['turn'];
+        const turn: unknown = params['turn'];
         if (method === 'turn/completed' && object(turn)) {
-          const turnId = identifier(turn['id']);
-          const status = turn['status'];
+          const turnId: string = identifier(turn['id']);
+          const status: unknown = turn['status'];
           providerTerminalId = turnId;
           if (active.turnId === turnId && timer) clearTimeout(timer);
           active.queue.push(
@@ -435,7 +447,7 @@ export function createCodexHarnessAdapter(input: CodexHarnessOptions): Programma
           object(params['tokenUsage']) &&
           object(params['tokenUsage']['last'])
         ) {
-          const quantity = params['tokenUsage']['last']['totalTokens'];
+          const quantity: unknown = params['tokenUsage']['last']['totalTokens'];
           if (typeof quantity === 'number' && Number.isSafeInteger(quantity) && quantity >= 0) {
             active.queue.push(
               createHarnessEvent({
@@ -463,7 +475,7 @@ export function createCodexHarnessAdapter(input: CodexHarnessOptions): Programma
         }
       };
       try {
-        const result = await state.server.request('turn/start', {
+        const result: JsonObject = await state.server.request('turn/start', {
           threadId: session.sessionId,
           input: [{ type: 'text', text: prompt }],
           effort: options.effort ?? 'low',
@@ -471,15 +483,15 @@ export function createCodexHarnessAdapter(input: CodexHarnessOptions): Programma
         if (!object(result['turn'])) throw new CodexHarnessError('provider-failed');
         active.turnId = identifier(result['turn']['id']);
         if (providerTerminalId !== active.turnId)
-          timer = setTimeout(() => state.server.fail('timeout'), turnTimeout);
+          timer = setTimeout((): void => state.server.fail('timeout'), turnTimeout);
         yield createHarnessEvent({ type: 'turn-started', session, turnId: active.turnId });
         while (!terminal) {
-          const event = await active.queue.next();
+          const event: HarnessEvent = await active.queue.next();
           if (event.type === 'session-started' || event.turnId !== active.turnId) continue;
           terminal = ['completed', 'failed', 'cancelled'].includes(event.type);
           yield event;
         }
-      } catch (error) {
+      } catch (error: unknown) {
         if (!active.turnId) throw error;
         terminal = true;
         yield createHarnessEvent({
@@ -501,14 +513,14 @@ export function createCodexHarnessAdapter(input: CodexHarnessOptions): Programma
         }
       }
     },
-    async cancelTurn({ session, turnId }) {
-      const state = stateFor(session);
+    async cancelTurn({ session, turnId }: CancelHarnessTurnRequest): Promise<void> {
+      const state: SessionState = stateFor(session);
       if (!state.active || state.active.turnId !== turnId)
         throw new CodexHarnessError('turn-not-found');
       await state.server.request('turn/interrupt', { threadId: session.sessionId, turnId });
     },
-    async closeSession({ session }) {
-      const state = stateFor(session, true);
+    async closeSession({ session }: CloseHarnessSessionRequest): Promise<void> {
+      let state: SessionState = stateFor(session, true);
       state.closed = true;
       await state.server.close();
     },

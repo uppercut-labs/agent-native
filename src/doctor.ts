@@ -1,15 +1,17 @@
-import { canonicalCapabilityId } from './core/contracts.js';
+import { type CapabilityDefinition, canonicalCapabilityId } from './core/contracts.js';
 import {
   createDiagnosticObservation,
   type DiagnosticObservation,
+  type DiagnosticObservationOptions,
   type DiagnosticStatus,
 } from './core/diagnostics.js';
-import type { CapabilityRegistry } from './core/registry.js';
+import type { CapabilityBinding, CapabilityRegistry } from './core/registry.js';
 import {
   type CapabilityDiscoveryAuthorizer,
   type CapabilitySurface,
   type CapabilitySurfaceExposure,
   evaluateCapabilityDiscovery,
+  type DiscoveryDecision,
 } from './discovery.js';
 
 export type DoctorEvidenceKind = 'configured' | 'generated' | 'reachable' | 'protocol' | 'behavior';
@@ -160,6 +162,9 @@ export type RegistryInspection = {
   }[];
 };
 
+type InspectedDefinition = RegistryInspection['definitions'][number];
+type InspectedBinding = RegistryInspection['bindings'][number];
+
 export type AuthorizedCapability = RegistryInspection['definitions'][number] & {
   readonly bindingIds: readonly string[];
 };
@@ -188,7 +193,7 @@ function assertText(value: unknown, field: string): void {
 function validateCheck(check: DoctorCheck): void {
   try {
     createDiagnosticObservation({ checkId: check.checkId, status: 'unknown' });
-  } catch (error) {
+  } catch (error: unknown) {
     throw new DoctorUsageError(
       error instanceof Error ? error.message : 'doctor check id is invalid',
     );
@@ -227,7 +232,7 @@ function freezeFinding(
   timestamp: string,
 ): DoctorFinding {
   const observedStatus: DiagnosticStatus = result.status === 'skipped' ? 'unknown' : result.status;
-  const observationOptions =
+  const observationOptions: DiagnosticObservationOptions =
     result.evidenceRefs === undefined
       ? { checkId: check.checkId, status: observedStatus }
       : {
@@ -236,7 +241,7 @@ function freezeFinding(
           evidenceRefs: result.evidenceRefs,
         };
   const observation: DiagnosticObservation = createDiagnosticObservation(observationOptions);
-  const references = observation.evidenceRefs;
+  const references: readonly string[] = observation.evidenceRefs;
   return Object.freeze({
     checkId: check.checkId,
     target: check.target,
@@ -256,10 +261,10 @@ function freezeFinding(
 }
 
 export function doctorExitCode(findings: readonly DoctorFinding[]): Exclude<DoctorExitCode, 2> {
-  if (findings.some((finding) => finding.status === 'failed')) return 1;
+  if (findings.some((finding: DoctorFinding): boolean => finding.status === 'failed')) return 1;
   if (
     findings.some(
-      (finding) =>
+      (finding: DoctorFinding): boolean =>
         finding.required && (finding.status === 'unknown' || finding.status === 'skipped'),
     )
   ) {
@@ -280,12 +285,17 @@ function resolveProfile(
   ) {
     throw new DoctorUsageError('profile must provide id, selectedCheckIds, and requiredCheckIds');
   }
-  const available = new Set(checks.map((check) => check.checkId));
-  const selected = profile?.selectedCheckIds ?? checks.map((check) => check.checkId);
-  const required =
+  const available: ReadonlySet<string> = new Set(
+    checks.map((check: DoctorCheck): string => check.checkId),
+  );
+  const selected: readonly string[] =
+    profile?.selectedCheckIds ?? checks.map((check: DoctorCheck): string => check.checkId);
+  const required: readonly string[] =
     profile?.requiredCheckIds ??
-    checks.filter((check) => check.required).map((check) => check.checkId);
-  const id = profile?.id ?? 'default';
+    checks
+      .filter((check: DoctorCheck): boolean => check.required)
+      .map((check: DoctorCheck): string => check.checkId);
+  const id: string = profile?.id ?? 'default';
   if (!/^[a-z][a-z0-9-]*$/.test(id)) {
     throw new DoctorUsageError('profile id must be a lowercase slug');
   }
@@ -298,7 +308,7 @@ function resolveProfile(
   for (const checkId of selected) {
     if (!available.has(checkId)) throw new DoctorUsageError(`unknown selected check: ${checkId}`);
   }
-  const selectedSet = new Set(selected);
+  const selectedSet: ReadonlySet<string> = new Set(selected);
   for (const checkId of required) {
     if (!selectedSet.has(checkId)) {
       throw new DoctorUsageError(`required check is not selected: ${checkId}`);
@@ -315,7 +325,7 @@ export async function runDoctor(
   checks: readonly DoctorCheck[],
   options: DoctorRunOptions = {},
 ): Promise<DoctorReport> {
-  const ids = new Set<string>();
+  let ids: Set<string> = new Set();
   for (const check of checks) {
     validateCheck(check);
     if (ids.has(check.checkId)) {
@@ -323,11 +333,11 @@ export async function runDoctor(
     }
     ids.add(check.checkId);
   }
-  const profile = resolveProfile(checks, options.profile);
-  const selected = new Set(profile.selectedCheckIds);
-  const required = new Set(profile.requiredCheckIds);
+  const profile: DoctorCheckProfile = resolveProfile(checks, options.profile);
+  const selected: ReadonlySet<string> = new Set(profile.selectedCheckIds);
+  const required: ReadonlySet<string> = new Set(profile.requiredCheckIds);
 
-  const findings: DoctorFinding[] = [];
+  let findings: DoctorFinding[] = [];
   for (const check of checks) {
     if (!selected.has(check.checkId)) continue;
     let result: DoctorCheckResult;
@@ -337,12 +347,12 @@ export async function runDoctor(
     } catch {
       result = { status: 'unknown' };
     }
-    const timestamp = (options.now?.() ?? new Date()).toISOString();
+    const timestamp: string = (options.now?.() ?? new Date()).toISOString();
     findings.push(
       freezeFinding({ ...check, required: required.has(check.checkId) }, result, timestamp),
     );
   }
-  const frozenFindings = Object.freeze(findings);
+  const frozenFindings: readonly DoctorFinding[] = Object.freeze(findings);
   return Object.freeze({
     schemaVersion: DOCTOR_REPORT_SCHEMA_VERSION,
     profile,
@@ -352,26 +362,28 @@ export async function runDoctor(
 }
 
 export function inspectCapabilityRegistry(registry: CapabilityRegistry): RegistryInspection {
-  const definitions = registry.definitions.map((definition) =>
-    Object.freeze({
-      id: canonicalCapabilityId(definition.identity),
-      description: definition.description,
-      risk: definition.risk,
-      access:
-        definition.access.kind === 'public'
-          ? Object.freeze({ kind: 'public' as const })
-          : Object.freeze({
-              kind: 'protected' as const,
-              scopes: Object.freeze([...definition.access.scopes]),
-            }),
-    }),
+  const definitions: readonly InspectedDefinition[] = registry.definitions.map(
+    (definition: CapabilityDefinition<unknown, unknown>): InspectedDefinition =>
+      Object.freeze({
+        id: canonicalCapabilityId(definition.identity),
+        description: definition.description,
+        risk: definition.risk,
+        access:
+          definition.access.kind === 'public'
+            ? Object.freeze({ kind: 'public' as const })
+            : Object.freeze({
+                kind: 'protected' as const,
+                scopes: Object.freeze([...definition.access.scopes]),
+              }),
+      }),
   );
-  const bindings = registry.bindings.map((binding) =>
-    Object.freeze({
-      id: binding.id,
-      capabilityId: binding.capabilityId,
-      targets: Object.freeze([...binding.targets]),
-    }),
+  const bindings: readonly InspectedBinding[] = registry.bindings.map(
+    (binding: CapabilityBinding): InspectedBinding =>
+      Object.freeze({
+        id: binding.id,
+        capabilityId: binding.capabilityId,
+        targets: Object.freeze([...binding.targets]),
+      }),
   );
   return Object.freeze({
     definitions: Object.freeze(definitions),
@@ -383,27 +395,33 @@ export async function listAuthorizedCapabilities(
   registry: CapabilityRegistry,
   options: AuthorizedCapabilityListOptions,
 ): Promise<readonly AuthorizedCapability[]> {
-  const inspection = inspectCapabilityRegistry(registry);
-  const listed: AuthorizedCapability[] = [];
+  const inspection: RegistryInspection = inspectCapabilityRegistry(registry);
+  let listed: AuthorizedCapability[] = [];
   for (const [index, definition] of registry.definitions.entries()) {
     if (definition === undefined) continue;
-    const decision = await evaluateCapabilityDiscovery(
+    const decision: DiscoveryDecision = await evaluateCapabilityDiscovery(
       definition,
       options.surface,
       options.exposure,
       options.authorize,
     );
     if (!decision.visible) continue;
-    const inspected = inspection.definitions[index];
+    const inspected: InspectedDefinition | undefined = inspection.definitions[index];
     if (inspected === undefined) continue;
-    const candidates = inspection.bindings.filter(
-      (binding) => binding.capabilityId === inspected.id,
+    const candidates: readonly InspectedBinding[] = inspection.bindings.filter(
+      (binding: InspectedBinding): boolean => binding.capabilityId === inspected.id,
     );
-    const local = candidates.filter((binding) => binding.targets.includes('local'));
-    const server = candidates.filter((binding) => binding.targets.includes('server'));
-    const browser = candidates.filter((binding) => binding.targets.includes('browser'));
-    const publicRead = definition.risk === 'read' && definition.access.kind === 'public';
-    const available =
+    const local: readonly InspectedBinding[] = candidates.filter(
+      (binding: InspectedBinding): boolean => binding.targets.includes('local'),
+    );
+    const server: readonly InspectedBinding[] = candidates.filter(
+      (binding: InspectedBinding): boolean => binding.targets.includes('server'),
+    );
+    const browser: readonly InspectedBinding[] = candidates.filter(
+      (binding: InspectedBinding): boolean => binding.targets.includes('browser'),
+    );
+    const publicRead: boolean = definition.risk === 'read' && definition.access.kind === 'public';
+    const available: readonly InspectedBinding[] =
       options.surface === 'browser'
         ? browser.length === 1
           ? browser
@@ -420,7 +438,9 @@ export async function listAuthorizedCapabilities(
     listed.push(
       Object.freeze({
         ...inspected,
-        bindingIds: Object.freeze([...new Set(available.map((binding) => binding.id))]),
+        bindingIds: Object.freeze([
+          ...new Set(available.map((binding: InspectedBinding): string => binding.id)),
+        ]),
       }),
     );
   }

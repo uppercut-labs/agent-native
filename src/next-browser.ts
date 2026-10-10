@@ -7,12 +7,12 @@ import {
 } from './browser.js';
 import type { CapabilityRegistry } from './core/registry.js';
 
-export type NextBrowserBootstrap = {
+export interface NextBrowserBootstrap {
   readonly supported: boolean;
   /** Call from a client component whenever usePathname() changes. */
   sync(): Promise<BrowserSyncReport>;
   dispose(): void;
-};
+}
 
 /**
  * Keeps the framework-neutral browser adapter separate from server route code.
@@ -26,7 +26,7 @@ export function createNextBrowserBootstrap(
   const adapter: BrowserCapabilityAdapter = createBrowserCapabilityAdapter(document);
   return {
     supported: adapter.supported,
-    sync: () => adapter.sync(registry, options),
-    dispose: () => adapter.dispose(),
+    sync: (): Promise<BrowserSyncReport> => adapter.sync(registry, options),
+    dispose: (): void => adapter.dispose(),
   };
 }

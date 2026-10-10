@@ -8,6 +8,7 @@ import {
   McpServer,
   type OAuthTokenVerifier,
   requireBearerAuth,
+  type StandardSchemaWithJSON,
   type ToolAnnotations,
 } from '@modelcontextprotocol/server';
 import {
@@ -17,27 +18,35 @@ import {
   hasGrantForScopes,
   type TrustedPrincipal,
 } from './auth.js';
+import { assertNever } from './core/assert-never.js';
 import { capabilitySurfaceNames, createCapabilitySurfaceMap } from './core/composition.js';
 import {
   type CapabilityDefinition,
   type CapabilityRisk,
   canonicalCapabilityId,
 } from './core/contracts.js';
-import type { AuthorizationPort, ExecutionCaller } from './core/executor.js';
+import type {
+  AuthorizationPort,
+  AuthorizationRequest,
+  ExecutionCaller,
+  ExecutionFailureKind,
+  ExecutionResult,
+} from './core/executor.js';
 import { executeCapability } from './core/executor.js';
-import type { CapabilityRegistry } from './core/registry.js';
+import type { CapabilityBinding, CapabilityRegistry } from './core/registry.js';
 import {
   type CapabilitySurfaceExposure,
   evaluateCapabilityDiscovery,
+  type DiscoveryDecision,
   isDestructiveCapabilityExposed,
 } from './discovery.js';
 import { PACKAGE_VERSION } from './package-version.js';
 
-const DEFAULT_ENDPOINT = '/mcp';
-const DEFAULT_MAX_REQUEST_BYTES = 32 * 1024;
-const MAX_REQUEST_BYTES = 1024 * 1024;
-const DEFAULT_DEADLINE_MS = 10_000;
-const MAX_DEADLINE_MS = 300_000;
+const DEFAULT_ENDPOINT: '/mcp' = '/mcp';
+const DEFAULT_MAX_REQUEST_BYTES: number = 32 * 1024;
+const MAX_REQUEST_BYTES: number = 1024 * 1024;
+const DEFAULT_DEADLINE_MS: number = 10_000;
+const MAX_DEADLINE_MS: number = 300_000;
 
 export type McpExecutionContext = {
   readonly caller: ExecutionCaller;
@@ -83,7 +92,7 @@ export type McpAppResourceDefinition = {
   readonly html: string;
 };
 
-export type McpAppRegistration = {
+export interface McpAppRegistration {
   readonly resources: readonly McpAppResourceDefinition[];
   readonly registerTool: (
     server: McpServer,
@@ -101,9 +110,9 @@ export type McpAppRegistration = {
     server: McpServer,
     resources: readonly McpAppResourceDefinition[],
   ) => void;
-};
+}
 
-function validateEndpoint(value = DEFAULT_ENDPOINT): string {
+function validateEndpoint(value: string = DEFAULT_ENDPOINT): string {
   if (
     !value.startsWith('/') ||
     value === '/' ||
@@ -111,12 +120,14 @@ function validateEndpoint(value = DEFAULT_ENDPOINT): string {
     value.includes('#') ||
     value.includes('\\') ||
     value.includes('//') ||
-    value.split('/').some((part) => part === '.' || part === '..') ||
+    value.split('/').some((part: string): boolean => part === '.' || part === '..') ||
     !value
       .slice(1)
       .split('/')
-      .every((segment) =>
-        Array.from(segment).every((character) => /[A-Za-z0-9._~-]/.test(character)),
+      .every((segment: string): boolean =>
+        Array.from(segment).every((character: string): boolean =>
+          /[A-Za-z0-9._~-]/.test(character),
+        ),
       )
   ) {
     throw new TypeError(
@@ -126,10 +137,43 @@ function validateEndpoint(value = DEFAULT_ENDPOINT): string {
   return value;
 }
 
-function validateOptions(options: McpAdapterOptions) {
-  const endpoint = validateEndpoint(options.endpoint);
-  const maxRequestBytes = options.maxRequestBytes ?? DEFAULT_MAX_REQUEST_BYTES;
-  const deadlineMs = options.deadlineMs ?? DEFAULT_DEADLINE_MS;
+type McpToolConfig = {
+  description: string;
+  inputSchema: StandardSchemaWithJSON<unknown, unknown>;
+  outputSchema: StandardSchemaWithJSON<unknown, unknown>;
+  annotations: { idempotentHint?: boolean; readOnlyHint: boolean; destructiveHint: boolean };
+};
+
+type McpAdapterConfig = {
+  readonly endpoint: string;
+  readonly maxRequestBytes: number;
+  readonly deadlineMs: number;
+};
+
+type ToolTextContent = { type: 'text'; text: string };
+
+type ToolErrorResult = {
+  content: ToolTextContent[];
+  isError: boolean;
+};
+
+type ToolSuccessResult = {
+  content: ToolTextContent[];
+  structuredContent: { result: unknown };
+};
+
+type TimeoutOutcome = { readonly kind: 'timeout' };
+
+type UnavailableOutcome = { readonly kind: 'unavailable' };
+
+type CompleteOutcome = { readonly kind: 'complete'; readonly result: ExecutionResult };
+
+type OperationOutcome = UnavailableOutcome | CompleteOutcome;
+
+function validateOptions(options: McpAdapterOptions): McpAdapterConfig {
+  const endpoint: string = validateEndpoint(options.endpoint);
+  const maxRequestBytes: number = options.maxRequestBytes ?? DEFAULT_MAX_REQUEST_BYTES;
+  const deadlineMs: number = options.deadlineMs ?? DEFAULT_DEADLINE_MS;
   if (
     !Number.isSafeInteger(maxRequestBytes) ||
     maxRequestBytes < 1 ||
@@ -179,7 +223,9 @@ export function mcpToolName(identity: CapabilityDefinition<unknown, unknown>['id
   return capabilitySurfaceNames(identity).mcp;
 }
 
-function sdkSchema(schema: Readonly<Record<string, unknown>>) {
+function sdkSchema(
+  schema: Readonly<Record<string, unknown>>,
+): StandardSchemaWithJSON<unknown, unknown> {
   // The Workerd validator annotates nested schemas, so give the SDK its own mutable JSON copy.
   return fromJsonSchema(JSON.parse(JSON.stringify(schema)) as JsonSchemaType);
 }
@@ -193,14 +239,14 @@ function resultSchema(schema: Readonly<Record<string, unknown>>): Record<string,
   };
 }
 
-function toolError(message: string) {
+function toolError(message: string): ToolErrorResult {
   return {
     content: [{ type: 'text' as const, text: message }],
     isError: true,
   };
 }
 
-function deadlineToolError(risk: CapabilityRisk) {
+function deadlineToolError(risk: CapabilityRisk): ToolErrorResult {
   return toolError(
     risk === 'read'
       ? 'Capability execution exceeded its deadline.'
@@ -208,7 +254,7 @@ function deadlineToolError(risk: CapabilityRisk) {
   );
 }
 
-function executorError(reason: string): string {
+function executorError(reason: ExecutionFailureKind): string {
   switch (reason) {
     case 'capability-missing':
     case 'invalid-identity':
@@ -216,8 +262,15 @@ function executorError(reason: string): string {
       return 'Capability not found.';
     case 'invalid-input':
       return 'Capability input is invalid.';
-    default:
+    case 'binding-unavailable':
+    case 'binding-ambiguous':
+    case 'authorization-error':
+    case 'invalid-output':
+    case 'handler-failed':
+    case 'deadline-exceeded':
       return 'Capability execution is unavailable.';
+    default:
+      return assertNever(reason);
   }
 }
 
@@ -225,7 +278,8 @@ function defaultContext(): McpExecutionContext {
   return {
     caller: { kind: 'anonymous' },
     authorization: {
-      authorize: (request) => request.risk === 'read' && request.access.kind === 'public',
+      authorize: (request: AuthorizationRequest): boolean =>
+        request.risk === 'read' && request.access.kind === 'public',
     },
   };
 }
@@ -238,27 +292,32 @@ async function defineServer(
   deadlineMs: number,
   appRegistration?: McpAppRegistration,
 ): Promise<McpServer> {
-  const server = new McpServer({ name: 'uppercut-agent-native', version: PACKAGE_VERSION });
+  const server: McpServer = new McpServer({
+    name: 'uppercut-agent-native',
+    version: PACKAGE_VERSION,
+  });
   if (requestInfo === undefined) return server;
-  const visibleAppResources = new Map<string, McpAppResourceDefinition>();
+  let visibleAppResources: Map<string, McpAppResourceDefinition> = new Map();
 
   for (const definition of registry.definitions) {
-    const serverBindings = registry.bindings.filter(
-      (binding) =>
+    const serverBindings: readonly CapabilityBinding[] = registry.bindings.filter(
+      (binding: CapabilityBinding): boolean =>
         binding.capabilityId === canonicalCapabilityId(definition.identity) &&
         binding.targets.includes('server'),
     );
     if (serverBindings.length !== 1) continue;
-    const publicRead = isPublicRead(definition);
-    const discovery = await evaluateCapabilityDiscovery(
+    const publicRead: boolean = isPublicRead(definition);
+    const discovery: DiscoveryDecision = await evaluateCapabilityDiscovery(
       definition,
       'mcp',
       options.surfaceExposure,
       publicRead
-        ? async (candidate) => (await options.canDiscover?.(candidate, requestInfo)) ?? true
-        : async (candidate) => {
-            const auth = options.grantAuthorization;
-            const principal =
+        ? async (candidate: CapabilityDefinition<unknown, unknown>): Promise<boolean> =>
+            (await options.canDiscover?.(candidate, requestInfo)) ?? true
+        : async (candidate: CapabilityDefinition<unknown, unknown>): Promise<boolean> => {
+            const auth: Omit<GrantAuthorizationOptions, 'principal'> | undefined =
+              options.grantAuthorization;
+            const principal: TrustedPrincipal | null =
               authInfo === undefined || options.resolveTrustedPrincipal === undefined
                 ? null
                 : await options.resolveTrustedPrincipal(authInfo);
@@ -270,7 +329,7 @@ async function defineServer(
               candidate.access.kind !== 'protected'
             )
               return false;
-            const hasGrant = await hasGrantForScopes({
+            const hasGrant: boolean = await hasGrantForScopes({
               principal,
               applicationId: auth.applicationId,
               audience: auth.audience,
@@ -284,10 +343,14 @@ async function defineServer(
           },
     );
     if (!discovery.visible) continue;
-    const name = mcpToolName(definition.identity);
-    const inputSchema = sdkSchema(definition.input.toJSONSchema());
-    const outputSchema = sdkSchema(resultSchema(definition.output.toJSONSchema()));
-    const toolConfig = {
+    const name: string = mcpToolName(definition.identity);
+    const inputSchema: StandardSchemaWithJSON<unknown, unknown> = sdkSchema(
+      definition.input.toJSONSchema(),
+    );
+    const outputSchema: StandardSchemaWithJSON<unknown, unknown> = sdkSchema(
+      resultSchema(definition.output.toJSONSchema()),
+    );
+    const toolConfig: McpToolConfig = {
       description: `${definition.description} Returns the contract value under structuredContent.result.`,
       inputSchema,
       outputSchema,
@@ -297,29 +360,34 @@ async function defineServer(
         ...(definition.risk === 'read' ? { idempotentHint: true } : {}),
       },
     };
-    const appResource = appRegistration?.resources.find(
-      (resource) => resource.capabilityId === canonicalCapabilityId(definition.identity),
+    const appResource: McpAppResourceDefinition | undefined = appRegistration?.resources.find(
+      (resource: McpAppResourceDefinition): boolean =>
+        resource.capabilityId === canonicalCapabilityId(definition.identity),
     );
     if (appResource !== undefined) visibleAppResources.set(appResource.uri, appResource);
-    const toolHandler = async (input: unknown) => {
+    const toolHandler: (input: unknown) => Promise<ToolErrorResult | ToolSuccessResult> = async (
+      input: unknown,
+    ): Promise<ToolErrorResult | ToolSuccessResult> => {
       if (!isDestructiveCapabilityExposed(definition, 'mcp', options.surfaceExposure)) {
         return toolError('Capability not found.');
       }
-      const controller = new AbortController();
+      let controller: AbortController = new AbortController();
       let timer: ReturnType<typeof setTimeout> | undefined;
-      const timeout = new Promise<{ readonly kind: 'timeout' }>((resolve) => {
-        timer = setTimeout(() => {
-          controller.abort();
-          resolve({ kind: 'timeout' });
-        }, deadlineMs);
-      });
-      const operation = (async () => {
+      const timeout: Promise<TimeoutOutcome> = new Promise<TimeoutOutcome>(
+        (resolve: (value: TimeoutOutcome) => void): void => {
+          timer = setTimeout((): void => {
+            controller.abort();
+            resolve({ kind: 'timeout' });
+          }, deadlineMs);
+        },
+      );
+      const operation: Promise<OperationOutcome> = (async (): Promise<OperationOutcome> => {
         let context: McpExecutionContext;
         try {
           if (options.resolveExecutionContext !== undefined) {
             context = await options.resolveExecutionContext(requestInfo, authInfo);
           } else {
-            const principal =
+            const principal: TrustedPrincipal | null =
               authInfo === undefined || options.resolveTrustedPrincipal === undefined
                 ? null
                 : await options.resolveTrustedPrincipal(authInfo);
@@ -338,7 +406,7 @@ async function defineServer(
         } catch {
           return { kind: 'unavailable' as const };
         }
-        const result = await executeCapability(registry, {
+        const result: ExecutionResult = await executeCapability(registry, {
           identity: definition.identity,
           runtime: 'server',
           input,
@@ -350,7 +418,7 @@ async function defineServer(
       })();
 
       try {
-        const outcome = await Promise.race([operation, timeout]);
+        const outcome: TimeoutOutcome | OperationOutcome = await Promise.race([operation, timeout]);
         if (outcome.kind === 'timeout') return deadlineToolError(definition.risk);
         if (outcome.kind === 'unavailable')
           return toolError('Capability execution is unavailable.');
@@ -358,7 +426,7 @@ async function defineServer(
           return outcome.result.reason === 'deadline-exceeded'
             ? deadlineToolError(definition.risk)
             : toolError(executorError(outcome.result.reason));
-        const value = outcome.result.value;
+        const value: unknown = outcome.result.value;
         let valueJson: string | undefined;
         try {
           if (typeof value === 'number' && !Number.isFinite(value))
@@ -369,8 +437,8 @@ async function defineServer(
         }
         if (valueJson === undefined) return toolError('Capability result could not be serialized.');
 
-        const structuredContent = { result: JSON.parse(valueJson) as unknown };
-        const text = JSON.stringify(structuredContent);
+        const structuredContent: { result: unknown } = { result: JSON.parse(valueJson) as unknown };
+        const text: string = JSON.stringify(structuredContent);
         return {
           content: [{ type: 'text' as const, text }],
           structuredContent,
@@ -406,9 +474,9 @@ export function createMcpHandlerWithAppRegistration(
   appRegistration?: McpAppRegistration,
 ): (request: Request) => Promise<Response> {
   createCapabilitySurfaceMap(registry.definitions);
-  const config = validateOptions(options);
-  const officialHandler = createOfficialMcpHandler(
-    async (context: McpRequestContext) =>
+  const config: McpAdapterConfig = validateOptions(options);
+  const officialHandler: ReturnType<typeof createOfficialMcpHandler> = createOfficialMcpHandler(
+    async (context: McpRequestContext): Promise<McpServer> =>
       await defineServer(
         registry,
         context.requestInfo,
@@ -423,7 +491,7 @@ export function createMcpHandlerWithAppRegistration(
     },
   );
 
-  const bearerGate =
+  const bearerGate: ((request: Request) => Promise<AuthInfo | Response>) | undefined =
     options.bearerAuth === undefined
       ? undefined
       : requireBearerAuth({
@@ -446,7 +514,7 @@ export function createMcpHandlerWithAppRegistration(
     }
     let authInfo: AuthInfo | undefined;
     if (bearerGate !== undefined && request.headers.has('authorization')) {
-      const gated = await bearerGate(request);
+      const gated: Response | AuthInfo = await bearerGate(request);
       if (gated instanceof Response) return gated;
       authInfo = gated;
     }

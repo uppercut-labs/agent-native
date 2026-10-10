@@ -50,13 +50,15 @@ export function bindCapability<Input, Output>(
   definition: CapabilityDefinition<Input, Output>,
   options: CapabilityBindingOptions<Input, Output>,
 ): CapabilityBinding {
-  const capabilityId = canonicalCapabilityId(definition.identity);
+  const capabilityId: string = canonicalCapabilityId(definition.identity);
   if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(options.id)) {
     throw new TypeError('binding id must be a lowercase slug');
   }
   if (
     options.targets.length === 0 ||
-    options.targets.some((target) => !['browser', 'server', 'local'].includes(target))
+    options.targets.some(
+      (target: RuntimeTarget): boolean => !['browser', 'server', 'local'].includes(target),
+    )
   ) {
     throw new TypeError('binding targets must name one or more supported runtimes');
   }
@@ -81,8 +83,8 @@ export function createCapabilityRegistry(
   definitions: readonly CapabilityDefinition<unknown, unknown>[],
   bindings: readonly CapabilityBinding[],
 ): CapabilityRegistry {
-  const definitionIds: Set<string> = new Set();
-  const definitionsById: Map<string, CapabilityDefinition<unknown, unknown>> = new Map();
+  let definitionIds: Set<string> = new Set();
+  let definitionsById: Map<string, CapabilityDefinition<unknown, unknown>> = new Map();
   for (const candidate of definitions) {
     if (!isCapabilityDefinition(candidate)) {
       throw new CapabilityRegistryError(
@@ -91,7 +93,7 @@ export function createCapabilityRegistry(
         'UAN-002.invalid-definition',
       );
     }
-    const definition = candidate;
+    const definition: CapabilityDefinition<unknown, unknown> = candidate;
     let id: string;
     try {
       id = canonicalCapabilityId(definition.identity);
@@ -113,10 +115,12 @@ export function createCapabilityRegistry(
     definitionsById.set(id, definition);
   }
 
-  const bindingIds: Set<string> = new Set();
+  let bindingIds: Set<string> = new Set();
   for (const binding of bindings) {
-    const registeredDefinition = definitionsById.get(binding.capabilityId);
-    const boundDefinition = getBindingRecord(binding)?.definition;
+    const registeredDefinition: CapabilityDefinition<unknown, unknown> | undefined =
+      definitionsById.get(binding.capabilityId);
+    const boundDefinition: CapabilityDefinition<unknown, unknown> | undefined =
+      getBindingRecord(binding)?.definition;
     if (
       registeredDefinition === undefined ||
       boundDefinition !== registeredDefinition ||

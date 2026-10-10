@@ -3,8 +3,12 @@ import {
   registerAppTool,
   RESOURCE_MIME_TYPE,
 } from '@modelcontextprotocol/ext-apps/server';
-import type { StandardSchemaWithJSON } from '@modelcontextprotocol/server';
-import { canonicalCapabilityId } from './core/contracts.js';
+import type {
+  CallToolResult,
+  McpServer,
+  StandardSchemaWithJSON,
+} from '@modelcontextprotocol/server';
+import { type CapabilityDefinition, canonicalCapabilityId } from './core/contracts.js';
 import type { CapabilityRegistry } from './core/registry.js';
 import {
   createMcpHandlerWithAppRegistration,
@@ -13,8 +17,8 @@ import {
   type McpAppResourceDefinition,
 } from './mcp.js';
 
-const MAX_RESOURCE_BYTES = 1024 * 1024;
-const URI_PATTERN = /^ui:\/\/[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\/[A-Za-z0-9._~/-]+$/;
+const MAX_RESOURCE_BYTES: number = 1024 * 1024;
+const URI_PATTERN: RegExp = /^ui:\/\/[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\/[A-Za-z0-9._~/-]+$/;
 
 export type McpAppResource = McpAppResourceDefinition;
 
@@ -22,17 +26,21 @@ export type McpAppsOptions = McpAdapterOptions & {
   readonly resources: readonly McpAppResource[];
 };
 
-const RESOURCE_TAG_PATTERN = /<[a-z][a-z0-9:-]*\b/gi;
-const URL_ATTRIBUTE_PATTERN =
+type McpAppResourceContents = {
+  contents: { uri: string; mimeType: string; text: string }[];
+};
+
+const RESOURCE_TAG_PATTERN: RegExp = /<[a-z][a-z0-9:-]*\b/gi;
+const URL_ATTRIBUTE_PATTERN: RegExp =
   /\b(src|href|srcset|poster|action|formaction|data|xlink:href|style)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>]+))/gi;
 
 function hasUnsafeResourceUrl(html: string): boolean {
   for (const tag of html.matchAll(RESOURCE_TAG_PATTERN)) {
-    let end = (tag.index ?? 0) + tag[0].length;
-    const start = end;
+    let end: number = (tag.index ?? 0) + tag[0].length;
+    const start: number = end;
     let quote: '"' | "'" | null = null;
     for (; end < html.length; end += 1) {
-      const character = html[end];
+      const character: string | undefined = html[end];
       if (quote !== null) {
         if (character === quote) quote = null;
       } else if (character === '"' || character === "'") {
@@ -42,17 +50,17 @@ function hasUnsafeResourceUrl(html: string): boolean {
       }
     }
     if (end === html.length) return true;
-    const attributes = html.slice(start, end);
+    const attributes: string = html.slice(start, end);
     // Hosts supply the CSP; an embedded refresh directive must not navigate around it.
     if (tag[0].toLowerCase() === '<meta' && /\bhttp-equiv\s*=/i.test(attributes)) return true;
     for (const match of attributes.matchAll(URL_ATTRIBUTE_PATTERN)) {
-      const attribute = match[1]?.toLowerCase();
-      const value = match[2] ?? match[3] ?? match[4] ?? '';
+      const attribute: string | undefined = match[1]?.toLowerCase();
+      const value: string = match[2] ?? match[3] ?? match[4] ?? '';
       // Entity or control decoding can turn an apparently local URL into a remote one.
       if (
         value.includes('&') ||
-        Array.from(value).some((character) => {
-          const code = character.charCodeAt(0);
+        Array.from(value).some((character: string): boolean => {
+          const code: number = character.charCodeAt(0);
           return code < 32 || code === 127;
         })
       )
@@ -61,11 +69,14 @@ function hasUnsafeResourceUrl(html: string): boolean {
         if (/@import|url\s*\(|\\/i.test(value)) return true;
         continue;
       }
-      const urls =
+      const urls: readonly string[] =
         attribute === 'srcset'
-          ? value.split(',').map((candidate) => candidate.trim().split(/\s+/)[0] ?? '')
+          ? value
+              .split(',')
+              .map((candidate: string): string => candidate.trim().split(/\s+/)[0] ?? '')
           : [value.trim()];
-      if (urls.some((url) => /^(?:[a-z][a-z\d+.-]*:|[\\/]{2})/i.test(url))) return true;
+      if (urls.some((url: string): boolean => /^(?:[a-z][a-z\d+.-]*:|[\\/]{2})/i.test(url)))
+        return true;
     }
   }
   return false;
@@ -75,7 +86,7 @@ function validateResource(resource: McpAppResource): void {
   if (!URI_PATTERN.test(resource.uri) || resource.uri.length > 256) {
     throw new TypeError('MCP App resource URI must be a bounded ui:// URI.');
   }
-  if (resource.uri.split('/').some((part) => part === '.' || part === '..')) {
+  if (resource.uri.split('/').some((part: string): boolean => part === '.' || part === '..')) {
     throw new TypeError('MCP App resource URI cannot contain traversal segments.');
   }
   if (
@@ -85,10 +96,14 @@ function validateResource(resource: McpAppResource): void {
   ) {
     throw new TypeError('MCP App resource metadata or HTML exceeds its bound.');
   }
-  const externalElement = hasUnsafeResourceUrl(resource.html);
-  const cssBlocks = [...resource.html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)];
+  const externalElement: boolean = hasUnsafeResourceUrl(resource.html);
+  const cssBlocks: readonly RegExpExecArray[] = [
+    ...resource.html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi),
+  ];
   // Resource styles stay self-contained; reject URL functions, imports, and CSS escapes.
-  const externalCss = cssBlocks.some((match) => /@import|url\s*\(|\\/i.test(match[1] ?? ''));
+  const externalCss: boolean = cssBlocks.some((match: RegExpExecArray): boolean =>
+    /@import|url\s*\(|\\/i.test(match[1] ?? ''),
+  );
   if (externalElement || externalCss) {
     throw new TypeError('MCP App resource cannot declare external origins.');
   }
@@ -105,12 +120,14 @@ export function validateMcpAppResources(
   registry: CapabilityRegistry,
   resources: readonly McpAppResource[],
 ): readonly McpAppResource[] {
-  const known = new Set(
-    registry.definitions.map((definition) => canonicalCapabilityId(definition.identity)),
+  const known: ReadonlySet<string> = new Set(
+    registry.definitions.map((definition: CapabilityDefinition<unknown, unknown>): string =>
+      canonicalCapabilityId(definition.identity),
+    ),
   );
-  const byCapability = new Set<string>();
-  const byUri = new Set<string>();
-  const validated: McpAppResource[] = [];
+  let byCapability: Set<string> = new Set();
+  let byUri: Set<string> = new Set();
+  let validated: McpAppResource[] = [];
   for (const resource of resources) {
     const candidate: McpAppResource = Object.freeze({
       capabilityId: resource.capabilityId,
@@ -119,7 +136,7 @@ export function validateMcpAppResources(
       html: resource.html,
     });
     validateResource(candidate);
-    const capabilityId = resourceKey(candidate);
+    const capabilityId: string = resourceKey(candidate);
     if (!known.has(capabilityId)) {
       throw new TypeError('MCP App resource refers to an undeclared capability.');
     }
@@ -134,10 +151,21 @@ export function validateMcpAppResources(
 }
 
 function createRegistration(resources: readonly McpAppResource[]): McpAppRegistration {
-  const byCapability = new Map(resources.map((resource) => [resource.capabilityId, resource]));
+  const byCapability: ReadonlyMap<string, McpAppResource> = new Map(
+    resources.map((resource: McpAppResource): [string, McpAppResource] => [
+      resource.capabilityId,
+      resource,
+    ]),
+  );
   return {
     resources,
-    registerTool(server, name, config, handler, resourceUri) {
+    registerTool(
+      server: McpServer,
+      name: string,
+      config: Parameters<McpAppRegistration['registerTool']>[2],
+      handler: (input: unknown) => Promise<CallToolResult>,
+      resourceUri: string,
+    ): void {
       registerAppTool<StandardSchemaWithJSON, StandardSchemaWithJSON>(
         server,
         name,
@@ -153,7 +181,7 @@ function createRegistration(resources: readonly McpAppResource[]): McpAppRegistr
         handler,
       );
     },
-    registerResources(server, visibleResources) {
+    registerResources(server: McpServer, visibleResources: readonly McpAppResource[]): void {
       for (const resource of visibleResources) {
         if (byCapability.get(resource.capabilityId) !== resource) {
           throw new Error('Refusing to register an undeclared MCP App resource.');
@@ -176,7 +204,7 @@ function createRegistration(resources: readonly McpAppResource[]): McpAppRegistr
               },
             },
           },
-          async (requestedUri) => {
+          async (requestedUri: URL): Promise<McpAppResourceContents> => {
             if (requestedUri.href !== resource.uri) {
               throw new Error('MCP App resource URI is not declared.');
             }
@@ -200,7 +228,10 @@ export function createMcpAppsHandler(
   registry: CapabilityRegistry,
   options: McpAppsOptions,
 ): (request: Request) => Promise<Response> {
-  const resources = validateMcpAppResources(registry, options.resources);
-  const registration = createRegistration(resources);
+  const resources: readonly McpAppResourceDefinition[] = validateMcpAppResources(
+    registry,
+    options.resources,
+  );
+  const registration: McpAppRegistration = createRegistration(resources);
   return createMcpHandlerWithAppRegistration(registry, options, registration);
 }

@@ -11,10 +11,11 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import type { Dirent, Stats } from 'node:fs';
 import path from 'node:path';
 
-export const INIT_PLAN_VERSION = 'uan.init-plan/v1';
-export const INIT_OWNERSHIP_VERSION = 'uan.init-ownership/v1';
+export const INIT_PLAN_VERSION: 'uan.init-plan/v1' = 'uan.init-plan/v1';
+export const INIT_OWNERSHIP_VERSION: 'uan.init-ownership/v1' = 'uan.init-ownership/v1';
 
 export type InitFramework = 'astro' | 'next' | 'unknown';
 export type InitRendering = 'static' | 'on-demand' | 'server' | 'unknown';
@@ -90,22 +91,69 @@ type OwnedManifest = {
   readonly astroConfigPath: string | null;
   readonly detection: InitDetection;
   readonly selectedChoices: InitChoices;
-  readonly files: Readonly<
-    Record<
-      string,
-      {
-        readonly beforeSha256: string | null;
-        readonly afterSha256: string;
-        readonly beforeContent?: string;
-      }
-    >
-  >;
+  readonly files: Readonly<Record<string, OwnedFileRecord>>;
+};
+
+type OwnedFileRecord = {
+  readonly beforeSha256: string | null;
+  readonly afterSha256: string;
+  readonly beforeContent?: string;
+};
+
+type AstroOutput = {
+  output: Exclude<InitRendering, 'on-demand'>;
+  serverAdapter: boolean;
+  dynamic: boolean;
+  patchable: boolean;
+};
+
+type AstroRoutes = {
+  onDemandRoutes: string[];
+  staticProtocolFiles: string[];
+};
+
+type AstroEvidence = {
+  found: boolean;
+  rendering: InitRendering;
+  serverAdapter: boolean;
+  onDemandRoutes: string[];
+  staticProtocolFiles: string[];
+  dynamic: boolean;
+  routeConflict: boolean;
+  patchable: boolean;
+  configPath: string | null;
+  configSha256: string | null;
+  evidence: string[];
+};
+
+type NextEvidence = {
+  found: boolean;
+  rendering: InitRendering;
+  routeConflict: boolean;
+  evidence: string[];
+};
+
+type HostingMarker = { marker: string; host: Exclude<InitHosting, 'unknown'> };
+
+type HostingEvidence = { hosting: InitHosting; evidence: string[]; unsupported: string[] };
+
+type InitSettings = {
+  readonly schemaVersion: string;
+  readonly framework: InitFramework;
+  readonly rendering: InitRendering;
+  readonly applicationRoot: string | null;
+  readonly packageManager: InitPackageManager;
+  readonly hosting: Exclude<InitHosting, 'unknown'>;
+  readonly sidecarOrigin: string | null;
+  readonly routeMode: InitRouteMode;
+  readonly browserEntry: string;
+  readonly note: string;
 };
 
 type Scaffold = Readonly<Record<string, string>>;
-const MANIFEST_PATH = '.agent-native/ownership.json';
-const BOOTSTRAP_PATH = '.agent-native/browser-entry.mjs';
-const SETTINGS_PATH = '.agent-native/init.json';
+const MANIFEST_PATH: '.agent-native/ownership.json' = '.agent-native/ownership.json';
+const BOOTSTRAP_PATH: '.agent-native/browser-entry.mjs' = '.agent-native/browser-entry.mjs';
+const SETTINGS_PATH: '.agent-native/init.json' = '.agent-native/init.json';
 const LOCKFILES: Readonly<Record<string, Exclude<InitPackageManager, 'unknown'>>> = {
   'package-lock.json': 'npm',
   'pnpm-lock.yaml': 'pnpm',
@@ -113,6 +161,18 @@ const LOCKFILES: Readonly<Record<string, Exclude<InitPackageManager, 'unknown'>>
   'bun.lock': 'bun',
   'bun.lockb': 'bun',
 };
+
+function requireAt<T>(values: ArrayLike<T>, index: number): T {
+  const value: T | undefined = values[index];
+  if (value === undefined) throw new Error(`internal error: missing element at index ${index}`);
+  return value;
+}
+
+function requireValue<T>(record: Readonly<Record<string, T>>, key: string): T {
+  const value: T | undefined = record[key];
+  if (value === undefined) throw new Error(`internal error: missing record entry ${key}`);
+  return value;
+}
 
 function hash(value: string | Uint8Array): string {
   return createHash('sha256').update(value).digest('hex');
@@ -123,8 +183,10 @@ function stableValue(value: unknown): unknown {
   if (typeof value !== 'object' || value === null) return value;
   return Object.fromEntries(
     Object.entries(value)
-      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
-      .map(([key, child]) => [key, stableValue(child)]),
+      .sort(([left]: [string, unknown], [right]: [string, unknown]): number =>
+        left < right ? -1 : left > right ? 1 : 0,
+      )
+      .map(([key, child]: [string, unknown]): [string, unknown] => [key, stableValue(child)]),
   );
 }
 
@@ -136,7 +198,7 @@ async function exists(filePath: string): Promise<boolean> {
   try {
     await lstat(filePath);
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT')
       return false;
     throw error;
@@ -144,18 +206,18 @@ async function exists(filePath: string): Promise<boolean> {
 }
 
 async function assertNoSymlink(root: string, relativePath: string): Promise<string> {
-  const segments = relativePath.split(/[\\/]/).filter(Boolean);
-  let current = root;
+  const segments: readonly string[] = relativePath.split(/[\\/]/).filter(Boolean);
+  let current: string = root;
   for (const segment of segments) {
     if (segment === '.' || segment === '..') throw new Error('managed path is not normalized');
     current = path.join(current, segment);
     if (!(await exists(current))) continue;
-    const info = await lstat(current);
+    const info: Stats = await lstat(current);
     if (info.isSymbolicLink()) throw new Error(`refusing symlink in managed path: ${relativePath}`);
   }
-  let existingParent = path.dirname(current);
+  let existingParent: string = path.dirname(current);
   while (!(await exists(existingParent))) existingParent = path.dirname(existingParent);
-  const parent = await realpath(existingParent);
+  const parent: string = await realpath(existingParent);
   if (parent !== root && !parent.startsWith(root + path.sep)) {
     throw new Error(`managed path escapes project root: ${relativePath}`);
   }
@@ -163,20 +225,20 @@ async function assertNoSymlink(root: string, relativePath: string): Promise<stri
 }
 
 async function readOptional(root: string, relativePath: string): Promise<string | null> {
-  const target = await assertNoSymlink(root, relativePath);
+  const target: string = await assertNoSymlink(root, relativePath);
   if (!(await exists(target))) return null;
   return readFile(target, 'utf8');
 }
 
 async function packageInfo(directory: string): Promise<Record<string, unknown> | null> {
   try {
-    const packagePath = path.join(directory, 'package.json');
+    const packagePath: string = path.join(directory, 'package.json');
     if ((await lstat(packagePath)).isSymbolicLink())
       throw new Error('refusing symlink package.json');
     const parsed: unknown = JSON.parse(await readFile(packagePath, 'utf8'));
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
     return parsed as Record<string, unknown>;
-  } catch (error) {
+  } catch (error: unknown) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT')
       return null;
     throw new Error(`cannot safely inspect package.json at ${directory}`, { cause: error });
@@ -185,13 +247,15 @@ async function packageInfo(directory: string): Promise<Record<string, unknown> |
 
 async function listDirectories(directory: string): Promise<string[]> {
   try {
-    const entries = await (await import('node:fs/promises')).readdir(directory, {
+    const entries: Dirent<string>[] = await (await import('node:fs/promises')).readdir(directory, {
       withFileTypes: true,
     });
     return entries
-      .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
-      .map((entry) => path.join(directory, entry.name));
-  } catch (error) {
+      .filter(
+        (entry: Dirent<string>): boolean => entry.isDirectory() && !entry.name.startsWith('.'),
+      )
+      .map((entry: Dirent<string>): string => path.join(directory, entry.name));
+  } catch (error: unknown) {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT')
       return [];
     throw error;
@@ -199,9 +263,9 @@ async function listDirectories(directory: string): Promise<string[]> {
 }
 
 function sourceTokens(source: string): string[] {
-  const tokens: string[] = [];
-  for (let index = 0; index < source.length; ) {
-    const char = source[index]!;
+  let tokens: string[] = [];
+  for (let index: number = 0; index < source.length; ) {
+    const char: string = requireAt(source, index);
     if (/\s/.test(char)) {
       index += 1;
       continue;
@@ -212,20 +276,20 @@ function sourceTokens(source: string): string[] {
       continue;
     }
     if (char === '/' && source[index + 1] === '*') {
-      const close = source.indexOf('*/', index + 2);
+      const close: number = source.indexOf('*/', index + 2);
       if (close < 0) throw new Error('unterminated comment in Astro config');
       index = close + 2;
       continue;
     }
     if (char === "'" || char === '"') {
-      let value = '';
+      let value: string = '';
       index += 1;
       while (index < source.length && source[index] !== char) {
         if (source[index] === '\\') {
           value += source[index + 1] ?? '';
           index += 2;
         } else {
-          value += source[index]!;
+          value += requireAt(source, index);
           index += 1;
         }
       }
@@ -234,7 +298,7 @@ function sourceTokens(source: string): string[] {
       tokens.push(`string:${value}`);
       continue;
     }
-    const word = source.slice(index).match(/^[A-Za-z_$][\w$]*/)?.[0];
+    const word: string | undefined = source.slice(index).match(/^[A-Za-z_$][\w$]*/)?.[0];
     if (word !== undefined) {
       tokens.push(`word:${word}`);
       index += word.length;
@@ -251,25 +315,20 @@ function sourceTokens(source: string): string[] {
   return tokens;
 }
 
-function staticAstroOutput(source: string): {
-  output: Exclude<InitRendering, 'on-demand'>;
-  serverAdapter: boolean;
-  dynamic: boolean;
-  patchable: boolean;
-} {
-  const tokens = sourceTokens(source);
-  const start = tokens.findIndex(
-    (token, index) =>
+function staticAstroOutput(source: string): AstroOutput {
+  const tokens: readonly string[] = sourceTokens(source);
+  const start: number = tokens.findIndex(
+    (token: string, index: number): boolean =>
       token === 'word:defineConfig' && tokens[index + 1] === '(' && tokens[index + 2] === '{',
   );
   if (start < 0)
     return { output: 'unknown', serverAdapter: false, dynamic: true, patchable: false };
-  let depth = 0;
+  let depth: number = 0;
   let output: string | undefined;
-  let serverAdapter = false;
-  let end = -1;
-  for (let index = start + 2; index < tokens.length; index += 1) {
-    const token = tokens[index]!;
+  let serverAdapter: boolean = false;
+  let end: number = -1;
+  for (let index: number = start + 2; index < tokens.length; index += 1) {
+    const token: string = requireAt(tokens, index);
     if (token === '{') depth += 1;
     else if (token === '}') {
       depth -= 1;
@@ -285,7 +344,7 @@ function staticAstroOutput(source: string): {
       (tokens[index + 2] === 'string:static' || tokens[index + 2] === 'string:server') &&
       (tokens[index + 3] === ',' || tokens[index + 3] === '}')
     ) {
-      output = tokens[index + 2]!.slice('string:'.length);
+      output = requireAt(tokens, index + 2).slice('string:'.length);
     } else if (
       depth === 1 &&
       token === 'word:adapter' &&
@@ -299,9 +358,9 @@ function staticAstroOutput(source: string): {
     }
   }
   if (end < 0) return { output: 'unknown', serverAdapter: false, dynamic: true, patchable: false };
-  const configTokens = tokens.slice(start, end + 1);
-  const dynamic = configTokens.some(
-    (token, index) =>
+  const configTokens: readonly string[] = tokens.slice(start, end + 1);
+  const dynamic: boolean = configTokens.some(
+    (token: string, index: number): boolean =>
       token === '...' ||
       token === 'word:await' ||
       token === 'word:async' ||
@@ -312,27 +371,24 @@ function staticAstroOutput(source: string): {
   );
   if (dynamic || output === undefined)
     return { output: 'unknown', serverAdapter, dynamic, patchable: false };
-  const patchable =
+  const patchable: boolean =
     /^import\s+\{\s*defineConfig\s*\}\s+from\s+(['"])astro\/config\1;\s*export\s+default\s+defineConfig\s*\(\s*\{\s*output\s*:\s*(['"])static\2\s*,?\s*\}\s*\);\s*$/s.test(
       source,
     );
   return { output: output as 'static' | 'server', serverAdapter, dynamic: false, patchable };
 }
 
-async function inspectAstroRoutes(directory: string): Promise<{
-  onDemandRoutes: string[];
-  staticProtocolFiles: string[];
-}> {
-  const onDemandRoutes: string[] = [];
-  const staticProtocolFiles: string[] = [];
-  const pagesRoot = path.join(directory, 'src/pages');
+async function inspectAstroRoutes(directory: string): Promise<AstroRoutes> {
+  let onDemandRoutes: string[] = [];
+  let staticProtocolFiles: string[] = [];
+  const pagesRoot: string = path.join(directory, 'src/pages');
 
   async function visit(current: string): Promise<void> {
     for (const entry of await (await import('node:fs/promises'))
       .readdir(current, {
         withFileTypes: true,
       })
-      .catch((error: unknown) => {
+      .catch((error: unknown): Dirent<string>[] => {
         if (
           typeof error === 'object' &&
           error !== null &&
@@ -343,15 +399,15 @@ async function inspectAstroRoutes(directory: string): Promise<{
         throw error;
       })) {
       if (entry.isSymbolicLink()) continue;
-      const absolute = path.join(current, entry.name);
+      const absolute: string = path.join(current, entry.name);
       if (entry.isDirectory()) {
         await visit(absolute);
         continue;
       }
       if (!/\.(?:astro|[cm]?[jt]s)$/.test(entry.name)) continue;
-      const relative = path.relative(pagesRoot, absolute).split(path.sep).join('/');
-      const source = await readFile(absolute, 'utf8');
-      const onDemand = /export\s+const\s+prerender\s*=\s*false\b/.test(source);
+      const relative: string = path.relative(pagesRoot, absolute).split(path.sep).join('/');
+      const source: string = await readFile(absolute, 'utf8');
+      const onDemand: boolean = /export\s+const\s+prerender\s*=\s*false\b/.test(source);
       if (onDemand) onDemandRoutes.push(relative);
       if (
         /^(?:mcp(?:\.|\/)|agent-native\/v1\/)/.test(relative) &&
@@ -370,12 +426,12 @@ async function inspectAstroRoutes(directory: string): Promise<{
     if (await exists(path.join(directory, 'public', relative)))
       staticProtocolFiles.push(`public/${relative}`);
   }
-  const publicProtocolRoot = path.join(directory, 'public/agent-native/v1');
+  const publicProtocolRoot: string = path.join(directory, 'public/agent-native/v1');
   for (const entry of await (await import('node:fs/promises'))
     .readdir(publicProtocolRoot, {
       withFileTypes: true,
     })
-    .catch((error: unknown) => {
+    .catch((error: unknown): Dirent<string>[] => {
       if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT')
         return [];
       throw error;
@@ -385,24 +441,19 @@ async function inspectAstroRoutes(directory: string): Promise<{
   return { onDemandRoutes: onDemandRoutes.sort(), staticProtocolFiles: staticProtocolFiles.sort() };
 }
 
-async function astroEvidence(directory: string): Promise<{
-  found: boolean;
-  rendering: InitRendering;
-  serverAdapter: boolean;
-  onDemandRoutes: string[];
-  staticProtocolFiles: string[];
-  dynamic: boolean;
-  routeConflict: boolean;
-  patchable: boolean;
-  configPath: string | null;
-  configSha256: string | null;
-  evidence: string[];
-}> {
-  const pkg = await packageInfo(directory);
-  const deps = [pkg?.['dependencies'], pkg?.['devDependencies'], pkg?.['peerDependencies']].filter(
-    (value): value is Record<string, unknown> => typeof value === 'object' && value !== null,
+async function astroEvidence(directory: string): Promise<AstroEvidence> {
+  const pkg: Record<string, unknown> | null = await packageInfo(directory);
+  const deps: readonly Record<string, unknown>[] = [
+    pkg?.['dependencies'],
+    pkg?.['devDependencies'],
+    pkg?.['peerDependencies'],
+  ].filter(
+    (value: unknown): value is Record<string, unknown> =>
+      typeof value === 'object' && value !== null,
   );
-  const packageHasAstro = deps.some((group) => Object.hasOwn(group, 'astro'));
+  const packageHasAstro: boolean = deps.some((group: Record<string, unknown>): boolean =>
+    Object.hasOwn(group, 'astro'),
+  );
   let configPath: string | null = null;
   for (const candidate of [
     'astro.config.mjs',
@@ -429,7 +480,7 @@ async function astroEvidence(directory: string): Promise<{
       configSha256: null,
       evidence: [],
     };
-  const evidence = [];
+  let evidence: string[] = [];
   if (packageHasAstro) evidence.push('package.json: Astro dependency');
   if (configPath === null)
     return {
@@ -446,15 +497,20 @@ async function astroEvidence(directory: string): Promise<{
       evidence,
     };
   evidence.push(configPath);
-  const configFile = await assertNoSymlink(await realpath(directory), configPath);
-  const text = await readFile(configFile, 'utf8');
-  const { output, serverAdapter, dynamic, patchable } = staticAstroOutput(text);
-  const routes = await inspectAstroRoutes(directory);
-  const rendering = output === 'static' && routes.onDemandRoutes.length > 0 ? 'on-demand' : output;
+  const configFile: string = await assertNoSymlink(await realpath(directory), configPath);
+  const text: string = await readFile(configFile, 'utf8');
+  const { output, serverAdapter, dynamic, patchable }: AstroOutput = staticAstroOutput(text);
+  const routes: AstroRoutes = await inspectAstroRoutes(directory);
+  const rendering: InitRendering =
+    output === 'static' && routes.onDemandRoutes.length > 0 ? 'on-demand' : output;
   if (rendering !== 'unknown') evidence.push(`literal output: ${rendering}`);
   if (serverAdapter) evidence.push('Astro server adapter configured');
-  evidence.push(...routes.onDemandRoutes.map((route) => `on-demand route: src/pages/${route}`));
-  evidence.push(...routes.staticProtocolFiles.map((file) => `static protocol file: ${file}`));
+  evidence.push(
+    ...routes.onDemandRoutes.map((route: string): string => `on-demand route: src/pages/${route}`),
+  );
+  evidence.push(
+    ...routes.staticProtocolFiles.map((file: string): string => `static protocol file: ${file}`),
+  );
   return {
     found: true,
     rendering,
@@ -472,7 +528,7 @@ async function astroEvidence(directory: string): Promise<{
 
 async function hasMcpRoute(directory: string): Promise<boolean> {
   for (const base of ['src/pages', 'src/app', 'pages', 'app']) {
-    const root = path.join(directory, base);
+    const root: string = path.join(directory, base);
     for (const name of [
       'mcp.astro',
       'mcp.js',
@@ -493,18 +549,20 @@ async function hasMcpRoute(directory: string): Promise<boolean> {
   return false;
 }
 
-async function nextEvidence(directory: string): Promise<{
-  found: boolean;
-  rendering: InitRendering;
-  routeConflict: boolean;
-  evidence: string[];
-}> {
-  const pkg = await packageInfo(directory);
-  const deps = [pkg?.['dependencies'], pkg?.['devDependencies'], pkg?.['peerDependencies']].filter(
-    (value): value is Record<string, unknown> => typeof value === 'object' && value !== null,
+async function nextEvidence(directory: string): Promise<NextEvidence> {
+  const pkg: Record<string, unknown> | null = await packageInfo(directory);
+  const deps: readonly Record<string, unknown>[] = [
+    pkg?.['dependencies'],
+    pkg?.['devDependencies'],
+    pkg?.['peerDependencies'],
+  ].filter(
+    (value: unknown): value is Record<string, unknown> =>
+      typeof value === 'object' && value !== null,
   );
-  const packageHasNext = deps.some((group) => Object.hasOwn(group, 'next'));
-  const markers: string[] = [];
+  const packageHasNext: boolean = deps.some((group: Record<string, unknown>): boolean =>
+    Object.hasOwn(group, 'next'),
+  );
+  let markers: string[] = [];
   for (const candidate of [
     'next.config.js',
     'next.config.mjs',
@@ -516,25 +574,24 @@ async function nextEvidence(directory: string): Promise<{
   ]) {
     if (await exists(path.join(directory, candidate))) markers.push(candidate);
   }
-  const found = packageHasNext || markers.some((marker) => marker.startsWith('next.config.'));
+  const found: boolean =
+    packageHasNext || markers.some((marker: string): boolean => marker.startsWith('next.config.'));
   if (!found) return { found: false, rendering: 'unknown', routeConflict: false, evidence: [] };
-  const routeConflict = await hasMcpRoute(directory);
+  const routeConflict: boolean = await hasMcpRoute(directory);
   return {
     found: true,
     rendering: 'server',
     routeConflict,
     evidence: [
       ...(packageHasNext ? ['package.json: Next dependency'] : []),
-      ...markers.map((marker) => `Next marker: ${marker}`),
+      ...markers.map((marker: string): string => `Next marker: ${marker}`),
       ...(routeConflict ? ['existing route: /mcp'] : []),
     ],
   };
 }
 
-async function hostingEvidence(
-  directory: string,
-): Promise<{ hosting: InitHosting; evidence: string[]; unsupported: string[] }> {
-  const found: { marker: string; host: Exclude<InitHosting, 'unknown'> }[] = [];
+async function hostingEvidence(directory: string): Promise<HostingEvidence> {
+  let found: HostingMarker[] = [];
   for (const [marker, host] of [
     ['wrangler.toml', 'cloudflare'],
     ['wrangler.json', 'cloudflare'],
@@ -544,14 +601,16 @@ async function hostingEvidence(
   ] as const) {
     if (await exists(path.join(directory, marker))) found.push({ marker, host });
   }
-  const unsupported: string[] = [];
+  let unsupported: string[] = [];
   for (const marker of ['firebase.json', 'amplify.yml', 'fly.toml', 'render.yaml']) {
     if (await exists(path.join(directory, marker))) unsupported.push(marker);
   }
-  const distinct = [...new Set(found.map((item) => item.host))];
+  const distinct: readonly Exclude<InitHosting, 'unknown'>[] = [
+    ...new Set(found.map((item: HostingMarker): Exclude<InitHosting, 'unknown'> => item.host)),
+  ];
   return {
-    hosting: distinct.length === 1 ? distinct[0]! : 'unknown',
-    evidence: [...found.map((item) => item.marker), ...unsupported],
+    hosting: distinct.length === 1 ? requireAt(distinct, 0) : 'unknown',
+    evidence: [...found.map((item: HostingMarker): string => item.marker), ...unsupported],
     unsupported,
   };
 }
@@ -561,22 +620,24 @@ export async function detectExistingProject(
   projectRoot: string,
   overrides: InitOverrides = {},
 ): Promise<InitDetection> {
-  const root = await realpath(projectRoot);
-  const rootPackage = await packageInfo(root);
-  const candidates: string[] = [];
-  const rootAstro = await astroEvidence(root);
-  const rootNext = await nextEvidence(root);
+  const root: string = await realpath(projectRoot);
+  const rootPackage: Record<string, unknown> | null = await packageInfo(root);
+  let candidates: string[] = [];
+  const rootAstro: AstroEvidence = await astroEvidence(root);
+  const rootNext: NextEvidence = await nextEvidence(root);
   if (rootAstro.found || rootNext.found) candidates.push(root);
-  const workspaceValue = rootPackage?.['workspaces'];
-  const workspacePaths = Array.isArray(workspaceValue)
-    ? workspaceValue.filter((item): item is string => typeof item === 'string')
+  const workspaceValue: unknown = rootPackage?.['workspaces'];
+  const workspacePaths: readonly string[] = Array.isArray(workspaceValue)
+    ? workspaceValue.filter((item: unknown): item is string => typeof item === 'string')
     : typeof workspaceValue === 'object' &&
         workspaceValue !== null &&
         'packages' in workspaceValue &&
         Array.isArray(workspaceValue['packages'])
-      ? workspaceValue['packages'].filter((item): item is string => typeof item === 'string')
+      ? workspaceValue['packages'].filter(
+          (item: unknown): item is string => typeof item === 'string',
+        )
       : [];
-  const hasWorkspaceLayout =
+  const hasWorkspaceLayout: boolean =
     workspacePaths.length > 0 || (await exists(path.join(root, 'pnpm-workspace.yaml')));
   if (hasWorkspaceLayout) {
     for (const group of ['apps', 'packages', 'sites']) {
@@ -589,12 +650,13 @@ export async function detectExistingProject(
       }
     }
   }
-  const overrideRoot =
+  const overrideRoot: string | null =
     overrides.appRoot === undefined ? null : path.resolve(root, overrides.appRoot);
   if (overrideRoot !== null && overrideRoot !== root && !overrideRoot.startsWith(root + path.sep)) {
     throw new Error('appRoot override must remain inside project root');
   }
-  const overrideRealRoot = overrideRoot === null ? null : await realpath(overrideRoot);
+  const overrideRealRoot: string | null =
+    overrideRoot === null ? null : await realpath(overrideRoot);
   if (
     overrideRealRoot !== null &&
     overrideRealRoot !== root &&
@@ -602,18 +664,22 @@ export async function detectExistingProject(
   ) {
     throw new Error('appRoot override resolves through a symlink outside project root');
   }
-  const applicationRoot = overrideRealRoot ?? (candidates.length === 1 ? candidates[0]! : null);
-  const appRelative = applicationRoot === null ? null : path.relative(root, applicationRoot);
-  const appAstro = applicationRoot === null ? null : await astroEvidence(applicationRoot);
-  const appNext = applicationRoot === null ? null : await nextEvidence(applicationRoot);
+  const applicationRoot: string | null =
+    overrideRealRoot ?? (candidates.length === 1 ? requireAt(candidates, 0) : null);
+  const appRelative: string | null =
+    applicationRoot === null ? null : path.relative(root, applicationRoot);
+  const appAstro: AstroEvidence | null =
+    applicationRoot === null ? null : await astroEvidence(applicationRoot);
+  const appNext: NextEvidence | null =
+    applicationRoot === null ? null : await nextEvidence(applicationRoot);
   const detectedFramework: InitFramework =
     appAstro?.found && !appNext?.found
       ? 'astro'
       : appNext?.found && !appAstro?.found
         ? 'next'
         : 'unknown';
-  const framework = overrides.framework ?? detectedFramework;
-  const appEvidence =
+  const framework: InitFramework = overrides.framework ?? detectedFramework;
+  const appEvidence: AstroEvidence =
     framework === 'astro' && appAstro !== null
       ? appAstro
       : framework === 'next' && appNext !== null
@@ -640,14 +706,21 @@ export async function detectExistingProject(
             configSha256: null,
             evidence: [],
           };
-  const lockEvidence: string[] = [];
+  let lockEvidence: string[] = [];
   for (const name of Object.keys(LOCKFILES))
     if (await exists(path.join(root, name))) lockEvidence.push(name);
-  const lockManagers = [...new Set(lockEvidence.map((file) => LOCKFILES[file]!))];
-  let packageManager: InitPackageManager = lockManagers.length === 1 ? lockManagers[0]! : 'unknown';
+  const lockManagers: readonly Exclude<InitPackageManager, 'unknown'>[] = [
+    ...new Set(
+      lockEvidence.map(
+        (file: string): Exclude<InitPackageManager, 'unknown'> => requireValue(LOCKFILES, file),
+      ),
+    ),
+  ];
+  let packageManager: InitPackageManager =
+    lockManagers.length === 1 ? requireAt(lockManagers, 0) : 'unknown';
   if (overrides.packageManager) packageManager = overrides.packageManager;
-  const detectedHost = await hostingEvidence(root);
-  const unresolved: string[] = [];
+  const detectedHost: HostingEvidence = await hostingEvidence(root);
+  let unresolved: string[] = [];
   if (applicationRoot === null)
     unresolved.push(
       candidates.length > 1 ? 'application-root-ambiguous' : 'application-root-not-detected',
@@ -673,17 +746,17 @@ export async function detectExistingProject(
     unresolved.push('next-manual-integration');
   }
   if (framework === 'unknown') unresolved.push('framework-unknown');
-  const host = overrides.hosting ?? detectedHost.hosting;
+  const host: InitHosting = overrides.hosting ?? detectedHost.hosting;
   if (host === 'unknown')
     unresolved.push(
       detectedHost.unsupported.length > 0 ? 'unsupported-host-config' : 'hosting-unknown',
     );
-  const evidence = [
+  const evidence: readonly string[] = [
     ...(applicationRoot === null
       ? []
       : [`application root: ${appRelative || '.'}`, ...appEvidence.evidence]),
-    ...lockEvidence.map((name) => `lockfile: ${name}`),
-    ...detectedHost.evidence.map((name) => `hosting config: ${name}`),
+    ...lockEvidence.map((name: string): string => `lockfile: ${name}`),
+    ...detectedHost.evidence.map((name: string): string => `hosting config: ${name}`),
   ];
   return {
     projectRoot: root,
@@ -697,7 +770,7 @@ export async function detectExistingProject(
     staticProtocolFiles: appEvidence.staticProtocolFiles,
     packageManager,
     hosting: host,
-    hostingConfig: detectedHost.evidence.length === 1 ? detectedHost.evidence[0]! : null,
+    hostingConfig: detectedHost.evidence.length === 1 ? requireAt(detectedHost.evidence, 0) : null,
     routeConflict: appEvidence.routeConflict,
     evidence,
     unresolved: [...new Set(unresolved)],
@@ -711,12 +784,14 @@ function validateOwnedManifest(manifest: OwnedManifest): void {
     (manifest.status !== 'applying' && manifest.status !== 'applied')
   )
     throw new Error('invalid init ownership manifest header');
-  const appRoot = manifest.applicationRoot;
+  const appRoot: string | null = manifest.applicationRoot;
   if (
     appRoot !== null &&
     appRoot !== '' &&
     (path.posix.isAbsolute(appRoot) ||
-      appRoot.split('/').some((part) => part === '..' || part === '.' || part === ''))
+      appRoot
+        .split('/')
+        .some((part: string): boolean => part === '..' || part === '.' || part === ''))
   ) {
     throw new Error('invalid application root in ownership manifest');
   }
@@ -728,11 +803,11 @@ function validateOwnedManifest(manifest: OwnedManifest): void {
   ) {
     throw new Error('invalid Astro config path in ownership manifest');
   }
-  const prefix = appRoot ? `${appRoot}/` : '';
-  const allowed = new Set([`${prefix}${BOOTSTRAP_PATH}`, `${prefix}${SETTINGS_PATH}`]);
+  const prefix: string = appRoot ? `${appRoot}/` : '';
+  let allowed: Set<string> = new Set([`${prefix}${BOOTSTRAP_PATH}`, `${prefix}${SETTINGS_PATH}`]);
   if (manifest.astroConfigPath !== null) allowed.add(`${prefix}${manifest.astroConfigPath}`);
-  const keys = Object.keys(manifest.files);
-  if (keys.length !== allowed.size || keys.some((key) => !allowed.has(key))) {
+  const keys: readonly string[] = Object.keys(manifest.files);
+  if (keys.length !== allowed.size || keys.some((key: string): boolean => !allowed.has(key))) {
     throw new Error('ownership manifest contains unexpected paths');
   }
   for (const record of Object.values(manifest.files)) {
@@ -754,11 +829,12 @@ function validateOwnedManifest(manifest: OwnedManifest): void {
     manifest.detection.astroConfigPath !== manifest.astroConfigPath
   )
     throw new Error('ownership manifest detection does not match its path boundary');
-  const configRelative =
+  const configRelative: string | null =
     manifest.astroConfigPath === null
       ? null
       : path.posix.join(manifest.applicationRoot ?? '', manifest.astroConfigPath);
-  const configRecord = configRelative === null ? null : manifest.files[configRelative];
+  const configRecord: OwnedFileRecord | null | undefined =
+    configRelative === null ? null : manifest.files[configRelative];
   let patchedConfig: string | null = null;
   if (configRecord !== null) {
     if (
@@ -770,7 +846,11 @@ function validateOwnedManifest(manifest: OwnedManifest): void {
     }
     patchedConfig = patchAstroConfig(configRecord.beforeContent);
   }
-  const expected = makeScaffold(manifest.selectedChoices, manifest.detection, patchedConfig);
+  const expected: Readonly<Record<string, string>> = makeScaffold(
+    manifest.selectedChoices,
+    manifest.detection,
+    patchedConfig,
+  );
   if (Object.keys(expected).length !== Object.keys(manifest.files).length) {
     throw new Error('ownership manifest file set does not match generated output');
   }
@@ -788,26 +868,26 @@ export async function createInitPlan(
   overrides: InitOverrides = {},
   selectedChoices: InitChoices | null = null,
 ): Promise<InitPlan> {
-  const detection = await detectExistingProject(projectRoot, overrides);
-  const appPrefix = detection.applicationRoot ? `${detection.applicationRoot}/` : '';
-  const routeMode = selectedChoices?.routeMode ?? 'sidecar';
-  const conflicts =
+  const detection: InitDetection = await detectExistingProject(projectRoot, overrides);
+  const appPrefix: string = detection.applicationRoot ? `${detection.applicationRoot}/` : '';
+  const routeMode: InitRouteMode = selectedChoices?.routeMode ?? 'sidecar';
+  const conflicts: readonly string[] =
     detection.routeConflict && routeMode === 'same-origin'
       ? ['existing /mcp route conflicts with the planned same-origin MCP endpoint']
       : [];
-  const ownershipText = await readOptional(detection.projectRoot, MANIFEST_PATH);
-  let alreadyInitialized = false;
+  const ownershipText: string | null = await readOptional(detection.projectRoot, MANIFEST_PATH);
+  let alreadyInitialized: boolean = false;
   if (ownershipText !== null) {
-    const ownership = JSON.parse(ownershipText) as OwnedManifest;
+    const ownership: OwnedManifest = JSON.parse(ownershipText) as OwnedManifest;
     validateOwnedManifest(ownership);
     alreadyInitialized =
       ownership.schemaVersion === INIT_OWNERSHIP_VERSION && ownership.status === 'applied';
     for (const [relativePath, record] of Object.entries(ownership.files)) {
-      const current = await readOptional(detection.projectRoot, relativePath);
+      const current: string | null = await readOptional(detection.projectRoot, relativePath);
       if (current === null || hash(current) !== record.afterSha256) alreadyInitialized = false;
     }
   }
-  const proposedFiles =
+  const proposedFiles: readonly string[] =
     alreadyInitialized || detection.framework === 'next' || conflicts.length > 0
       ? []
       : [
@@ -816,7 +896,7 @@ export async function createInitPlan(
           ...(detection.astroConfigPath ? [`${appPrefix}${detection.astroConfigPath}`] : []),
           MANIFEST_PATH,
         ];
-  const payload = {
+  const payload: Omit<InitPlan, 'planDigest'> = {
     schemaVersion: INIT_PLAN_VERSION as typeof INIT_PLAN_VERSION,
     detection,
     proposedFiles,
@@ -849,7 +929,7 @@ export async function createInitPlan(
 }
 
 function patchAstroConfig(source: string): string {
-  const supported =
+  const supported: RegExp =
     /^import\s+\{\s*defineConfig\s*\}\s+from\s+(['"])astro\/config\1;\s*export\s+default\s+defineConfig\s*\(\s*\{\s*output\s*:\s*(['"])static\2\s*,?\s*\}\s*\);\s*$/s;
   if (!supported.test(source))
     throw new Error(
@@ -879,10 +959,10 @@ function makeScaffold(
   detection: InitDetection,
   astroConfig: string | null,
 ): Scaffold {
-  const appPrefix = detection.applicationRoot ? `${detection.applicationRoot}/` : '';
-  const bootstrapPath = `${appPrefix}${BOOTSTRAP_PATH}`;
-  const settingsPath = `${appPrefix}${SETTINGS_PATH}`;
-  const settings = {
+  const appPrefix: string = detection.applicationRoot ? `${detection.applicationRoot}/` : '';
+  const bootstrapPath: string = `${appPrefix}${BOOTSTRAP_PATH}`;
+  const settingsPath: string = `${appPrefix}${SETTINGS_PATH}`;
+  const settings: InitSettings = {
     schemaVersion: 'uan.init-settings/v1',
     framework: detection.framework,
     rendering: detection.rendering,
@@ -907,11 +987,11 @@ function makeScaffold(
 
 async function writeAtomic(destination: string, content: string): Promise<void> {
   await mkdir(path.dirname(destination), { recursive: true });
-  const temporary = `${destination}.tmp-${randomUUID()}`;
+  const temporary: string = `${destination}.tmp-${randomUUID()}`;
   try {
     await writeFile(temporary, content, { flag: 'wx' });
     await rename(temporary, destination);
-  } catch (error) {
+  } catch (error: unknown) {
     await rm(temporary, { force: true });
     throw error;
   }
@@ -919,7 +999,7 @@ async function writeAtomic(destination: string, content: string): Promise<void> 
 
 async function writeNewNoReplace(destination: string, content: string): Promise<void> {
   await mkdir(path.dirname(destination), { recursive: true });
-  const temporary = `${destination}.tmp-${randomUUID()}`;
+  const temporary: string = `${destination}.tmp-${randomUUID()}`;
   try {
     await writeFile(temporary, content, { flag: 'wx' });
     await link(temporary, destination);
@@ -933,14 +1013,14 @@ async function replaceIfUnchanged(
   content: string,
   expectedSha256: string,
 ): Promise<void> {
-  const temporary = `${destination}.tmp-${randomUUID()}`;
+  const temporary: string = `${destination}.tmp-${randomUUID()}`;
   try {
     await writeFile(temporary, content, { flag: 'wx' });
-    const current = await readFile(destination);
+    const current: NonSharedBuffer = await readFile(destination);
     if (hash(current) !== expectedSha256)
       throw new Error(`target changed before guarded replacement: ${destination}`);
     await rename(temporary, destination);
-  } catch (error) {
+  } catch (error: unknown) {
     await rm(temporary, { force: true });
     throw error;
   }
@@ -953,14 +1033,14 @@ async function applyScaffoldFiles(
   beforeTargetWrite?: (relativePath: string) => Promise<void>,
   failAfterWrites?: number,
 ): Promise<number> {
-  let writes = 0;
+  let writes: number = 0;
   for (const [relativePath, content] of Object.entries(scaffold)) {
     await beforeTargetWrite?.(relativePath);
-    const target = await assertNoSymlink(root, relativePath);
-    const record = records[relativePath];
+    const target: string = await assertNoSymlink(root, relativePath);
+    const record: OwnedFileRecord | undefined = records[relativePath];
     if (record === undefined)
       throw new Error(`ownership manifest is missing record: ${relativePath}`);
-    const current = await readOptional(root, relativePath);
+    const current: string | null = await readOptional(root, relativePath);
     if (current !== null && hash(current) === record.afterSha256) continue;
     if (record.beforeSha256 === null) {
       if (current !== null)
@@ -991,16 +1071,16 @@ export async function applyInitPlan(
   if (!options.approved) throw new Error('plan must be explicitly approved');
   if (plan.selectedChoices === null || stableJson(plan.selectedChoices) !== stableJson(choices))
     throw new Error('apply choices must exactly match the reviewed plan');
-  const root = await realpath(projectRoot);
+  const root: string = await realpath(projectRoot);
   if (root !== plan.detection.projectRoot)
     throw new Error('plan project root does not match apply root');
-  const planPayload = { ...plan } as Record<string, unknown>;
+  let planPayload: Record<string, unknown> = { ...plan } as Record<string, unknown>;
   delete planPayload['planDigest'];
   if (hash(stableJson(planPayload)) !== plan.planDigest)
     throw new Error('init plan digest is invalid');
 
-  const manifestTarget = await assertNoSymlink(root, MANIFEST_PATH);
-  const existingManifestText = await readOptional(root, MANIFEST_PATH);
+  const manifestTarget: string = await assertNoSymlink(root, MANIFEST_PATH);
+  const existingManifestText: string | null = await readOptional(root, MANIFEST_PATH);
   let existingManifest: OwnedManifest | null = null;
   if (!plan.alreadyInitialized && existingManifestText !== null) {
     existingManifest = JSON.parse(existingManifestText) as OwnedManifest;
@@ -1014,7 +1094,7 @@ export async function applyInitPlan(
     )
       throw new Error('existing init ownership manifest does not match this plan');
     for (const [relativePath, record] of Object.entries(existingManifest.files)) {
-      const current = await readOptional(root, relativePath);
+      const current: string | null = await readOptional(root, relativePath);
       if (current === null) {
         if (record.beforeSha256 !== null || existingManifest.status !== 'applying')
           throw new Error('owned file disappeared after interruption: ' + relativePath);
@@ -1026,15 +1106,18 @@ export async function applyInitPlan(
       }
     }
   }
-  const currentDetection = await detectExistingProject(root, plan.detectionOverrides);
-  let resumableDetection = currentDetection;
+  const currentDetection: InitDetection = await detectExistingProject(
+    root,
+    plan.detectionOverrides,
+  );
+  let resumableDetection: InitDetection = currentDetection;
   if (existingManifest?.status === 'applying' && existingManifest.astroConfigPath !== null) {
-    const configPath = path.posix.join(
+    const configPath: string = path.posix.join(
       existingManifest.applicationRoot ?? '',
       existingManifest.astroConfigPath,
     );
-    const configRecord = existingManifest.files[configPath];
-    const currentConfig = await readOptional(root, configPath);
+    const configRecord: OwnedFileRecord | undefined = existingManifest.files[configPath];
+    const currentConfig: string | null = await readOptional(root, configPath);
     if (
       configRecord !== undefined &&
       currentConfig !== null &&
@@ -1044,7 +1127,7 @@ export async function applyInitPlan(
         ...currentDetection,
         astroConfigSha256: plan.detection.astroConfigSha256,
         unresolved: currentDetection.unresolved.filter(
-          (item) =>
+          (item: string): boolean =>
             item !== 'astro-config-manual-integration' || plan.detection.unresolved.includes(item),
         ),
       };
@@ -1053,18 +1136,20 @@ export async function applyInitPlan(
   if (stableJson(resumableDetection) !== stableJson(plan.detection))
     throw new Error('project evidence changed after plan creation; create a fresh plan');
   if (plan.alreadyInitialized) {
-    const ownedText = await readOptional(root, MANIFEST_PATH);
+    const ownedText: string | null = await readOptional(root, MANIFEST_PATH);
     if (ownedText === null) throw new Error('ownership manifest disappeared after no-op plan');
-    const owned = JSON.parse(ownedText) as OwnedManifest;
+    const owned: OwnedManifest = JSON.parse(ownedText) as OwnedManifest;
     validateOwnedManifest(owned);
     for (const [relativePath, record] of Object.entries(owned.files)) {
-      const current = await readOptional(root, relativePath);
+      const current: string | null = await readOptional(root, relativePath);
       if (current === null || hash(current) !== record.afterSha256)
         throw new Error(`owned file changed after plan: ${relativePath}`);
     }
     return { status: 'no-op', ownedFiles: Object.keys(owned.files), planDigest: plan.planDigest };
   }
-  const unresolved = plan.detection.unresolved.filter((item) => item !== 'hosting-unknown');
+  const unresolved: readonly string[] = plan.detection.unresolved.filter(
+    (item: string): boolean => item !== 'hosting-unknown',
+  );
   if (unresolved.length > 0)
     throw new Error(`plan has unresolved detection: ${unresolved.join(', ')}`);
   if (choices.hosting !== 'browser-only' && choices.sidecarOrigin === undefined)
@@ -1074,7 +1159,7 @@ export async function applyInitPlan(
       'same-origin mode requires reviewed on-demand routes and a server adapter; choose sidecar for a static site',
     );
   if (choices.sidecarOrigin !== undefined) {
-    const parsed = new URL(choices.sidecarOrigin);
+    const parsed: URL = new URL(choices.sidecarOrigin);
     if (
       parsed.protocol !== 'https:' &&
       parsed.hostname !== 'localhost' &&
@@ -1086,14 +1171,14 @@ export async function applyInitPlan(
   }
   if (plan.detection.routeConflict && choices.routeMode === 'same-origin')
     throw new Error('an existing /mcp route conflicts with same-origin mode');
-  const configRelative =
+  const configRelative: string | null =
     plan.detection.astroConfigPath !== null && plan.detection.applicationRoot !== null
       ? path.posix.join(plan.detection.applicationRoot, plan.detection.astroConfigPath)
       : null;
   let originalConfig: string | null = null;
   if (configRelative !== null) {
-    const currentConfig = await readOptional(root, configRelative);
-    const configRecord = existingManifest?.files[configRelative];
+    const currentConfig: string | null = await readOptional(root, configRelative);
+    const configRecord: OwnedFileRecord | undefined = existingManifest?.files[configRelative];
     if (existingManifest?.status === 'applying' && configRecord !== undefined) {
       if (
         currentConfig === null ||
@@ -1108,13 +1193,18 @@ export async function applyInitPlan(
       originalConfig = currentConfig;
     }
   }
-  const patchedConfig = originalConfig === null ? null : patchAstroConfig(originalConfig);
-  const scaffold = makeScaffold(choices, plan.detection, patchedConfig);
+  const patchedConfig: string | null =
+    originalConfig === null ? null : patchAstroConfig(originalConfig);
+  const scaffold: Readonly<Record<string, string>> = makeScaffold(
+    choices,
+    plan.detection,
+    patchedConfig,
+  );
   if (existingManifest !== null && existingManifestText !== null) {
-    const existing = existingManifest;
+    const existing: OwnedManifest = existingManifest;
     for (const [relativePath, record] of Object.entries(existing.files)) {
-      const current = await readOptional(root, relativePath);
-      const expected = scaffold[relativePath];
+      const current: string | null = await readOptional(root, relativePath);
+      const expected: string | undefined = scaffold[relativePath];
       if (expected === undefined || hash(expected) !== record.afterSha256)
         throw new Error(`init choices differ from recorded plan: ${relativePath}`);
       if (
@@ -1153,14 +1243,14 @@ export async function applyInitPlan(
       planDigest: plan.planDigest,
     };
   }
-  const records: Record<
+  let records: Record<
     string,
     { beforeSha256: string | null; afterSha256: string; beforeContent?: string }
   > = {};
   for (const [relativePath, content] of Object.entries(scaffold)) {
     await assertNoSymlink(root, relativePath);
-    const current = await readOptional(root, relativePath);
-    const isConfig = relativePath.endsWith(plan.detection.astroConfigPath ?? '\u0000');
+    const current: string | null = await readOptional(root, relativePath);
+    const isConfig: boolean = relativePath.endsWith(plan.detection.astroConfigPath ?? '\u0000');
     if (current !== null && !isConfig)
       throw new Error(`refusing to overwrite existing file: ${relativePath}`);
     if (isConfig && (current === null || hash(current) !== plan.detection.astroConfigSha256))
@@ -1202,15 +1292,15 @@ export async function restoreInit(
   projectRoot: string,
   options: { readonly beforeTargetRestore?: (relativePath: string) => Promise<void> } = {},
 ): Promise<InitRestoreResult> {
-  const root = await realpath(projectRoot);
-  const manifestText = await readOptional(root, MANIFEST_PATH);
+  const root: string = await realpath(projectRoot);
+  const manifestText: string | null = await readOptional(root, MANIFEST_PATH);
   if (manifestText === null) return { status: 'no-op', removed: [], conflicts: [] };
-  const manifest = JSON.parse(manifestText) as OwnedManifest;
+  const manifest: OwnedManifest = JSON.parse(manifestText) as OwnedManifest;
   validateOwnedManifest(manifest);
-  const conflicts: string[] = [];
-  const removable: string[] = [];
+  let conflicts: string[] = [];
+  let removable: string[] = [];
   for (const [relativePath, record] of Object.entries(manifest.files)) {
-    const current = await readOptional(root, relativePath);
+    const current: string | null = await readOptional(root, relativePath);
     if (current !== null && hash(current) === record.afterSha256) removable.push(relativePath);
     else if (
       current !== null &&
@@ -1223,22 +1313,22 @@ export async function restoreInit(
   }
   if (conflicts.length > 0) return { status: 'conflict', removed: [], conflicts };
   for (const relativePath of removable) {
-    const record = manifest.files[relativePath]!;
+    const record: OwnedFileRecord = requireValue(manifest.files, relativePath);
     await options.beforeTargetRestore?.(relativePath);
-    const current = await readOptional(root, relativePath);
+    const current: string | null = await readOptional(root, relativePath);
     if (current === null || hash(current) !== record.afterSha256) {
       return { status: 'conflict', removed: [], conflicts: [relativePath] };
     }
-    const target = await assertNoSymlink(root, relativePath);
+    const target: string = await assertNoSymlink(root, relativePath);
     if (record.beforeContent === undefined) await rm(target);
     else await replaceIfUnchanged(target, record.beforeContent, record.afterSha256);
   }
   await rm(await assertNoSymlink(root, MANIFEST_PATH));
   for (const directory of ['.agent-native']) {
-    const target = path.join(root, directory);
+    const target: string = path.join(root, directory);
     try {
       await rmdir(target);
-    } catch (error) {
+    } catch (error: unknown) {
       if (
         typeof error !== 'object' ||
         error === null ||
