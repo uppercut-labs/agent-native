@@ -28,11 +28,11 @@ For protected capabilities, the application must provide token verification, iss
 ## Open provider and full-host acceptance gates
 
 - [x] GitHub private vulnerability reporting is enabled for the public repository; the [Security Advisories page](https://github.com/uppercut-labs/agent-native/security/advisories) is the private report channel.
-- [ ] Finish UAN-020 security/failure-safety review and document its production support limits.
-- [ ] UAN-021 guides and every E01-E12 example have checked prerequisites, expected output, a negative path, and source-backed evidence.
-- [ ] UAN-022 Windows and Linux representative install/CLI behavior, dependency license inventory, and overhead measurements have a recorded decision.
-- [ ] UAN-023 named MCP Apps rendered-host and clean-context Astro adoption evidence is complete. Native WebMCP remains unsupported until a suitable host is actually tested.
-- [ ] The Astro/example dependency path to `http-cache-semantics@4.2.0` is assessed against [GHSA-ch52-4w7c-c8xp](https://github.com/advisories/GHSA-ch52-4w7c-c8xp) before an Astro support claim or provider launch.
-- [ ] A final candidate tarball, digest/provenance, clean install, docs/example run and provider handoff are recorded on the exact release commit.
+- [x] UAN-020 security/failure-safety review and its production support limits are recorded in [negative security fixtures](evidence/UAN-020-negative-security-fixtures.md), [operational failure safety](evidence/UAN-020-operational-failure-safety.md) and [support limits](support-and-limitations.md).
+- [x] UAN-021 guides and every E01-E12 example have checked prerequisites, expected output, a negative path, and source-backed evidence; `npm run docs:check` enforces [coverage](evidence/UAN-021-docs-coverage.md).
+- [x] UAN-022 Windows and Linux representative install/CLI behavior, dependency license inventory, and overhead measurements have a recorded decision: [portability](evidence/UAN-022-package-portability.md), [overhead](evidence/UAN-022-overhead-license-audit.md) and the [cross-platform license and notice review](evidence/UAN-022-cross-platform-license-notices.md).
+- [x] UAN-023 named-host evidence is recorded: [Inspector MCP Apps rendering and clean-context Astro adoption](evidence/UAN-023-inspector-web-and-astro-adoption.md) and [native Chrome 155 WebMCP](evidence/UAN-023-native-webmcp-chrome.md) with the opt-in feature. Commercial MCP hosts and shipping browser agents remain unverified and carry no support claim.
+- [x] The Astro/example dependency path to `http-cache-semantics@4.2.0` is assessed against [GHSA-ch52-4w7c-c8xp](https://github.com/advisories/GHSA-ch52-4w7c-c8xp): the [2026-10-10 recheck](evidence/GHSA-ch52-4w7c-c8xp-2026-10-10.md) found no upstream fix, and Astro does not use the vulnerable method. Recheck before a provider launch guide.
+- [x] The `0.1.1` tarball's digest, source commit, clean registry install and packed proof are recorded in the [harness release evidence](evidence/codex-harness.md#registry-release---2026-10-05). Provider handoff remains the deploying application's work, described above.
 
 See [support limits](support-and-limitations.md), [compatibility](compatibility.md), [security model](https://github.com/uppercut-labs/agent-native/blob/main/SECURITY.md), and [contributing](https://github.com/uppercut-labs/agent-native/blob/main/CONTRIBUTING.md). A green repository CI run is one gate; it does not close the deployment and host gates.
