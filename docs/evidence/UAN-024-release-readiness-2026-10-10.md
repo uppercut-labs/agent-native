@@ -23,11 +23,11 @@ This page supersedes the open rows in the [2026-10-03 snapshot](UAN-024-release-
 | A19 sidecar routing and revision | Packed E04 route, origin, revision and protocol checks on local workerd | Passed locally. A live provider address and rollback belong to the deploying application |
 | A23 docs/example coverage | The coverage manifest, source-region and link checks, and isolated example exports | Passed |
 | A26 provider provisioning guard | Init plans only local edits and never provisions | Passed |
-| A27 real-host compatibility | Inspector 2.8.0 MCP Apps, and Chrome 155 native WebMCP with the opt-in feature | Passed for named hosts. Commercial MCP hosts and shipping browser agents are unverified and not claimed |
+| A27 real-host compatibility | Inspector 2.8.0 MCP Apps, Chrome 155 native WebMCP with the opt-in feature, and [Antigravity CLI invoking the flagship tool over MCP](UAN-023-commercial-agent-hosts.md) | Passed for named hosts. Claude Code invocation, MCP Apps rendering in commercial hosts and shipping browser agents are unverified and not claimed |
 | A28 independent checks | Node 22/24 CI on every pushed commit | Passed |
 | A29 packed install | The 0.1.1 registry install, and examples installed outside the repository | Passed |
 | A30 CLI platform smoke | macOS and Linux CI packed CLI, plus the Windows packed CLI in a path with spaces | Passed |
 
 ## Not claimed
 
-Native WebMCP in default browsers, commercial MCP or MCP Apps hosts, provider deployments, and external identity providers. The `consequentialHint` and style changes are listed as unreleased in the changelog, and no npm version was published for them.
+Native WebMCP in default browsers, Claude Code tool invocation, MCP Apps rendering in commercial hosts, provider deployments, and external identity providers. The changes listed under 0.1.2 in the changelog ship in that release.
