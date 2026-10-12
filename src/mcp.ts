@@ -25,6 +25,7 @@ import {
   type CapabilityRisk,
   canonicalCapabilityId,
 } from './core/contracts.js';
+import type { DiagnosticObservation } from './core/diagnostics.js';
 import type {
   AuthorizationPort,
   AuthorizationRequest,
@@ -47,6 +48,26 @@ const DEFAULT_MAX_REQUEST_BYTES: number = 32 * 1024;
 const MAX_REQUEST_BYTES: number = 1024 * 1024;
 const DEFAULT_DEADLINE_MS: number = 10_000;
 const MAX_DEADLINE_MS: number = 300_000;
+// MCP 2025-11-25 tool names: 1 to 128 characters of ASCII letters, digits, underscore, hyphen and dot.
+const TOOL_NAME_PATTERN: RegExp = /^[A-Za-z0-9_.-]{1,128}$/;
+
+/**
+ * Why a tool call returned an error. Executor reasons come from the shared executor;
+ * the others are adapter outcomes. No input, output, credential or exception text is included.
+ */
+export type McpToolFailureReason =
+  | ExecutionFailureKind
+  | 'context-unavailable'
+  | 'not-exposed'
+  | 'result-not-serializable'
+  | 'adapter-error';
+
+export type McpToolFailure = {
+  readonly capabilityId: string;
+  readonly toolName: string;
+  readonly reason: McpToolFailureReason;
+  readonly observation?: DiagnosticObservation;
+};
 
 export type McpExecutionContext = {
   readonly caller: ExecutionCaller;
@@ -72,7 +93,16 @@ export type McpAdapterOptions = {
     readonly expectedResource: URL;
     readonly requiredScopes?: readonly string[];
     readonly resourceMetadataUrl?: string;
+    // Answer requests without an Authorization header with the SDK's 401 challenge. Defaults to
+    // true when no capability is a public read, so hosts are prompted to authenticate instead of
+    // receiving an empty tool list.
+    readonly required?: boolean;
   };
+  // Operator hook for tool calls that end in an error. It runs after the response is decided;
+  // a throwing or rejecting hook is ignored.
+  readonly onToolFailure?: (failure: McpToolFailure) => void | Promise<void>;
+  // Overrides the default collision-free tool name. Names must be unique and match MCP's name rules.
+  readonly toolName?: (definition: CapabilityDefinition<unknown, unknown>) => string;
   // AuthInfo comes from the SDK verifier; issuer/subject/tenant must be supplied by that
   // verifier's trusted metadata, never inferred from request headers or MCP clientInfo.
   readonly resolveTrustedPrincipal?: (
@@ -219,6 +249,48 @@ function isPublicRead(definition: CapabilityDefinition<unknown, unknown>): boole
   return definition.risk === 'read' && definition.access.kind === 'public';
 }
 
+function serverBindingsFor(
+  registry: CapabilityRegistry,
+  definition: CapabilityDefinition<unknown, unknown>,
+): readonly CapabilityBinding[] {
+  return registry.bindings.filter(
+    (binding: CapabilityBinding): boolean =>
+      binding.capabilityId === canonicalCapabilityId(definition.identity) &&
+      binding.targets.includes('server'),
+  );
+}
+
+function resolveToolNames(
+  registry: CapabilityRegistry,
+  options: McpAdapterOptions,
+): ReadonlyMap<string, string> {
+  const names: Map<string, string> = new Map();
+  const used: Set<string> = new Set();
+  for (const definition of registry.definitions) {
+    const name: string =
+      options.toolName === undefined
+        ? mcpToolName(definition.identity)
+        : options.toolName(definition);
+    if (typeof name !== 'string' || !TOOL_NAME_PATTERN.test(name)) {
+      throw new TypeError('toolName must return 1 to 128 characters of A-Z, a-z, 0-9, _, - or .');
+    }
+    if (used.has(name)) throw new TypeError('toolName must return a unique name per capability');
+    used.add(name);
+    names.set(canonicalCapabilityId(definition.identity), name);
+  }
+  return names;
+}
+
+function reportFailure(options: McpAdapterOptions, failure: McpToolFailure): void {
+  if (options.onToolFailure === undefined) return;
+  try {
+    const pending: void | Promise<void> = options.onToolFailure(Object.freeze(failure));
+    if (pending instanceof Promise) pending.catch((): void => undefined);
+  } catch {
+    // The hook is diagnostic only; it must not change the tool result.
+  }
+}
+
 export function mcpToolName(identity: CapabilityDefinition<unknown, unknown>['identity']): string {
   return capabilitySurfaceNames(identity).mcp;
 }
@@ -290,6 +362,7 @@ async function defineServer(
   authInfo: AuthInfo | undefined,
   options: McpAdapterOptions,
   deadlineMs: number,
+  toolNames: ReadonlyMap<string, string>,
   appRegistration?: McpAppRegistration,
 ): Promise<McpServer> {
   const server: McpServer = new McpServer({
@@ -300,11 +373,7 @@ async function defineServer(
   let visibleAppResources: Map<string, McpAppResourceDefinition> = new Map();
 
   for (const definition of registry.definitions) {
-    const serverBindings: readonly CapabilityBinding[] = registry.bindings.filter(
-      (binding: CapabilityBinding): boolean =>
-        binding.capabilityId === canonicalCapabilityId(definition.identity) &&
-        binding.targets.includes('server'),
-    );
+    const serverBindings: readonly CapabilityBinding[] = serverBindingsFor(registry, definition);
     if (serverBindings.length !== 1) continue;
     const publicRead: boolean = isPublicRead(definition);
     const discovery: DiscoveryDecision = await evaluateCapabilityDiscovery(
@@ -343,7 +412,21 @@ async function defineServer(
           },
     );
     if (!discovery.visible) continue;
-    const name: string = mcpToolName(definition.identity);
+    const capabilityId: string = canonicalCapabilityId(definition.identity);
+    const name: string = toolNames.get(capabilityId) ?? mcpToolName(definition.identity);
+    const fail = (
+      reason: McpToolFailureReason,
+      result: ToolErrorResult,
+      observation?: DiagnosticObservation,
+    ): ToolErrorResult => {
+      reportFailure(options, {
+        capabilityId,
+        toolName: name,
+        reason,
+        ...(observation === undefined ? {} : { observation }),
+      });
+      return result;
+    };
     const inputSchema: StandardSchemaWithJSON<unknown, unknown> = sdkSchema(
       definition.input.toJSONSchema(),
     );
@@ -369,7 +452,7 @@ async function defineServer(
       input: unknown,
     ): Promise<ToolErrorResult | ToolSuccessResult> => {
       if (!isDestructiveCapabilityExposed(definition, 'mcp', options.surfaceExposure)) {
-        return toolError('Capability not found.');
+        return fail('not-exposed', toolError('Capability not found.'));
       }
       let controller: AbortController = new AbortController();
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -419,23 +502,38 @@ async function defineServer(
 
       try {
         const outcome: TimeoutOutcome | OperationOutcome = await Promise.race([operation, timeout]);
-        if (outcome.kind === 'timeout') return deadlineToolError(definition.risk);
+        if (outcome.kind === 'timeout')
+          return fail('deadline-exceeded', deadlineToolError(definition.risk));
         if (outcome.kind === 'unavailable')
-          return toolError('Capability execution is unavailable.');
+          return fail('context-unavailable', toolError('Capability execution is unavailable.'));
         if (outcome.result.kind === 'failure')
-          return outcome.result.reason === 'deadline-exceeded'
-            ? deadlineToolError(definition.risk)
-            : toolError(executorError(outcome.result.reason));
+          return fail(
+            outcome.result.reason,
+            outcome.result.reason === 'deadline-exceeded'
+              ? deadlineToolError(definition.risk)
+              : toolError(executorError(outcome.result.reason)),
+            outcome.result.observation,
+          );
         const value: unknown = outcome.result.value;
         let valueJson: string | undefined;
         try {
           if (typeof value === 'number' && !Number.isFinite(value))
-            return toolError('Capability result could not be serialized.');
+            return fail(
+              'result-not-serializable',
+              toolError('Capability result could not be serialized.'),
+            );
           valueJson = JSON.stringify(value);
         } catch {
-          return toolError('Capability result could not be serialized.');
+          return fail(
+            'result-not-serializable',
+            toolError('Capability result could not be serialized.'),
+          );
         }
-        if (valueJson === undefined) return toolError('Capability result could not be serialized.');
+        if (valueJson === undefined)
+          return fail(
+            'result-not-serializable',
+            toolError('Capability result could not be serialized.'),
+          );
 
         const structuredContent: { result: unknown } = { result: JSON.parse(valueJson) as unknown };
         const text: string = JSON.stringify(structuredContent);
@@ -444,7 +542,7 @@ async function defineServer(
           structuredContent,
         };
       } catch {
-        return toolError('Capability execution is unavailable.');
+        return fail('adapter-error', toolError('Capability execution is unavailable.'));
       } finally {
         if (timer !== undefined) clearTimeout(timer);
       }
@@ -475,6 +573,13 @@ export function createMcpHandlerWithAppRegistration(
 ): (request: Request) => Promise<Response> {
   createCapabilitySurfaceMap(registry.definitions);
   const config: McpAdapterConfig = validateOptions(options);
+  const toolNames: ReadonlyMap<string, string> = resolveToolNames(registry, options);
+  const hasPublicRead: boolean = registry.definitions.some(
+    (definition: CapabilityDefinition<unknown, unknown>): boolean =>
+      isPublicRead(definition) && serverBindingsFor(registry, definition).length === 1,
+  );
+  const authenticationRequired: boolean =
+    options.bearerAuth !== undefined && (options.bearerAuth.required ?? !hasPublicRead);
   const officialHandler: ReturnType<typeof createOfficialMcpHandler> = createOfficialMcpHandler(
     async (context: McpRequestContext): Promise<McpServer> =>
       await defineServer(
@@ -483,6 +588,7 @@ export function createMcpHandlerWithAppRegistration(
         context.authInfo,
         options,
         config.deadlineMs,
+        toolNames,
         appRegistration,
       ),
     {
@@ -513,7 +619,10 @@ export function createMcpHandlerWithAppRegistration(
       });
     }
     let authInfo: AuthInfo | undefined;
-    if (bearerGate !== undefined && request.headers.has('authorization')) {
+    if (
+      bearerGate !== undefined &&
+      (authenticationRequired || request.headers.has('authorization'))
+    ) {
       const gated: Response | AuthInfo = await bearerGate(request);
       if (gated instanceof Response) return gated;
       authInfo = gated;

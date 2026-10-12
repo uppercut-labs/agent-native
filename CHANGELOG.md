@@ -2,6 +2,17 @@
 
 All notable changes will be recorded here.
 
+## Unreleased
+
+Findings from the first real integration (Domain Expansion, Gate 2):
+
+- Bindings receive the authorized caller as `context.caller`. A caller built from a verified principal carries `identity` (`issuer`, `subject`, `tenantId`, `clientId`). New exported type `ExecutionCallerIdentity`.
+- **Behavior change:** with `bearerAuth` and no public-read capability, requests without a token now get the SDK's 401 challenge instead of an empty tool list. Set `bearerAuth.required: false` to keep the old behavior, or `true` to require a token everywhere.
+- `onToolFailure` reports the capability, tool name, failure reason and diagnostic observation for every tool error, without input, output or exception text. New exported types `McpToolFailure` and `McpToolFailureReason`.
+- `toolName` sets MCP tool names. Names are validated against MCP's name rules and must be unique.
+- The Zod peer accepts the 4.6.x patch line (`~4.6.5`). The suite passes with 4.6.5 and 4.6.6; Zod 4.0.0 fails JSON Schema conversion, so earlier 4.x stays unsupported.
+- The MCP guide documents the Workers stream lifecycle: request-scoped resources must outlive the `Response` until its body ends.
+
 ## 0.1.3 - 2026-10-10
 
 - The packaged host evidence now records that Claude Code 2.1.286, in addition to Antigravity CLI, invoked the flagship E04 tool over remote MCP. It also records the verified 0.1.2 npm publication.

@@ -336,3 +336,44 @@ test('invalid schemas carry a structured diagnostic and omitted access is reject
     /access metadata must be explicit/,
   );
 });
+
+test('bindings receive the authorized caller for record scoping', async () => {
+  const definition = defineCapability({
+    identity: { namespace: 'catalog', name: 'mine', majorVersion: 1 },
+    description: 'Return the caller a binding saw.',
+    input: fromZod(z.object({})),
+    output: fromZod(z.object({ kind: z.string(), subject: z.string().nullable() })),
+    risk: 'read',
+    access: { kind: 'protected', scopes: ['catalog:read'] },
+  });
+  const binding = bindCapability(definition, {
+    id: 'caller-echo',
+    targets: ['local'],
+    execute: (_input, context) => ({
+      kind: context.caller.kind,
+      subject:
+        context.caller.kind === 'authenticated' ? (context.caller.identity?.subject ?? null) : null,
+    }),
+  });
+  const registry = createCapabilityRegistry([definition], [binding]);
+  const caller = Object.freeze({
+    kind: 'authenticated',
+    subject: 'opaque-subject',
+    scopes: ['catalog:read'],
+    identity: {
+      issuer: 'https://issuer.test',
+      subject: 'user-1',
+      tenantId: 'tenant-1',
+      clientId: 'client-1',
+    },
+  });
+  const result = await executeCapability(registry, {
+    identity: definition.identity,
+    runtime: 'local',
+    input: {},
+    caller,
+    authorization: { authorize: () => true },
+  });
+  assert.equal(result.kind, 'success');
+  assert.deepEqual(result.value, { kind: 'authenticated', subject: 'user-1' });
+});

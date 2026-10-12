@@ -75,6 +75,36 @@ The adapter filters out definitions without one unique server binding and requir
 
 For the optional interactive MCP Apps presentation, use the isolated [/mcp-apps](mcp-apps.md) adapter and its E09 SDK conformance fixture. It keeps the regular text/structured tool result for hosts without MCP Apps rendering.
 
+## Protected-only servers
+
+When `bearerAuth` is configured and no capability is a public read with a server binding, a request without an `Authorization` header receives the SDK's 401 challenge with `WWW-Authenticate: Bearer`. Hosts then ask for credentials instead of connecting and seeing an empty tool list. Set `bearerAuth.required` to `true` to require a token even when public reads exist, or to `false` to keep anonymous handshakes.
+
+## Caller identity in bindings
+
+Every binding receives the caller the executor authorized as `context.caller`. For a verified MCP principal, `context.caller.identity` carries its `issuer`, `subject`, `tenantId` and `clientId`, so a binding can scope records to the caller without rebuilding the registry per request. Authorization still happens first: `authorizeResource` must enforce ownership before the binding runs.
+
+## Operator failure hook
+
+Tool errors returned to the client are deliberately generic. To see why a call failed, pass `onToolFailure`. It receives the capability ID, the tool name, a reason (an executor failure kind, or `context-unavailable`, `not-exposed`, `result-not-serializable` or `adapter-error`) and the executor's `DiagnosticObservation`. It never receives input, output, credentials or exception text. Errors thrown by the hook are ignored. To log a binding exception, catch it inside the binding.
+
+## Tool names
+
+The default name, from `mcpToolName`, is collision-free but long, for example `cap_7_example_6_lookup_v1`. The `toolName` option can return shorter names. Each must be 1 to 128 characters of `A-Z a-z 0-9 _ - .` and unique within the registry; otherwise the handler is not created.
+
+## Cloudflare Workers: keep request resources open until the response ends
+
+A Streamable HTTP response is a stream. For a tool call, the SDK returns the `Response` first and runs the binding while the body is being written. Anything the binding uses that is scoped to the request, such as a database pool, must stay open until the body ends, not merely until the handler returns:
+
+~~~ts
+const response = await handler(request);
+if (!response.body) return response;
+const { readable, writable } = new TransformStream();
+ctx.waitUntil(response.body.pipeTo(writable).finally(() => pool.end()));
+return new Response(readable, response);
+~~~
+
+Closing the pool in a `finally` around `await handler(request)` makes every tool call fail as `handler-failed`, while discovery still works.
+
 ## Reproduce a local protocol call
 
 Use Node.js 22 or newer, `npm ci`, then `npm run example:e04` from the repository

@@ -28,7 +28,7 @@ No runtime is inferred. A server-only binding is unavailable to a browser reques
 bindings match one capability and runtime, the caller must specify `bindingId`; otherwise execution
 returns a `binding-ambiguous` failure.
 
-Every execution request provides a runtime, caller, and `AuthorizationPort`. The executor validates
+Every execution request provides a runtime, caller, and `AuthorizationPort`. The binding receives that caller as `context.caller`, after authorization, so it can scope records to it. The executor validates
 input first, awaits `authorize` for every invocation, invokes only the selected binding after an
 allow result, then validates output. Authorization errors deny execution. Public-read examples
 implement their own explicit policy port; there is no implicit allow-all default. The port is the

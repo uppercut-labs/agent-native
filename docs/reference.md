@@ -125,7 +125,16 @@ export type McpAdapterOptions = {
     readonly expectedResource: URL;
     readonly requiredScopes?: readonly string[];
     readonly resourceMetadataUrl?: string;
+    // Answer requests without an Authorization header with the SDK's 401 challenge. Defaults to
+    // true when no capability is a public read, so hosts are prompted to authenticate instead of
+    // receiving an empty tool list.
+    readonly required?: boolean;
   };
+  // Operator hook for tool calls that end in an error. It runs after the response is decided;
+  // a throwing or rejecting hook is ignored.
+  readonly onToolFailure?: (failure: McpToolFailure) => void | Promise<void>;
+  // Overrides the default collision-free tool name. Names must be unique and match MCP's name rules.
+  readonly toolName?: (definition: CapabilityDefinition<unknown, unknown>) => string;
   // AuthInfo comes from the SDK verifier; issuer/subject/tenant must be supplied by that
   // verifier's trusted metadata, never inferred from request headers or MCP clientInfo.
   readonly resolveTrustedPrincipal?: (

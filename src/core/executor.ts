@@ -14,12 +14,21 @@ import type {
 } from './registry.js';
 import { createDiagnosticObservation, type DiagnosticObservation } from './diagnostics.js';
 
+/** Verified identity fields an adapter attaches to an authenticated caller, for bindings that scope data. */
+export type ExecutionCallerIdentity = {
+  readonly issuer: string;
+  readonly subject: string;
+  readonly tenantId: string;
+  readonly clientId: string;
+};
+
 export type ExecutionCaller =
   | { readonly kind: 'anonymous' }
   | {
       readonly kind: 'authenticated';
       readonly subject: string;
       readonly scopes: readonly string[];
+      readonly identity?: ExecutionCallerIdentity;
     };
 
 export type AuthorizationRequest = {
@@ -164,6 +173,7 @@ export async function executeCapability(
     rawOutput = await invokeBindingHandler(binding, parsedInput, {
       capabilityId,
       runtime: request.runtime,
+      caller: request.caller,
       ...(request.signal === undefined ? {} : { signal: request.signal }),
     });
   } catch {

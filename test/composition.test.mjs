@@ -496,7 +496,7 @@ test('composed definitions execute with consumer bindings and preserve scoped re
   assert.equal(allowed.kind, 'success');
   assert.equal(authorizationRequest.caller, caller);
   assert.deepEqual(seen, [
-    { capabilityId: 'shared.example.units:value.convert@1', runtime: 'local', signal },
+    { capabilityId: 'shared.example.units:value.convert@1', runtime: 'local', caller, signal },
   ]);
 
   const denied = await executeCapability(registry, {
