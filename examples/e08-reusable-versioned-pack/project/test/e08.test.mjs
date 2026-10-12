@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
@@ -247,7 +248,7 @@ test('each consumer app selects its major in an independent process', () => {
   ]) {
     const result = spawnSync(
       process.execPath,
-      [new URL(`../src/${entrypoint}`, import.meta.url).pathname],
+      [fileURLToPath(new URL(`../src/${entrypoint}`, import.meta.url))],
       {
         encoding: 'utf8',
       },
@@ -267,8 +268,8 @@ test('contract-only import does not load executor, registry, or provider modules
       process.execPath,
       [
         '--experimental-loader',
-        new URL('./trace-loader.mjs', import.meta.url).pathname,
-        new URL('./import-contract.mjs', import.meta.url).pathname,
+        new URL('./trace-loader.mjs', import.meta.url).href,
+        fileURLToPath(new URL('./import-contract.mjs', import.meta.url)),
       ],
       { encoding: 'utf8', env: { ...process.env, E08_IMPORT_TRACE: trace } },
     );

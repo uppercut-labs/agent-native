@@ -31,7 +31,7 @@ test('changed CLI option bounds require a reference update', async () => {
 test('missing exported adapter configuration fails reference generation', async () => {
   const manifest = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
   const [cli, http, mcp, doctor] = await Promise.all(
-    ['cli.ts', 'http.ts', 'mcp.ts', 'doctor.ts'].map((name) =>
+    ['cli.ts', 'http.ts', 'mcp-core.ts', 'doctor.ts'].map((name) =>
       readFile(path.join(root, 'src', name), 'utf8'),
     ),
   );

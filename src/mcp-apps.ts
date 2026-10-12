@@ -15,7 +15,7 @@ import {
   type McpAdapterOptions,
   type McpAppRegistration,
   type McpAppResourceDefinition,
-} from './mcp.js';
+} from './mcp-core.js';
 
 const MAX_RESOURCE_BYTES: number = 1024 * 1024;
 const URI_PATTERN: RegExp = /^ui:\/\/[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\/[A-Za-z0-9._~/-]+$/;

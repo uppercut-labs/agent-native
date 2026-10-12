@@ -1,7 +1,7 @@
 # Existing Astro site: experimental init
 
 The `@uppercut-labs/agent-native/init` entrypoint is available in the
-`0.1.3` preview package. There is no `agent-native init` executable yet. Use the E01 fixture to try the current
+`1.0.0` package. There is no `agent-native init` executable yet. Use the E01 fixture to try the current
 programmatic flow from a local package tarball:
 
 ```sh
@@ -68,6 +68,15 @@ register a capability, create a server route, deploy a Worker, or edit the
 project's dependencies or lockfile. Bind only reviewed application operations
 using the [capability guide](capabilities-and-bindings.md), and use the
 [static-site guide](static-sites.md) for the separate Worker example.
+
+After init, these steps remain yours:
+
+1. Install what you import: `@uppercut-labs/agent-native`, `zod@4.6.5` for the schema adapter,
+   and `@modelcontextprotocol/server@2.3.0` if you expose MCP ([installation](installation.md)).
+2. Define capabilities and bind them to reviewed application operations.
+3. Pass an authorization port on every execution, including public reads.
+4. Add and deploy the server route or Worker sidecar if you expose HTTP or MCP.
+5. Test discovery, one successful call and one denied or invalid call before you publish.
 
 E01's installed after-state explicitly executes its public album lookup through the shared
 registry and authorization port. Init does not generate this application code:

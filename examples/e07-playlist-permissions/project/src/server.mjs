@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { createServer as createNodeServer } from 'node:http';
 import * as z from 'zod';
 import { createMcpHandler } from '@uppercut-labs/agent-native/mcp';
@@ -164,7 +166,7 @@ export async function listenE07(handler, port = 0) {
   };
 }
 
-if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const grantPath = process.env.E07_GRANTS_PATH;
   const playlistPath = process.env.E07_PLAYLISTS_PATH;
   const port = Number(process.env.PORT ?? 0);

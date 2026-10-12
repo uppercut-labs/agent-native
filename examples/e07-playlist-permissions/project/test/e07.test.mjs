@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
@@ -10,7 +11,7 @@ import { mcpToolName } from '@uppercut-labs/agent-native/mcp';
 import { JsonFileGrantStore } from '../src/grant-store.mjs';
 import { createTestVerifier } from '../src/test-auth.mjs';
 
-const projectRoot = path.resolve(new URL('..', import.meta.url).pathname);
+const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const editIdentity = { namespace: 'e07.playlists', name: 'edit', majorVersion: 1 };
 const deleteIdentity = { namespace: 'e07.playlists', name: 'delete', majorVersion: 1 };
 const listIdentity = { namespace: 'e07.playlists', name: 'list-public', majorVersion: 1 };
