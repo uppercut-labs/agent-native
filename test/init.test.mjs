@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { cp, mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
@@ -6,7 +7,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { applyInitPlan, createInitPlan, detectExistingProject, restoreInit } from '../dist/init.js';
 
-const repositoryRoot = path.resolve(new URL('..', import.meta.url).pathname);
+const repositoryRoot = fileURLToPath(new URL('..', import.meta.url));
 const baseline = path.join(repositoryRoot, 'examples/e01-album-catalog/site-before');
 const onDemandBaseline = path.join(
   repositoryRoot,

@@ -1,6 +1,6 @@
 # Support and limitations
 
-Agent Native `0.1.3` is a preview package. The repository documents local fixtures and narrowly verified hosts; publication of the package does not certify a production deployment.
+Agent Native `1.0.0` promises stable contracts for the entry points in [stability](stability.md). The repository documents local fixtures, narrowly verified hosts and one real deployment ([Domain Expansion](evidence/gate-2-domain-expansion.md)); publication of the package does not certify every production deployment.
 
 ## Fixture-tested surfaces
 
@@ -8,7 +8,7 @@ The repository contains local examples for static Astro (E01), Astro on-demand (
 
 The local MCP checks use official SDK client/server packages. The browser draft checks use a simulated WebMCP API, and E01/E06 also passed in [native Chrome 155 WebMCP](evidence/UAN-023-native-webmcp-chrome.md) with the opt-in feature enabled. E09 exercises the official MCP Apps protocol components locally, but a commercial host's iframe behavior and prompts remain unverified. Two commercial agent hosts, Antigravity CLI and Claude Code, invoked the flagship E04 tool over remote MCP ([evidence](evidence/UAN-023-commercial-agent-hosts.md)).
 
-## Outside current preview support
+## Outside current support
 
 - All twelve independent example exports and source-backed guide snippets run in CI, but this does not supply real-host evidence.
 - Provider deployment, MCP Apps rendering in commercial hosts, shipping browser agents, default-enabled browser WebMCP, physical devices, and outsider installation are not yet certified.

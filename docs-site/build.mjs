@@ -8,6 +8,9 @@ import { expandSourceRegions } from './source-regions.mjs';
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(siteRoot, '..');
 const docsRoot = path.join(repositoryRoot, 'docs');
+const packageVersion = JSON.parse(
+  await readFile(path.join(repositoryRoot, 'package.json'), 'utf8'),
+).version;
 const outputRoot = path.join(siteRoot, 'dist');
 const repositoryUrl = 'https://github.com/uppercut-labs/agent-native';
 
@@ -30,6 +33,8 @@ const guideOrder = [
   'doctor-and-troubleshooting',
   'compatibility',
   'support-and-limitations',
+  'stability',
+  'upgrading-to-1.0',
 ];
 
 function escapeHtml(value) {
@@ -193,12 +198,12 @@ function shell({ pageKey, title, content, guides, evidence, source }) {
 <script type="module" src="${escapeHtml(assetUrl(pageKey, 'assets/site.js'))}"></script></head>
 <body><a class="skip" href="#main">Skip to content</a>
 <header class="masthead"><a class="brand" href="${escapeHtml(home)}"><span class="mark" aria-hidden="true">/</span> Agent Native <span class="brand-small">docs</span></a>
-<span class="release-tag">Unreleased preview · 0.0.0</span><button class="menu-button" type="button" aria-controls="site-nav" aria-expanded="false">Menu</button></header>
+<span class="release-tag">v${escapeHtml(packageVersion)}</span><button class="menu-button" type="button" aria-controls="site-nav" aria-expanded="false">Menu</button></header>
 <div class="layout">${navigation(pageKey, guides, evidence)}
 <div class="main-column"><form class="search" role="search"><label for="site-search">Search documentation</label><input id="site-search" type="search" autocomplete="off" placeholder="Search guides and evidence" aria-controls="search-results"><span class="search-hint">Press / to search</span><ul id="search-results" class="search-results" aria-live="polite" hidden></ul></form>
 <main id="main"><div class="eyebrow">Uppercut Labs / Agent Native</div><article class="prose">${content}</article>
 ${source ? `<div class="source-links"><a href="${escapeHtml(sourceUrl(source))}">View source on GitHub</a>${raw ? `<a href="${escapeHtml(raw)}">Raw Markdown</a>` : ''}</div>` : ''}</main>
-<footer>Experimental package documentation. <a href="${escapeHtml(pageUrl(pageKey, 'support-and-limitations'))}">Read support and limitations</a>.</footer></div></div></body></html>`;
+<footer>Agent Native ${escapeHtml(packageVersion)} documentation. <a href="${escapeHtml(pageUrl(pageKey, 'support-and-limitations'))}">Read support and limitations</a>.</footer></div></div></body></html>`;
 }
 
 async function writePage(key, html) {
@@ -243,8 +248,8 @@ async function build() {
   }
 
   const intro = `<h1>Typed capabilities for the sites you already run.</h1>
-    <p class="lead">Agent Native is an experimental package for defining one capability contract and binding it to local, browser, CLI, HTTP, and MCP surfaces.</p>
-    <div class="notice"><strong>Unreleased preview.</strong> The package is private at version 0.0.0. These pages document source and fixture-tested behavior; they are not npm installation instructions or production host certification.</div>
+    <p class="lead">Agent Native defines one capability contract and binds it to local, browser, CLI, HTTP, and MCP surfaces.</p>
+    <div class="notice"><strong>Version ${escapeHtml(packageVersion)}.</strong> Install <code>@uppercut-labs/agent-native</code> from npm. <a href="${pageUrl('', 'stability')}">Stability</a> lists the stable and experimental entry points. Evidence pages record exactly which fixtures and hosts were tested; they are not production host certification.</div>
     <div class="cards"><a href="${pageUrl('', 'getting-started')}"><span>01 / Start</span><strong>Existing Astro site</strong><span>Plan a narrow retrofit and inspect the E01 fixture.</span></a>
     <a href="${pageUrl('', 'capabilities-and-bindings')}"><span>02 / Model</span><strong>Capabilities and bindings</strong><span>Learn the contract, runtime and authorization boundaries.</span></a>
     <a href="${pageUrl('', 'support-and-limitations')}"><span>03 / Verify</span><strong>Support and limitations</strong><span>See what current fixtures prove and what remains open.</span></a></div>

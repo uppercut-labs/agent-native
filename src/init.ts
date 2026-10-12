@@ -667,7 +667,9 @@ export async function detectExistingProject(
   const applicationRoot: string | null =
     overrideRealRoot ?? (candidates.length === 1 ? requireAt(candidates, 0) : null);
   const appRelative: string | null =
-    applicationRoot === null ? null : path.relative(root, applicationRoot);
+    applicationRoot === null
+      ? null
+      : path.relative(root, applicationRoot).split(path.sep).join('/');
   const appAstro: AstroEvidence | null =
     applicationRoot === null ? null : await astroEvidence(applicationRoot);
   const appNext: NextEvidence | null =

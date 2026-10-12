@@ -2,9 +2,16 @@
 
 All notable changes will be recorded here.
 
-## Unreleased
+## 1.0.0 - 2026-10-12
 
-Findings from the first real integration (Domain Expansion, Gate 2):
+The first stable release. [Stability](docs/stability.md) lists the stable and experimental entry points and what counts as a breaking change; [upgrading from 0.1.x](docs/upgrading-to-1.0.md) covers the changes below.
+
+- `npm run check:api` guards the declarations of every stable entry point against `api/stable-api.txt`, and CI runs it.
+- **Breaking:** `@uppercut-labs/agent-native/mcp` no longer exports the MCP Apps plumbing (`createMcpHandlerWithAppRegistration`, `McpAppRegistration`, `McpAppResourceDefinition`). Use `@uppercut-labs/agent-native/mcp-apps`.
+- The documentation site shows the package version, and the docs no longer describe a preview.
+- `detectExistingProject` reports `applicationRoot` with forward slashes on Windows, as on other platforms. Two test files no longer build paths from `URL.pathname`, so the suite passes on Windows.
+
+Findings from the first real integration ([Domain Expansion](docs/evidence/gate-2-domain-expansion.md)):
 
 - Bindings receive the authorized caller as `context.caller`. A caller built from a verified principal carries `identity` (`issuer`, `subject`, `tenantId`, `clientId`). New exported type `ExecutionCallerIdentity`.
 - **Behavior change:** with `bearerAuth` and no public-read capability, requests without a token now get the SDK's 401 challenge instead of an empty tool list. Set `bearerAuth.required: false` to keep the old behavior, or `true` to require a token everywhere.

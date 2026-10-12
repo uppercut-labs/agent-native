@@ -1,10 +1,10 @@
 # Release and provider handoff
 
-This handoff covers the `0.1.1` preview candidate. The public source is [uppercut-labs/agent-native](https://github.com/uppercut-labs/agent-native); `@uppercut-labs/agent-native` is its npm name and MIT is its license. Check the registry before claiming publication. See [UAN-024 release evidence](evidence/UAN-024-release-readiness.md) for the earlier `0.0.0` preparation snapshot.
+This handoff covers how a release candidate is checked and published; the current release is `1.0.0`. The public source is [uppercut-labs/agent-native](https://github.com/uppercut-labs/agent-native); `@uppercut-labs/agent-native` is its npm name and MIT is its license. Check the registry before claiming publication. See [UAN-024 release evidence](evidence/UAN-024-release-readiness.md) for the earlier `0.0.0` preparation snapshot.
 
 ## Package release sequence
 
-1. Select the preview version, remove the package's private flag, and align the changelog and installation guide.
+1. Select the version, update `src/package-version.ts` and the E08 contract peer with it, regenerate `docs/reference.md`, and align the changelog, installation guide and [upgrade notes](upgrading-to-1.0.md). Run `npm run check:api`; a stable API change needs a major version unless [stability](stability.md) allows it.
 2. Run the Node 22/24 CI matrix on the exact candidate commit. The example negative probes and independent tarball install are part of that gate.
 3. From a clean checkout of that commit, run `npm ci` and `npm pack --json`. Inspect the actual tarball, license, README, documentation, dependency licenses, production audit, file list, and every declared export. Record its SHA-256 digest, package file count and size, source SHA, and Node/npm versions. Install the archive in a clean consumer and run the documented first capability.
 4. Publish that exact archive under the organization scope with public access. Record the registry URL and digest. Keep the source tag and registry artifact tied to the same source commit.

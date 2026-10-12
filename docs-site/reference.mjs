@@ -60,7 +60,7 @@ export function renderReference(manifest, cliSource, sources = {}) {
 This page is generated from [package.json](../package.json) and the
 [CLI parser](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts). Run \`node docs-site/reference.mjs\` after changing those
 sources. \`npm run docs:check\` fails if this page drifts. Agent Native
-\`${manifest.version}\` is a preview; verify registry availability before npm installation.
+\`${manifest.version}\`. Stable and experimental entry points are listed in [stability](stability.md).
 
 ## Typed package entrypoints
 
@@ -94,7 +94,7 @@ For a runnable instance, use Node.js 22 or newer, \`npm ci\`, and
   const sections = [
     ['CLI', 'src/cli.ts', cliSource, ['CliCredentialProfile', 'CapabilityCliOptions']],
     ['HTTP', 'src/http.ts', sources.http, ['HttpAdapterOptions']],
-    ['MCP', 'src/mcp.ts', sources.mcp, ['McpAdapterOptions']],
+    ['MCP', 'src/mcp-core.ts', sources.mcp, ['McpAdapterOptions']],
     ['Doctor', 'src/doctor.ts', sources.doctor, ['DoctorRunOptions']],
   ];
   return (
@@ -116,7 +116,7 @@ For a runnable instance, use Node.js 22 or newer, \`npm ci\`, and
 export async function currentReference() {
   const manifest = JSON.parse(await readFile(path.join(repositoryRoot, 'package.json'), 'utf8'));
   const [cliSource, http, mcp, doctor] = await Promise.all(
-    ['cli.ts', 'http.ts', 'mcp.ts', 'doctor.ts'].map((name) =>
+    ['cli.ts', 'http.ts', 'mcp-core.ts', 'doctor.ts'].map((name) =>
       readFile(path.join(repositoryRoot, 'src', name), 'utf8'),
     ),
   );

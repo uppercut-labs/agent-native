@@ -3,7 +3,7 @@
 This page is generated from [package.json](../package.json) and the
 [CLI parser](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts). Run `node docs-site/reference.mjs` after changing those
 sources. `npm run docs:check` fails if this page drifts. Agent Native
-`0.1.3` is a preview; verify registry availability before npm installation.
+`1.0.0`. Stable and experimental entry points are listed in [stability](stability.md).
 
 ## Typed package entrypoints
 
@@ -103,7 +103,7 @@ export type HttpAdapterOptions = {
 
 ### MCP
 
-[View source](https://github.com/uppercut-labs/agent-native/blob/main/src/mcp.ts)
+[View source](https://github.com/uppercut-labs/agent-native/blob/main/src/mcp-core.ts)
 
 ~~~ts
 export type McpAdapterOptions = {

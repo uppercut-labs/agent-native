@@ -1,7 +1,7 @@
 # Compatibility and evidence
 
-Agent Native `0.1.3` is a preview. The table describes the exact local
-fixtures; it is not a claim for all releases of a runtime or every client.
+Agent Native `1.0.0`. The table describes the exact local fixtures and hosts
+that were tested; it is not a claim for all releases of a runtime or every client.
 
 | Surface | Runnable check | Verified boundary |
 | --- | --- | --- |
@@ -11,6 +11,7 @@ fixtures; it is not a claim for all releases of a runtime or every client.
 | Cloudflare Worker | `npm run example:e04` | Wrangler 4.147.0 local workerd, HTTP/OpenAPI and official MCP SDK client |
 | Node/Hono | `npm run example:e05` | Hono 4.13.12 and Node adapter 2.1.3 on loopback |
 | Browser-only WebMCP | `npm run example:e06` | Simulated `document.modelContext` and native Chrome 155 with the opt-in `WebMCP` feature; ordinary button fallback in default Chrome |
+| Deployed protected MCP | [Domain Expansion evidence](evidence/gate-2-domain-expansion.md) | Cloudflare Worker with Neon in production: official MCP SDK client 2.3.0 and Claude Code 2.1.285 against `https://domains.uppercut-labs.com/mcp`, with bearer tokens, grants, typed outcomes and a rollback drill |
 | Commercial agent hosts over MCP | `node test/uan023-agent-host.mjs agy` or `claude` (opt-in inference) | Antigravity CLI 1.2.14/1.3.3 and Claude Code 2.1.286 called the E04 flagship tool, with found and invalid cases ([evidence](evidence/UAN-023-commercial-agent-hosts.md)) |
 | MCP Apps | `npm run example:e09` | Official ext-apps App/AppBridge fixture and local MCP client; no commercial host claim |
 | Codex local harness | `npm run proof:codex -- --model gpt-5.6-luna` (explicit inference opt-in) | CLI 0.145.0, managed ChatGPT login, two file writes and same-thread resume across processes; [evidence](evidence/codex-harness.md) |

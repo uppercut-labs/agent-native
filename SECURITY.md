@@ -1,6 +1,6 @@
 # Security model
 
-Version `0.1.0` is an experimental preview with no security support window. To report a vulnerability privately, use the **Report a vulnerability** button on the [repository Security Advisories page](https://github.com/uppercut-labs/agent-native/security/advisories). GitHub private vulnerability reporting was enabled and verified on 2026-10-03. Maintainers will triage reports privately before any coordinated disclosure; no response-time promise is made. Please do not post credentials or exploit details in public issues.
+Security fixes ship for the latest 1.x minor release. 0.1.x releases are no longer supported; upgrade with [upgrading from 0.1.x](docs/upgrading-to-1.0.md). To report a vulnerability privately, use the **Report a vulnerability** button on the [repository Security Advisories page](https://github.com/uppercut-labs/agent-native/security/advisories). GitHub private vulnerability reporting was enabled and verified on 2026-10-03. Maintainers will triage reports privately before any coordinated disclosure; no response-time promise is made. Please do not post credentials or exploit details in public issues.
 
 ## Identity and permission boundaries
 

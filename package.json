@@ -1,6 +1,6 @@
 {
   "name": "@uppercut-labs/agent-native",
-  "version": "0.1.3",
+  "version": "1.0.0",
   "license": "MIT",
   "description": "Experimental typed capability contracts with local, HTTP, CLI, and MCP adapters.",
   "repository": {
@@ -131,7 +131,7 @@
     "example:e05": "node scripts/check-example.mjs e05-node-cli",
     "example:e06": "node scripts/check-example.mjs e06-browser-only-theme-controls",
     "example:e03": "node scripts/check-example.mjs e03-next-reading-list",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run example:e01 && npm run example:e02 && npm run example:e03 && npm run example:e08 && npm run example:e10 && npm run example:e12 && npm run example:e05 && npm run example:e06 && npm run example:e04 && npm run example:e07 && npm run example:e09 && npm run example:e11 && npm run docs:check && npm run check:portability",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run check:api && npm run example:e01 && npm run example:e02 && npm run example:e03 && npm run example:e08 && npm run example:e10 && npm run example:e12 && npm run example:e05 && npm run example:e06 && npm run example:e04 && npm run example:e07 && npm run example:e09 && npm run example:e11 && npm run docs:check && npm run check:portability",
     "example:e04": "node scripts/check-example.mjs e04-worker-sidecar",
     "example:e07": "node scripts/check-example.mjs e07-playlist-permissions",
     "example:e09": "node scripts/check-example.mjs e09-album-explorer",
@@ -139,6 +139,7 @@
     "docs:build": "node docs-site/build.mjs",
     "docs:check": "node --test docs-site/coverage-check.test.mjs docs-site/source-regions.test.mjs docs-site/reference.test.mjs && npm run docs:build && node docs-site/check.mjs",
     "check:portability": "node scripts/check-package-portability.mjs",
+    "check:api": "node scripts/check-api.mjs",
     "proof:codex": "npm run build && node scripts/check-codex-harness.mjs",
     "check:isolated-examples": "node scripts/check-isolated-exports.mjs"
   },

@@ -1,6 +1,6 @@
 # Contributing
 
-Agent Native is an unreleased preview. Discuss an intended API or documentation change in a GitHub issue before a broad refactor. Do not put credentials, private deployment details, or exploit reports in public issues; follow [SECURITY.md](SECURITY.md).
+Agent Native 1.x follows semantic versioning for its stable entry points ([stability](docs/stability.md)). Discuss an intended API or documentation change in a GitHub issue before a broad refactor. A change to a stable declaration fails `npm run check:api` until the baseline is regenerated and the change is reviewed against the policy. Do not put credentials, private deployment details, or exploit reports in public issues; follow [SECURITY.md](SECURITY.md).
 
 ## Local setup
 
