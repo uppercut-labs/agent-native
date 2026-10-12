@@ -130,7 +130,10 @@ test('bounded request and host shutdown settle without an unhandled rejection', 
   }
 });
 
-test('server handles SIGTERM and reports port conflict without stacks or secrets', async () => {
+// Windows has no POSIX signals: kill('SIGTERM') ends the process without running its handler.
+test('server handles SIGTERM without stacks or secrets', {
+  skip: process.platform === 'win32' && 'Windows does not deliver SIGTERM to Node handlers',
+}, async () => {
   const signalRun = collectChild([], { ...process.env, PORT: '0', E05_TOKEN: token });
   let signaled;
   try {
@@ -148,7 +151,9 @@ test('server handles SIGTERM and reports port conflict without stacks or secrets
   assert.equal(signaled.stdout, '');
   assert.match(signaled.stderr, /shutdown=SIGTERM/);
   assert.equal(signaled.stderr.includes(token), false);
+});
 
+test('server reports a port conflict without stacks or secrets', async () => {
   await withServer(async ({ origin }) => {
     const occupiedPort = new URL(origin).port;
     const conflictRun = collectChild([], {

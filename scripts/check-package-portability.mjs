@@ -41,9 +41,11 @@ async function fileBytes(directory) {
 
 const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), 'agent-native-portability-'));
 try {
-  const pack = JSON.parse(
+  // npm 11 prints an array of packs; npm 12 prints an object keyed by package name.
+  const packed = JSON.parse(
     run(['pack', '--json', '--pack-destination', temporaryRoot], repositoryRoot, true),
-  )[0];
+  );
+  const pack = Array.isArray(packed) ? packed[0] : Object.values(packed)[0];
   assert.ok(pack, 'npm pack returned no archive');
   for (const file of pack.files) {
     assert.match(file.path, /^(?:dist\/|docs\/|LICENSE$|README\.md$|package\.json$)/);
