@@ -102,6 +102,12 @@ export function executionCallerForPrincipal(principal: TrustedPrincipal): Execut
     kind: 'authenticated',
     subject: JSON.stringify([principal.issuer, principal.subject, principal.tenantId]),
     scopes: Object.freeze([...principal.scopes]),
+    identity: Object.freeze({
+      issuer: principal.issuer,
+      subject: principal.subject,
+      tenantId: principal.tenantId,
+      clientId: principal.clientId,
+    }),
   });
 }
 

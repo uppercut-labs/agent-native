@@ -2,6 +2,7 @@ import type { CapabilityDefinition } from './contracts.js';
 import { canonicalCapabilityId, isCapabilityDefinition } from './contracts.js';
 import { createDiagnosticObservation, type DiagnosticObservation } from './diagnostics.js';
 import { getBindingRecord, setBindingRecord } from './binding-internal.js';
+import type { ExecutionCaller } from './executor.js';
 
 export type RuntimeTarget = 'browser' | 'server' | 'local';
 
@@ -12,6 +13,8 @@ export type ExecutionSignal = {
 export type BindingExecutionContext = {
   readonly capabilityId: string;
   readonly runtime: RuntimeTarget;
+  /** The caller the executor authorized. Bindings use it to scope records to the caller. */
+  readonly caller: ExecutionCaller;
   readonly signal?: ExecutionSignal;
 };
 

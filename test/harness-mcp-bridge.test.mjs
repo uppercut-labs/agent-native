@@ -193,14 +193,13 @@ test('real MCP client cannot invoke a protected binding through the bridge witho
           }),
         })
       ).status,
-      200,
+      // No capability is a public read, so a request without a token gets the bearer challenge.
+      401,
     );
     const anonymous = new Client({ name: 'anonymous-bridge-fixture', version: '1.0.0' });
     try {
-      await anonymous.connect(new StreamableHTTPClientTransport(new URL(bridge.url)));
-      assert.deepEqual((await anonymous.listTools()).tools, []);
       await assert.rejects(
-        anonymous.callTool({ name: mcpToolName(capability.identity), arguments: {} }),
+        anonymous.connect(new StreamableHTTPClientTransport(new URL(bridge.url))),
       );
     } finally {
       await anonymous.close();
