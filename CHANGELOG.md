@@ -10,6 +10,7 @@ The first stable release. [Stability](docs/stability.md) lists the stable and ex
 - **Breaking:** `@uppercut-labs/agent-native/mcp` no longer exports the MCP Apps plumbing (`createMcpHandlerWithAppRegistration`, `McpAppRegistration`, `McpAppResourceDefinition`). Use `@uppercut-labs/agent-native/mcp-apps`.
 - The documentation site shows the package version, and the docs no longer describe a preview.
 - `detectExistingProject` reports `applicationRoot` with forward slashes on Windows, as on other platforms. Two test files no longer build paths from `URL.pathname`, so the suite passes on Windows.
+- `npm run check` passes on Windows 11 with npm 12. E05 skips its SIGTERM test on Windows, which has no POSIX signals, and the portability check reads both the npm 11 and the npm 12 `npm pack --json` formats.
 
 Findings from the first real integration ([Domain Expansion](docs/evidence/gate-2-domain-expansion.md)):
 
