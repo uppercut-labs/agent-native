@@ -497,7 +497,7 @@ export type { CapabilityDiscoveryAuthorizer, CapabilitySurface, CapabilitySurfac
 export { evaluateCapabilityDiscovery, isDestructiveCapabilityExposed } from './discovery.js';
 
 ## dist/mcp-core.d.ts
-import { type AuthInfo, type CallToolResult, McpServer, type OAuthTokenVerifier, type StandardSchemaWithJSON, type ToolAnnotations } from '@modelcontextprotocol/server';
+import { type AuthInfo, type CallToolResult, McpServer, type OAuthTokenVerifier, type ScopeChallengeHandler, type StandardSchemaWithJSON, type ToolAnnotations } from '@modelcontextprotocol/server';
 import { type GrantAuthorizationOptions, type TrustedPrincipal } from './auth.js';
 import { type CapabilityDefinition } from './core/contracts.js';
 import type { DiagnosticObservation } from './core/diagnostics.js';
@@ -531,6 +531,7 @@ readonly required?: boolean;
 };
 readonly onToolFailure?: (failure: McpToolFailure) => void | Promise<void>;
 readonly toolName?: (definition: CapabilityDefinition<unknown, unknown>) => string;
+readonly toolScopeChallenge?: (definition: CapabilityDefinition<unknown, unknown>) => ScopeChallengeHandler | undefined;
 readonly resolveTrustedPrincipal?: (authInfo: AuthInfo) => TrustedPrincipal | null | Promise<TrustedPrincipal | null>;
 readonly grantAuthorization?: Omit<GrantAuthorizationOptions, 'principal'>;
 readonly resolveExecutionContext?: (request: Request, authInfo?: AuthInfo) => McpExecutionContext | Promise<McpExecutionContext>;
@@ -548,6 +549,7 @@ readonly description: string;
 readonly inputSchema: ReturnType<typeof sdkSchema>;
 readonly outputSchema: ReturnType<typeof sdkSchema>;
 readonly annotations: ToolAnnotations;
+readonly scopeChallenge?: ScopeChallengeHandler;
 }, handler: (input: unknown) => Promise<CallToolResult>, resourceUri: string) => void;
 readonly registerResources: (server: McpServer, resources: readonly McpAppResourceDefinition[]) => void;
 }
