@@ -853,7 +853,7 @@ test('per-tool OAuth scope challenges stop execution and include resource metada
           return {
             token,
             clientId: 'catalog-test-client',
-            scopes: ['catalog:read'],
+            scopes: token === 'permitted' ? ['catalog:read'] : [],
             expiresAt: Math.floor(Date.now() / 1000) + 600,
             resource: expectedResource,
           };
@@ -878,7 +878,16 @@ test('per-tool OAuth scope challenges stop execution and include resource metada
     params: { name: mcpToolName(lookupIdentity), arguments: { slug: 'first-light' } },
   });
   try {
-    const denied = await jsonRpcPost(server.origin, body);
+    // A valid but under-scoped bearer token exercises OAuth step-up (not anonymous 401).
+    const denied = await fetch(server.origin + '/mcp', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
+        authorization: 'Bearer insufficient',
+      },
+      body,
+    });
     assert.equal(denied.status, 403);
     const challenge = denied.headers.get('www-authenticate') ?? '';
     assert.match(challenge, /insufficient_scope/);
