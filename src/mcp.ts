@@ -5,5 +5,6 @@ export type {
   McpExecutionContext,
   McpToolFailure,
   McpToolFailureReason,
+  McpToolSecurityScheme,
 } from './mcp-core.js';
 export { createMcpHandler, mcpToolName } from './mcp-core.js';

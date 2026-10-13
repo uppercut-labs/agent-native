@@ -497,7 +497,7 @@ export type { CapabilityDiscoveryAuthorizer, CapabilitySurface, CapabilitySurfac
 export { evaluateCapabilityDiscovery, isDestructiveCapabilityExposed } from './discovery.js';
 
 ## dist/mcp-core.d.ts
-import { type AuthInfo, type CallToolResult, McpServer, type OAuthTokenVerifier, type ScopeChallengeHandler, type StandardSchemaWithJSON, type ToolAnnotations } from '@modelcontextprotocol/server';
+import { type AuthInfo, type CallToolResult, McpServer, type OAuthTokenVerifier, type ScopeChallengeHandler, type ServerContext, type StandardSchemaWithJSON, type ToolAnnotations } from '@modelcontextprotocol/server';
 import { type GrantAuthorizationOptions, type TrustedPrincipal } from './auth.js';
 import { type CapabilityDefinition } from './core/contracts.js';
 import type { DiagnosticObservation } from './core/diagnostics.js';
@@ -514,6 +514,12 @@ readonly observation?: DiagnosticObservation;
 export type McpExecutionContext = {
 readonly caller: ExecutionCaller;
 readonly authorization: AuthorizationPort;
+};
+export type McpToolSecurityScheme = {
+readonly type: 'noauth';
+} | {
+readonly type: 'oauth2';
+readonly scopes: readonly string[];
 };
 export type McpAdapterOptions = {
 readonly endpoint?: string;
@@ -532,6 +538,8 @@ readonly required?: boolean;
 readonly onToolFailure?: (failure: McpToolFailure) => void | Promise<void>;
 readonly toolName?: (definition: CapabilityDefinition<unknown, unknown>) => string;
 readonly toolScopeChallenge?: (definition: CapabilityDefinition<unknown, unknown>) => ScopeChallengeHandler | undefined;
+readonly toolSecuritySchemes?: (definition: CapabilityDefinition<unknown, unknown>) => readonly McpToolSecurityScheme[] | undefined;
+readonly toolScopeChallengeMode?: 'http' | 'tool-result';
 readonly resolveTrustedPrincipal?: (authInfo: AuthInfo) => TrustedPrincipal | null | Promise<TrustedPrincipal | null>;
 readonly grantAuthorization?: Omit<GrantAuthorizationOptions, 'principal'>;
 readonly resolveExecutionContext?: (request: Request, authInfo?: AuthInfo) => McpExecutionContext | Promise<McpExecutionContext>;
@@ -550,7 +558,7 @@ readonly inputSchema: ReturnType<typeof sdkSchema>;
 readonly outputSchema: ReturnType<typeof sdkSchema>;
 readonly annotations: ToolAnnotations;
 readonly scopeChallenge?: ScopeChallengeHandler;
-}, handler: (input: unknown) => Promise<CallToolResult>, resourceUri: string) => void;
+}, handler: (input: unknown, context: ServerContext) => Promise<CallToolResult>, resourceUri: string) => void;
 readonly registerResources: (server: McpServer, resources: readonly McpAppResourceDefinition[]) => void;
 }
 export declare function mcpToolName(identity: CapabilityDefinition<unknown, unknown>['identity']): string;
@@ -560,7 +568,7 @@ export declare function createMcpHandlerWithAppRegistration(registry: Capability
 export {};
 
 ## dist/mcp.d.ts
-export type { McpAdapterOptions, McpExecutionContext, McpToolFailure, McpToolFailureReason, } from './mcp-core.js';
+export type { McpAdapterOptions, McpExecutionContext, McpToolFailure, McpToolFailureReason, McpToolSecurityScheme, } from './mcp-core.js';
 export { createMcpHandler, mcpToolName } from './mcp-core.js';
 
 ## dist/registry.d.ts

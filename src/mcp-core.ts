@@ -1,15 +1,24 @@
 import {
   type AuthInfo,
+  bearerAuthChallengeResponse,
   type CallToolResult,
   createMcpHandler as createOfficialMcpHandler,
   fromJsonSchema,
+  getOAuthProtectedResourceMetadataUrl,
   type JsonSchemaType,
   type McpRequestContext,
   McpServer,
+  OAuthError,
+  OAuthErrorCode,
   type OAuthTokenVerifier,
-  type ScopeChallengeHandler,
+  type RequestId,
   requireBearerAuth,
+  requireScopes,
+  type ScopeChallenge,
+  type ScopeChallengeHandler,
+  type ServerContext,
   type StandardSchemaWithJSON,
+  type Tool,
   type ToolAnnotations,
 } from '@modelcontextprotocol/server';
 import {
@@ -38,8 +47,8 @@ import { executeCapability } from './core/executor.js';
 import type { CapabilityBinding, CapabilityRegistry } from './core/registry.js';
 import {
   type CapabilitySurfaceExposure,
-  evaluateCapabilityDiscovery,
   type DiscoveryDecision,
+  evaluateCapabilityDiscovery,
   isDestructiveCapabilityExposed,
 } from './discovery.js';
 import { PACKAGE_VERSION } from './package-version.js';
@@ -75,6 +84,10 @@ export type McpExecutionContext = {
   readonly authorization: AuthorizationPort;
 };
 
+export type McpToolSecurityScheme =
+  | { readonly type: 'noauth' }
+  | { readonly type: 'oauth2'; readonly scopes: readonly string[] };
+
 export type McpAdapterOptions = {
   readonly endpoint?: string;
   readonly surfaceExposure?: CapabilitySurfaceExposure;
@@ -109,6 +122,12 @@ export type McpAdapterOptions = {
   readonly toolScopeChallenge?: (
     definition: CapabilityDefinition<unknown, unknown>,
   ) => ScopeChallengeHandler | undefined;
+  // Opt-in ChatGPT wire metadata. Discovery and execution authorization still apply.
+  readonly toolSecuritySchemes?: (
+    definition: CapabilityDefinition<unknown, unknown>,
+  ) => readonly McpToolSecurityScheme[] | undefined;
+  // Default remains the SDK HTTP 403. Tool-result mode carries the same challenge in _meta.
+  readonly toolScopeChallengeMode?: 'http' | 'tool-result';
   // AuthInfo comes from the SDK verifier; issuer/subject/tenant must be supplied by that
   // verifier's trusted metadata, never inferred from request headers or MCP clientInfo.
   readonly resolveTrustedPrincipal?: (
@@ -140,7 +159,7 @@ export interface McpAppRegistration {
       readonly annotations: ToolAnnotations;
       readonly scopeChallenge?: ScopeChallengeHandler;
     },
-    handler: (input: unknown) => Promise<CallToolResult>,
+    handler: (input: unknown, context: ServerContext) => Promise<CallToolResult>,
     resourceUri: string,
   ) => void;
   readonly registerResources: (
@@ -193,6 +212,7 @@ type ToolTextContent = { type: 'text'; text: string };
 type ToolErrorResult = {
   content: ToolTextContent[];
   isError: boolean;
+  _meta?: { 'mcp/www_authenticate': string[] };
 };
 
 type ToolSuccessResult = {
@@ -379,6 +399,7 @@ async function defineServer(
   });
   if (requestInfo === undefined) return server;
   let visibleAppResources: Map<string, McpAppResourceDefinition> = new Map();
+  const listedTools: (Tool & { securitySchemes?: readonly McpToolSecurityScheme[] })[] = [];
 
   for (const definition of registry.definitions) {
     const serverBindings: readonly CapabilityBinding[] = serverBindingsFor(registry, definition);
@@ -419,7 +440,19 @@ async function defineServer(
             return await options.discoverProtected(candidate, requestInfo, authInfo);
           },
     );
-    if (!discovery.visible) continue;
+    // A known protected name may return a scope prompt, but cannot run or appear in discovery
+    // without a grant. Unexposed destructive and unbound capabilities remain absent.
+    const canPromptHidden: boolean =
+      !discovery.visible &&
+      authInfo !== undefined &&
+      definition.access.kind === 'protected' &&
+      isDestructiveCapabilityExposed(definition, 'mcp', options.surfaceExposure) &&
+      options.toolSecuritySchemes !== undefined &&
+      options.toolScopeChallengeMode === 'tool-result';
+    if (!discovery.visible && !canPromptHidden) continue;
+    const scopeChallenge: ScopeChallengeHandler | undefined =
+      options.toolScopeChallenge?.(definition);
+    if (!discovery.visible && scopeChallenge === undefined) continue;
     const capabilityId: string = canonicalCapabilityId(definition.identity);
     const name: string = toolNames.get(capabilityId) ?? mcpToolName(definition.identity);
     const fail = (
@@ -441,10 +474,35 @@ async function defineServer(
     const outputSchema: StandardSchemaWithJSON<unknown, unknown> = sdkSchema(
       resultSchema(definition.output.toJSONSchema()),
     );
-    const scopeChallenge: ScopeChallengeHandler | undefined =
-      options.toolScopeChallenge?.(definition);
+    const toolResultChallenges: Map<RequestId, ScopeChallenge | undefined> = new Map();
     const toolConfig: McpToolConfig = {
-      ...(scopeChallenge === undefined ? {} : { scopeChallenge }),
+      ...(scopeChallenge === undefined
+        ? {}
+        : {
+            scopeChallenge:
+              options.toolScopeChallengeMode === 'tool-result'
+                ? async (context) => {
+                    // Preserve the SDK's actual request/auth context; this server is request-scoped.
+                    const challenge: ScopeChallenge | undefined = await scopeChallenge(context);
+                    if (challenge !== undefined) {
+                      // Returning undefined bypasses SDK challenge validation, so validate here.
+                      requireScopes(...challenge.scopes);
+                      if (
+                        challenge.errorDescription !== undefined &&
+                        !/^[\u0020-\u0021\u0023-\u005B\u005D-\u007E]+$/.test(
+                          challenge.errorDescription,
+                        )
+                      ) {
+                        throw new TypeError(
+                          'Scope challenge errorDescription must satisfy RFC 6750.',
+                        );
+                      }
+                    }
+                    toolResultChallenges.set(context.request.id, challenge);
+                    return undefined;
+                  }
+                : scopeChallenge,
+          }),
       description: `${definition.description} Returns the contract value under structuredContent.result.`,
       inputSchema,
       outputSchema,
@@ -454,17 +512,71 @@ async function defineServer(
         ...(definition.risk === 'read' ? { idempotentHint: true } : {}),
       },
     };
-    const appResource: McpAppResourceDefinition | undefined = appRegistration?.resources.find(
-      (resource: McpAppResourceDefinition): boolean =>
-        resource.capabilityId === canonicalCapabilityId(definition.identity),
-    );
+    const appResource: McpAppResourceDefinition | undefined = discovery.visible
+      ? appRegistration?.resources.find(
+          (resource: McpAppResourceDefinition): boolean =>
+            resource.capabilityId === canonicalCapabilityId(definition.identity),
+        )
+      : undefined;
     if (appResource !== undefined) visibleAppResources.set(appResource.uri, appResource);
-    const toolHandler: (input: unknown) => Promise<ToolErrorResult | ToolSuccessResult> = async (
+    if (discovery.visible && options.toolSecuritySchemes !== undefined) {
+      const securitySchemes = options.toolSecuritySchemes(definition);
+      const schema = definition.input.toJSONSchema();
+      if (schema['type'] !== 'object') {
+        throw new TypeError('MCP tool input schema must have an object root.');
+      }
+      listedTools.push({
+        name,
+        description: toolConfig.description,
+        inputSchema: { ...schema, type: 'object' },
+        outputSchema: { ...resultSchema(definition.output.toJSONSchema()), type: 'object' },
+        annotations: toolConfig.annotations,
+        ...(securitySchemes === undefined ? {} : { securitySchemes }),
+        _meta: {
+          ...(securitySchemes === undefined ? {} : { securitySchemes }),
+          ...(appResource === undefined
+            ? {}
+            : { ui: { resourceUri: appResource.uri, visibility: ['model', 'app'] } }),
+        },
+      });
+    }
+    const toolHandler = async (
       input: unknown,
+      context: ServerContext,
     ): Promise<ToolErrorResult | ToolSuccessResult> => {
       if (!isDestructiveCapabilityExposed(definition, 'mcp', options.surfaceExposure)) {
         return fail('not-exposed', toolError('Capability not found.'));
       }
+      if (options.toolScopeChallengeMode === 'tool-result' && scopeChallenge !== undefined) {
+        if (!toolResultChallenges.has(context.mcpReq.id)) {
+          throw new Error('OAuth scope challenge context was not resolved.');
+        }
+        const challenge: ScopeChallenge | undefined = toolResultChallenges.get(context.mcpReq.id);
+        if (challenge !== undefined) {
+          const description: string =
+            challenge.errorDescription ?? 'Additional permission required.';
+          const resourceMetadataUrl: string | undefined =
+            authInfo?.resourceMetadataUrl ??
+            options.bearerAuth?.resourceMetadataUrl ??
+            (options.bearerAuth?.expectedResource === undefined
+              ? undefined
+              : getOAuthProtectedResourceMetadataUrl(options.bearerAuth.expectedResource));
+          const response: Response = bearerAuthChallengeResponse(
+            new OAuthError(OAuthErrorCode.InsufficientScope, description),
+            {
+              requiredScopes: [...challenge.scopes],
+              ...(resourceMetadataUrl === undefined ? {} : { resourceMetadataUrl }),
+            },
+          );
+          const header: string | null = response.headers.get('www-authenticate');
+          if (header === null) throw new Error('OAuth scope challenge has no WWW-Authenticate.');
+          return fail('unauthorized', {
+            ...toolError(description),
+            _meta: { 'mcp/www_authenticate': [header] },
+          });
+        }
+      }
+      if (!discovery.visible) return fail('not-exposed', toolError('Capability not found.'));
       let controller: AbortController = new AbortController();
       let timer: ReturnType<typeof setTimeout> | undefined;
       const timeout: Promise<TimeoutOutcome> = new Promise<TimeoutOutcome>(
@@ -566,6 +678,11 @@ async function defineServer(
   }
   if (visibleAppResources.size > 0 && appRegistration !== undefined) {
     appRegistration.registerResources(server, [...visibleAppResources.values()]);
+  }
+  // SDK 2.3.0 drops root securitySchemes from registration. Use its supported low-level
+  // list handler; keep the SDK call handler for validation, transport and result projection.
+  if (options.toolSecuritySchemes !== undefined) {
+    server.server.setRequestHandler('tools/list', () => ({ tools: listedTools }));
   }
   return server;
 }

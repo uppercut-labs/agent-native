@@ -140,6 +140,12 @@ export type McpAdapterOptions = {
   readonly toolScopeChallenge?: (
     definition: CapabilityDefinition<unknown, unknown>,
   ) => ScopeChallengeHandler | undefined;
+  // Opt-in ChatGPT wire metadata. Discovery and execution authorization still apply.
+  readonly toolSecuritySchemes?: (
+    definition: CapabilityDefinition<unknown, unknown>,
+  ) => readonly McpToolSecurityScheme[] | undefined;
+  // Default remains the SDK HTTP 403. Tool-result mode carries the same challenge in _meta.
+  readonly toolScopeChallengeMode?: 'http' | 'tool-result';
   // AuthInfo comes from the SDK verifier; issuer/subject/tenant must be supplied by that
   // verifier's trusted metadata, never inferred from request headers or MCP clientInfo.
   readonly resolveTrustedPrincipal?: (
