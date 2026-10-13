@@ -841,3 +841,63 @@ test('timed-out protected MCP write reports uncertain completion and is never re
     await server.close();
   }
 });
+
+test('per-tool OAuth scope challenges stop execution and include resource metadata', async () => {
+  const fixture = createFixtureRegistry();
+  const expectedResource = new URL('https://catalog.example.test/mcp');
+  const resourceMetadataUrl = 'https://catalog.example.test/.well-known/oauth-protected-resource';
+  const handler = createMcpHandler(fixture.registry, {
+    bearerAuth: {
+      verifier: {
+        async verifyAccessToken(token) {
+          return {
+            token,
+            clientId: 'catalog-test-client',
+            scopes: ['catalog:read'],
+            expiresAt: Math.floor(Date.now() / 1000) + 600,
+            resource: expectedResource,
+          };
+        },
+      },
+      expectedResource,
+      resourceMetadataUrl,
+    },
+    toolScopeChallenge: (definition) =>
+      definition.identity.name === 'album.lookup'
+        ? ({ authInfo }) =>
+            authInfo?.scopes.includes('catalog:read')
+              ? undefined
+              : { scopes: ['catalog:read'], errorDescription: 'Portfolio read permission required' }
+        : undefined,
+  });
+  const server = await listen(handler);
+  const body = JSON.stringify({
+    jsonrpc: '2.0',
+    id: 34,
+    method: 'tools/call',
+    params: { name: mcpToolName(lookupIdentity), arguments: { slug: 'first-light' } },
+  });
+  try {
+    const denied = await jsonRpcPost(server.origin, body);
+    assert.equal(denied.status, 403);
+    const challenge = denied.headers.get('www-authenticate') ?? '';
+    assert.match(challenge, /insufficient_scope/);
+    assert.match(challenge, /catalog:read/);
+    assert.match(challenge, /oauth-protected-resource/);
+    assert.equal(fixture.counts().publicCalls, 0);
+
+    const granted = await fetch(server.origin + '/mcp', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
+        authorization: 'Bearer permitted',
+      },
+      body,
+    });
+    assert.equal(granted.status, 200);
+    assert.equal(fixture.counts().publicCalls, 1);
+  } finally {
+    await server.close();
+  }
+});
