@@ -2,6 +2,13 @@
 
 All notable changes will be recorded here.
 
+## Unreleased - planned 1.1.0
+
+- Add opt-in `toolSecuritySchemes` to the MCP and MCP Apps adapters. Root OAuth descriptors and their compatibility metadata survive SDK 2.3.0 discovery without widening grants or destructive exposure.
+- Add `toolScopeChallengeMode: 'tool-result'` for hosts that reconnect using an error result's `_meta["mcp/www_authenticate"]`. The existing HTTP 403 mode remains the default. Challenges carry `error`, `error_description`, requested scopes and protected-resource metadata.
+- Known, undiscoverable protected tools can return a scope prompt in the opt-in mode; they cannot execute without current scopes and grants. Successful results retain `structuredContent.result`.
+- This additive API needs a reviewed minor release before downstream production pinning. Fixture and candidate integration evidence is not native ChatGPT iPhone acceptance.
+
 ## 1.0.0 - 2026-10-12
 
 The first stable release. [Stability](docs/stability.md) lists the stable and experimental entry points and what counts as a breaking change; [upgrading from 0.1.x](docs/upgrading-to-1.0.md) covers the changes below.

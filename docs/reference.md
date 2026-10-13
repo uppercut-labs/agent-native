@@ -135,6 +135,17 @@ export type McpAdapterOptions = {
   readonly onToolFailure?: (failure: McpToolFailure) => void | Promise<void>;
   // Overrides the default collision-free tool name. Names must be unique and match MCP's name rules.
   readonly toolName?: (definition: CapabilityDefinition<unknown, unknown>) => string;
+  // Optional per-tool OAuth step-up challenge, before the binding executes. The SDK emits
+  // a 403 insufficient_scope with WWW-Authenticate; authorization still checks durable grants.
+  readonly toolScopeChallenge?: (
+    definition: CapabilityDefinition<unknown, unknown>,
+  ) => ScopeChallengeHandler | undefined;
+  // Opt-in ChatGPT wire metadata. Discovery and execution authorization still apply.
+  readonly toolSecuritySchemes?: (
+    definition: CapabilityDefinition<unknown, unknown>,
+  ) => readonly McpToolSecurityScheme[] | undefined;
+  // Default remains the SDK HTTP 403. Tool-result mode carries the same challenge in _meta.
+  readonly toolScopeChallengeMode?: 'http' | 'tool-result';
   // AuthInfo comes from the SDK verifier; issuer/subject/tenant must be supplied by that
   // verifier's trusted metadata, never inferred from request headers or MCP clientInfo.
   readonly resolveTrustedPrincipal?: (

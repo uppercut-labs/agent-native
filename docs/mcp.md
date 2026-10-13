@@ -73,6 +73,21 @@ surfaceExposure: { mcp: { destructive: ['account:delete@1'] } }
 
 The adapter filters out definitions without one unique server binding and requires current token scopes plus a matching, unexpired, unrevoked grant before consulting `discoverProtected`; that callback only narrows discovery. The shared executor still checks every call. Exposure is also checked at the call boundary so a stale listing cannot retain destructive access.
 
+## Per-tool OAuth and reconnect results
+
+`toolSecuritySchemes` opts into root tool descriptors and the `_meta.securitySchemes` compatibility mirror. Supply application-owned OAuth scopes or `{ type: 'noauth' }` for public tools. SDK 2.3.0 omits root security schemes from its regular registration path, so the adapter uses its supported low-level `tools/list` handler. MCP Apps UI metadata remains present. The callback does not grant or expose capabilities.
+
+`toolScopeChallenge(definition)` returns an SDK scope-challenge handler with the actual request and verified auth context. HTTP 403 is the default. Set `toolScopeChallengeMode: 'tool-result'` for ChatGPT's documented reconnect flow: a denied call returns an HTTP 200 MCP error result with `_meta["mcp/www_authenticate"]`, including `error="insufficient_scope"`, a nonempty `error_description`, scope and resource metadata. Configure `bearerAuth.resourceMetadataUrl` or `expectedResource` so the host can find the correct issuer.
+
+~~~ts
+toolSecuritySchemes: (definition) => definition.access.kind === 'protected'
+  ? [{ type: 'oauth2', scopes: definition.access.scopes }]
+  : [{ type: 'noauth' }],
+toolScopeChallengeMode: 'tool-result',
+~~~
+
+In this opt-in mode, calling a known but undiscoverable protected tool may return a scope prompt. It stays absent from discovery and cannot run without current grants. Hidden destructive or unbound tools remain absent. Hosts may need an explicit unlink/relink to change scopes if they cannot discover hidden write tools; do not expose or authorize writes merely to trigger a prompt. Never put a client secret in descriptors.
+
 For the optional interactive MCP Apps presentation, use the isolated [/mcp-apps](mcp-apps.md) adapter and its E09 SDK conformance fixture. It keeps the regular text/structured tool result for hosts without MCP Apps rendering.
 
 ## Protected-only servers

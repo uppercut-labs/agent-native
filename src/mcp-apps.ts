@@ -1,13 +1,9 @@
 import {
+  RESOURCE_MIME_TYPE,
   registerAppResource,
   registerAppTool,
-  RESOURCE_MIME_TYPE,
 } from '@modelcontextprotocol/ext-apps/server';
-import type {
-  CallToolResult,
-  McpServer,
-  StandardSchemaWithJSON,
-} from '@modelcontextprotocol/server';
+import type { McpServer, StandardSchemaWithJSON } from '@modelcontextprotocol/server';
 import { type CapabilityDefinition, canonicalCapabilityId } from './core/contracts.js';
 import type { CapabilityRegistry } from './core/registry.js';
 import {
@@ -163,7 +159,7 @@ function createRegistration(resources: readonly McpAppResource[]): McpAppRegistr
       server: McpServer,
       name: string,
       config: Parameters<McpAppRegistration['registerTool']>[2],
-      handler: (input: unknown) => Promise<CallToolResult>,
+      handler: Parameters<McpAppRegistration['registerTool']>[3],
       resourceUri: string,
     ): void {
       registerAppTool<StandardSchemaWithJSON, StandardSchemaWithJSON>(

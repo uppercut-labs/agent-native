@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
-import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { test } from 'node:test';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
+import * as z from 'zod';
+import { fromZod } from '../dist/adapters/zod.js';
 import { canonicalCapabilityId } from '../dist/core/contracts.js';
-import { createMcpAppsHandler, validateMcpAppResources } from '../dist/mcp-apps.js';
-import { createMcpHandler, mcpToolName } from '../dist/mcp.js';
 import { createDiagnosticObservation } from '../dist/core/diagnostics.js';
 import { bindCapability, createCapabilityRegistry, defineCapability } from '../dist/index.js';
-import { fromZod } from '../dist/adapters/zod.js';
-import * as z from 'zod';
+import { createMcpHandler, mcpToolName } from '../dist/mcp.js';
+import { createMcpAppsHandler, validateMcpAppResources } from '../dist/mcp-apps.js';
 
 const lookupIdentity = { namespace: 'example.catalog', name: 'album.lookup', majorVersion: 1 };
 const lookupInput = fromZod(z.object({ slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/) }));
@@ -838,6 +838,276 @@ test('timed-out protected MCP write reports uncertain completion and is never re
     assert.equal(sawAbort, true);
   } finally {
     await client.close();
+    await server.close();
+  }
+});
+
+test('per-tool OAuth scope challenges stop execution and include resource metadata', async () => {
+  const fixture = createFixtureRegistry();
+  const expectedResource = new URL('https://catalog.example.test/mcp');
+  const resourceMetadataUrl = 'https://catalog.example.test/.well-known/oauth-protected-resource';
+  const handler = createMcpHandler(fixture.registry, {
+    bearerAuth: {
+      verifier: {
+        async verifyAccessToken(token) {
+          return {
+            token,
+            clientId: 'catalog-test-client',
+            scopes: token === 'permitted' ? ['catalog:read'] : [],
+            expiresAt: Math.floor(Date.now() / 1000) + 600,
+            resource: expectedResource,
+          };
+        },
+      },
+      expectedResource,
+      resourceMetadataUrl,
+    },
+    toolScopeChallenge: (definition) =>
+      definition.identity.name === 'album.lookup'
+        ? ({ authInfo }) =>
+            authInfo?.scopes.includes('catalog:read')
+              ? undefined
+              : { scopes: ['catalog:read'], errorDescription: 'Portfolio read permission required' }
+        : undefined,
+  });
+  const server = await listen(handler);
+  const body = JSON.stringify({
+    jsonrpc: '2.0',
+    id: 34,
+    method: 'tools/call',
+    params: { name: mcpToolName(lookupIdentity), arguments: { slug: 'first-light' } },
+  });
+  try {
+    // A valid but under-scoped bearer token exercises OAuth step-up (not anonymous 401).
+    const denied = await fetch(server.origin + '/mcp', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
+        authorization: 'Bearer insufficient',
+      },
+      body,
+    });
+    assert.equal(denied.status, 403);
+    const challenge = denied.headers.get('www-authenticate') ?? '';
+    assert.match(challenge, /insufficient_scope/);
+    assert.match(challenge, /catalog:read/);
+    assert.match(challenge, /oauth-protected-resource/);
+    assert.equal(fixture.counts().publicCalls, 0);
+
+    const granted = await fetch(server.origin + '/mcp', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
+        authorization: 'Bearer permitted',
+      },
+      body,
+    });
+    assert.equal(granted.status, 200);
+    assert.equal(fixture.counts().publicCalls, 1);
+  } finally {
+    await server.close();
+  }
+});
+
+test('ChatGPT raw wire auth metadata and tool-result challenge preserve execution gates', async () => {
+  for (const withApp of [false, true]) {
+    const fixture = createFixtureRegistry();
+    const expectedResource = new URL('https://catalog.example.test/mcp');
+    const resourceMetadataUrl = 'https://catalog.example.test/.well-known/oauth-protected-resource';
+    const options = {
+      bearerAuth: {
+        required: true,
+        verifier: {
+          async verifyAccessToken(token) {
+            return {
+              token,
+              clientId: 'wire-client',
+              scopes: token === 'permitted' ? ['catalog:read'] : [],
+              expiresAt: Math.floor(Date.now() / 1000) + 600,
+              resource: expectedResource,
+            };
+          },
+        },
+        expectedResource,
+        resourceMetadataUrl,
+      },
+      toolSecuritySchemes: () => [{ type: 'oauth2', scopes: ['catalog:read'] }],
+      toolScopeChallengeMode: 'tool-result',
+      toolScopeChallenge:
+        () =>
+        ({ authInfo, request }) => {
+          assert.equal(request.method, 'tools/call');
+          assert.equal(request.params.name, mcpToolName(lookupIdentity));
+          return authInfo?.scopes.includes('catalog:read')
+            ? undefined
+            : {
+                scopes: ['catalog:read'],
+                errorDescription: 'Link the catalog read permission to continue.',
+              };
+        },
+    };
+    const appResource = {
+      capabilityId: canonicalCapabilityId(lookupIdentity),
+      uri: 'ui://catalog.example.test/album.html',
+      name: 'Album',
+      html: '<p>Album</p>',
+    };
+    const server = await listen(
+      withApp
+        ? createMcpAppsHandler(fixture.registry, { ...options, resources: [appResource] })
+        : createMcpHandler(fixture.registry, options),
+    );
+    async function rpc(method, params, token) {
+      const response = await fetch(server.origin + '/mcp', {
+        method: 'POST',
+        headers: {
+          accept: 'application/json, text/event-stream',
+          'content-type': 'application/json',
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 44, method, params }),
+      });
+      const text = await response.text();
+      const data = text.startsWith('event:')
+        ? JSON.parse(
+            text
+              .split('\n')
+              .find((line) => line.startsWith('data:'))
+              .slice(5),
+          )
+        : JSON.parse(text);
+      return { response, data };
+    }
+    try {
+      const anonymous = await rpc('tools/list', {}, undefined);
+      assert.equal(anonymous.response.status, 401);
+      assert.match(anonymous.response.headers.get('www-authenticate'), /resource_metadata=/);
+      const listing = await rpc('tools/list', {}, 'insufficient');
+      assert.equal(listing.response.status, 200);
+      const descriptor = listing.data.result.tools[0];
+      assert.deepEqual(descriptor.securitySchemes, [{ type: 'oauth2', scopes: ['catalog:read'] }]);
+      assert.deepEqual(descriptor._meta.securitySchemes, descriptor.securitySchemes);
+      assert.equal(descriptor.annotations.readOnlyHint, true);
+      if (withApp) assert.equal(descriptor._meta.ui.resourceUri, appResource.uri);
+      const params = { name: mcpToolName(lookupIdentity), arguments: { slug: 'first-light' } };
+      const denied = await rpc('tools/call', params, 'insufficient');
+      assert.equal(denied.response.status, 200);
+      assert.equal(denied.data.result.isError, true);
+      const challenge = denied.data.result._meta['mcp/www_authenticate'][0];
+      assert.match(challenge, /error="insufficient_scope"/);
+      assert.match(challenge, /error_description="Link the catalog read permission to continue\."/);
+      assert.match(challenge, /scope="catalog:read"/);
+      assert.match(challenge, /resource_metadata=/);
+      assert.equal(fixture.counts().publicCalls, 0);
+      const granted = await rpc('tools/call', params, 'permitted');
+      assert.equal(granted.data.result.isError, undefined);
+      assert.equal(granted.data.result.structuredContent.result.album.slug, 'first-light');
+      assert.equal(fixture.counts().publicCalls, 1);
+    } finally {
+      await server.close();
+    }
+  }
+});
+
+test('reconnect prompts never make hidden protected tools executable without a durable grant', async () => {
+  let calls = 0;
+  const capability = defineCapability({
+    identity: { namespace: 'private', name: 'write', majorVersion: 1 },
+    description: 'Protected fixture write.',
+    input: fromZod(z.object({})),
+    output: fromZod(z.object({ ok: z.boolean() })),
+    risk: 'write',
+    access: { kind: 'protected', scopes: ['private:write'] },
+  });
+  const binding = bindCapability(capability, {
+    id: 'fixture-write',
+    targets: ['server'],
+    execute: async () => {
+      calls += 1;
+      return { ok: true };
+    },
+  });
+  const registry = createCapabilityRegistry([capability], [binding]);
+  const resource = new URL('https://private.example.test/mcp');
+  const handler = createMcpHandler(registry, {
+    bearerAuth: {
+      expectedResource: resource,
+      verifier: {
+        async verifyAccessToken(token) {
+          return {
+            token,
+            clientId: 'fixture-client',
+            scopes: token === 'scoped' ? ['private:write'] : [],
+            expiresAt: Math.floor(Date.now() / 1000) + 600,
+            resource,
+          };
+        },
+      },
+    },
+    resolveTrustedPrincipal: (info) => ({
+      issuer: 'https://issuer.example.test',
+      subject: 'fixture-owner',
+      clientId: info.clientId,
+      tenantId: 'fixture',
+      audience: resource.toString(),
+      scopes: info.scopes,
+      expiresAt: info.expiresAt,
+    }),
+    grantAuthorization: {
+      applicationId: 'fixture',
+      audience: resource.toString(),
+      policyRevision: '1',
+      store: { find: async () => [], save: async () => {}, revoke: async () => false },
+    },
+    discoverProtected: () => true,
+    toolSecuritySchemes: () => [{ type: 'oauth2', scopes: ['private:write'] }],
+    toolScopeChallengeMode: 'tool-result',
+    toolScopeChallenge:
+      () =>
+      ({ authInfo }) =>
+        authInfo.scopes.includes('private:write') ? undefined : { scopes: ['private:write'] },
+  });
+  const server = await listen(handler);
+  async function rpc(token, method, params) {
+    const response = await fetch(server.origin + '/mcp', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json, text/event-stream',
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 55, method, params }),
+    });
+    const text = await response.text();
+    return JSON.parse(
+      text.startsWith('event:')
+        ? text
+            .split('\n')
+            .find((line) => line.startsWith('data:'))
+            .slice(5)
+        : text,
+    );
+  }
+  try {
+    for (const token of ['identity', 'scoped']) {
+      assert.deepEqual((await rpc(token, 'tools/list', {})).result.tools, []);
+      const denied = (
+        await rpc(token, 'tools/call', { name: mcpToolName(capability.identity), arguments: {} })
+      ).result;
+      assert.equal(denied.isError, true);
+      assert.equal(denied.structuredContent, undefined);
+      if (token === 'identity') {
+        assert.match(denied._meta['mcp/www_authenticate'][0], /scope="private:write"/);
+        assert.match(
+          denied._meta['mcp/www_authenticate'][0],
+          /resource_metadata=.*oauth-protected-resource\/mcp/,
+        );
+      } else assert.equal(denied._meta, undefined);
+    }
+    assert.equal(calls, 0);
+  } finally {
     await server.close();
   }
 });
