@@ -36,6 +36,11 @@ Run npm run example:e01 to build and verify the static fixture. Run npm run exam
 and install E04, run negative-path tests, build/scan the Worker bundle with Wrangler dry-run, and
 exercise the Worker locally through Wrangler/workerd. No production deploy is performed.
 
+E04 uses the adapters’ anonymous public-read defaults. When integrating your own app,
+provide `resolveExecutionContext` with its caller and authorization port, as in the
+[checked explicit context example](adopt-existing-site.md). Keep schema peers in the
+separate sidecar when the static site pins an incompatible version.
+
 The E04 wrangler.jsonc values are explicit:
 
 - CATALOG_REVISION must match the SHA-256 of ordered public album records in the static fixture.

@@ -30,7 +30,9 @@ npm install @uppercut-labs/agent-native@1.0.0
 npm install zod@4.6.5
 ```
 
-Zod is only needed if you use the `/schema/zod` adapter. To serve MCP, add the tested official server SDK peer separately:
+Zod is only needed if you use the `/schema/zod` adapter. Check the app’s current pin
+first; an incompatible schema peer can stay isolated in the separate sidecar instead
+of silently changing the existing website’s dependencies. To serve MCP, add the tested official server SDK peer separately:
 
 ```sh
 npm install @modelcontextprotocol/server@2.3.0
