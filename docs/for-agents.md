@@ -7,6 +7,20 @@ Canonical source assets: [portable skill](../skill/agent-native/SKILL.md),
 [verification](../skill/agent-native/references/verification.md),
 [full prompt](../agent/agent-prompt.md), and [short prompt](../agent/agent-prompt-short.md).
 
+For local skill installation, keep `SKILL.md` and both reference files together:
+
+```text
+agent-native/
+  SKILL.md
+  references/
+    adapter-decision.md
+    verification.md
+```
+
+The npm archive includes this folder under `skill/agent-native/`. Downloading only
+`SKILL.md` requires fetching its two linked references as well. The standalone prompt
+is a single file.
+
 There are two independent instructions paths:
 
 - **Portable Agent Native skill:** a short `SKILL.md` for agents supporting portable Agent Skills format, with optional references for adapter selection and verification. Read the skill source from the public package, or download the canonical asset from Uppercut's documentation host when that route is available.
