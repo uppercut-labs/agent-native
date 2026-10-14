@@ -1,12 +1,12 @@
 # Real integration: Domain Expansion
 
-Checked 2026-10-11. Domain Expansion is an owner-only domain portfolio app on a Cloudflare Worker with Neon Postgres. Its source is the public [uppercut-labs/domain-expansion](https://github.com/uppercut-labs/domain-expansion) repository. It serves Agent Native capabilities as remote MCP at `https://domains.uppercut-labs.com/mcp`. This was the first integration outside the repository's fixtures.
+Checked 2026-10-11. Domain Expansion is an existing first-party application with publicly available [source](https://github.com/uppercut-labs/domain-expansion). It integrates Agent Native with authenticated remote MCP in a deployed application; the production endpoint, deployment configuration, and operator credentials are deliberately omitted from this SDK-level evidence. This was the first integration outside the repository's fixtures.
 
 ## What it exercises
 
-- Five protected capabilities (`domains.list`, `domains.get`, `renewals.upcoming`, `domains.create`, `domains.update`) and a destructive `domains.delete` with no MCP exposure.
-- The application's own personal tokens act as the bearer credential and the persisted grant, through `bearerAuth`, `resolveTrustedPrincipal`, `GrantStorePort` and `authorizeResource`.
-- Bindings call the application's existing REST services, so validation, revisions, idempotency and rate limits are shared with its API and CLI.
+- Five protected application capabilities projected through MCP; a separate destructive operation intentionally has no MCP exposure.
+- The application supplies its own bearer authentication, trusted-principal resolution, persisted grant checks, and per-resource authorization via `bearerAuth`, `resolveTrustedPrincipal`, `GrantStorePort` and `authorizeResource`; this note contains no token, identity, grant record or sensitive configuration.
+- Bindings call application-owned services so validation, revisions, idempotency and rate limits remain shared with the application's existing interfaces.
 
 ## Results
 
