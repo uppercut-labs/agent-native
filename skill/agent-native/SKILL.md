@@ -33,6 +33,9 @@ Do not suggest `npx agent-native init`, `agent-native init`, an installed global
 Use only exported APIs verified against the installed package and current docs:
 
 1. Define a capability with `defineCapability`, a stable `{namespace, name, majorVersion}`, meaningful description, input/output schema ports (often `fromZod`), truthful `risk`, and truthful `access`.
+Identity namespace and name use lower-case slug segments separated by dots or hyphens,
+such as `{ namespace: 'blog', name: 'list-posts', majorVersion: 1 }`.
+
 2. Bind the actual existing function through `bindCapability` at its real runtime target. Assemble via `createCapabilityRegistry`. Do not duplicate logic that human pages already use.
 3. For direct execution, call `executeCapability` with a *caller* and an application-supplied `AuthorizationPort` **every time**. The shared order is input validation → authorization → handler → output validation. Never add an unconditional allow-all policy.
 4. Mount the isolated adapter the architecture needs: `@uppercut-labs/agent-native/http`, `/mcp`, `/next` or `/astro`, with only their required optional peers. Reuse the registry and host's existing auth/configuration. Keep server-only bindings, SDKs and secrets out of browser bundles.

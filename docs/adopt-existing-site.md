@@ -123,6 +123,9 @@ http: {
 [View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/capability.mjs#L33)
 <!-- /source -->
 
+Identity namespace and name use lower-case slug segments separated by dots or hyphens,
+such as `{ namespace: 'blog', name: 'list-posts', majorVersion: 1 }`.
+
 For your own site, adapt the namespace/operation names and input/output schemas from the actual operation. A registry is not a permission policy: supply an application authorization port **on every execution**, even for explicitly public reads. The E10 sample authorizer permits exactly public reads. Do not copy it to a protected write or assume an unauthenticated visitor owns someone else's data. [Capabilities and bindings](capabilities-and-bindings.md) explains this boundary.
 
 ## 4. Mount the agent surface in an actual server

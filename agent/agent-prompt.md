@@ -12,6 +12,9 @@ Read the repository instructions, package manifest, lockfile, framework, routes,
 
 Choose a minimal implementation that respects the site's actual architecture. Start with an **existing public read** unless my request specifically authorizes authenticated actions. Define a versioned capability with real input/output schemas, honest risk/access metadata, an explicit runtime binding to the existing domain function, and a checked registry. Use an application-owned authorization port on **every invocation**. Preserve current human UI, working APIs, records, routes and auth.
 
+Identity namespace and name use lower-case slug segments separated by dots or hyphens,
+such as `{ namespace: 'blog', name: 'list-posts', majorVersion: 1 }`.
+
 Expose an actual useful agent surface, not just a local registry. If this website has a server, prefer HTTP/OpenAPI for public reads and, where useful, official MCP Streamable HTTP. If it is static, retain its static output and use a separately hosted server/Worker sidecar for remote tool calls, or explain precisely why a server cannot be provided within this work scope. If Next App Router, use its documented Node route adapter; if Astro, use its supported mode deliberately. Browser WebMCP is optional/experimental and requires normal UI fallback. There is **no** global `agent-native init` CLI, no automatic discovery of business operations, and no built-in production identity/grant service.
 
 Never turn protected customer data, user-specific operations, writes or destructive actions into public tools. For protected MCP functionality, use the host's real verified identity, current scopes, application-persisted grants and per-record authorization; do not use a fixture store or unconditional allow-all. Don't place tokens or server-only SDKs in client bundles. Don't create paid services, change DNS, deploy, publish a package, change external permissions, or modify production records unless separately authorized.

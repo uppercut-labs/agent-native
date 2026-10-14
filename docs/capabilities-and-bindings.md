@@ -1,5 +1,8 @@
 # Capabilities and bindings
 
+Identity namespace and name are lower-case slug segments separated by dots or hyphens,
+with at most 64 characters each; majorVersion is a positive safe integer.
+
 A capability definition describes a versioned outcome and its runtime input/output contracts. It
 does not need an implementation. A binding supplies that implementation for named runtime
 targets. Definitions and bindings compose into an immutable checked registry; requests execute
