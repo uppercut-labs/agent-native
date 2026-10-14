@@ -1,5 +1,7 @@
 # Installing only the surfaces you use
 
+To wrap a working site’s existing operation, follow [adopt an existing site](adopt-existing-site.md).
+
 Agent Native `1.0.0` requires Node.js 22 or newer. Install the package and only the peers your application imports:
 
 ```sh

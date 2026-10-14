@@ -1,5 +1,7 @@
 # Compatibility and evidence
 
+To wrap a working site’s existing operation, follow [adopt an existing site](adopt-existing-site.md).
+
 Agent Native `1.0.0`. The table describes the exact local fixtures and hosts
 that were tested; it is not a claim for all releases of a runtime or every client.
 

@@ -28,7 +28,7 @@ layout, config, or routes. An existing `/mcp` route is a conflict for same-origi
 no proposed edits.
 
 See the [E03 fixture](https://github.com/uppercut-labs/agent-native/blob/main/examples/e03-next-reading-list/project/README.md) and
-[UAN-014 evidence draft](evidence/UAN-014-next.md).
+[UAN-014 local verification evidence](evidence/UAN-014-next.md).
 
 ## Verify the ownership boundary
 

@@ -40,7 +40,7 @@ cli: {
 },
 ~~~
 
-[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/capability.mjs#L39)
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/capability.mjs#L40)
 <!-- /source -->
 
 Commands and aliases are lowercase slugs and must be unique across the registry. They resolve to

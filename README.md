@@ -5,6 +5,12 @@ HTTP, CLI, MCP, Node/Hono, browser, and Astro static/on-demand surfaces. It is d
 `@uppercut-labs/agent-native` under the MIT license. See [installation](docs/installation.md)
 for the first programmatic capability.
 
+To expose a real operation from a working app, start with [adopt an existing site](docs/adopt-existing-site.md).
+For a coding assistant, use [the portable skill or standalone prompt](docs/for-agents.md).
+Node.js 22+ is required. Eleven entry points are stable under SemVer; browser, framework, init
+and harness integrations are experimental. See [stability](docs/stability.md). The package
+ships importable APIs, including an app-owned CLI runner, and no package-level executable.
+
 ## Current scope
 
 UAN-001 established the strict TypeScript baseline, Zod adapter, JSON Schema projection checks,
