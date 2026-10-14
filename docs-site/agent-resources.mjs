@@ -1,19 +1,9 @@
 import { readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { JSON_SCHEMA, load } from 'js-yaml';
 
-export const agentResources = Object.freeze([
-  ['skill/agent-native/SKILL.md', 'skill/agent-native/SKILL.md'],
-  [
-    'skill/agent-native/references/adapter-decision.md',
-    'skill/agent-native/references/adapter-decision.md',
-  ],
-  [
-    'skill/agent-native/references/verification.md',
-    'skill/agent-native/references/verification.md',
-  ],
-  ['agent/agent-prompt.md', 'agent-prompt.md'],
-  ['agent/agent-prompt-short.md', 'agent-prompt-short.md'],
-]);
+import { agentResources } from './agent-resource-paths.mjs';
+export { agentResources } from './agent-resource-paths.mjs';
 
 export async function validateAgentResources(repositoryRoot) {
   const root = await realpath(repositoryRoot);
@@ -60,10 +50,19 @@ export async function validateAgentResources(repositoryRoot) {
   }
   const skill = texts.get('skill/agent-native/SKILL.md') ?? '';
   const frontmatter = /^---\n([\s\S]*?)\n---\n/.exec(skill)?.[1];
-  if (!frontmatter || !/^name: agent-native$/m.test(frontmatter)) {
+  let metadata;
+  try {
+    metadata = frontmatter && load(frontmatter, { schema: JSON_SCHEMA });
+  } catch {
+    failures.push('SKILL.md: invalid YAML frontmatter');
+  }
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    failures.push('SKILL.md: YAML frontmatter must be a mapping');
+  }
+  if (metadata?.name !== 'agent-native') {
     failures.push('SKILL.md: YAML name must be agent-native');
   }
-  if (!frontmatter || !/^description: \S.{20,}$/m.test(frontmatter)) {
+  if (typeof metadata?.description !== 'string' || metadata.description.trim().length < 21) {
     failures.push('SKILL.md: YAML description must explain the integration trigger');
   }
   const version = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8')).version;

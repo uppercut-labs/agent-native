@@ -7,7 +7,7 @@ import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 import { marked } from 'marked';
-import { agentResources } from '../docs-site/agent-resources.mjs';
+import { agentResources } from '../docs-site/agent-resource-paths.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const npmCli = process.env.npm_execpath;

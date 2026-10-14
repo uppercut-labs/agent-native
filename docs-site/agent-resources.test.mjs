@@ -18,6 +18,13 @@ test('agent resources validate actual public sources and reject damaged handoffs
     for (const [before, after, expected] of [
       ['name: agent-native', 'name: other', 'YAML name'],
       [/description: .+/, 'description:', 'YAML description'],
+      ['license: MIT', 'license: [', 'invalid YAML'],
+      ['license: MIT', 'license: MIT\nname: other', 'invalid YAML'],
+      [
+        /description: .+/,
+        'description: { workflow: permission-checked existing-site integration }',
+        'YAML description',
+      ],
       ['references/verification.md', 'references/missing.md', 'broken or escaping reference'],
     ]) {
       await writeFile(skill, original.replace(before, after));

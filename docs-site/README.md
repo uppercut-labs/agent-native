@@ -20,6 +20,7 @@ The [API and CLI reference](../docs/reference.md) is generated from the package 
 ## Agent handoff resources
 
 `agentResources` in coverage.json records the two adoption guides and five canonical assets.
-agent-resources.mjs validates frontmatter, version and referenced public source paths. Its mutation
+agent-resources.mjs parses frontmatter as YAML and validates its mapping, typed name/description, version and referenced public source paths.
+agent-resource-paths.mjs owns the dependency-free download allowlist. Its mutation
 tests reject damaged skill metadata and missing references. The renderer emits only its explicit
 source/destination allowlist, and check.mjs requires byte identity with upstream source.

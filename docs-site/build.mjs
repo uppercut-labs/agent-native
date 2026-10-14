@@ -3,7 +3,7 @@ import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promi
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Marked, marked } from 'marked';
-import { agentResources } from './agent-resources.mjs';
+import { agentResources } from './agent-resource-paths.mjs';
 import { expandSourceRegions } from './source-regions.mjs';
 
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
