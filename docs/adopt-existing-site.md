@@ -49,6 +49,7 @@ E10's [capability module](https://github.com/uppercut-labs/agent-native/blob/mai
 
 The tested definition, binding and public-read-only authorizer are:
 
+<!-- source:examples/e10-existing-functions-retrofit/project/src/capability.mjs#adoption-contract -->
 ~~~js
 const contentItem = z.object({
   slug: z.string(),
@@ -106,9 +107,11 @@ export const publicReadAuthorization = {
 ~~~
 
 [View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/capability.mjs#L8)
+<!-- /source -->
 
 The example preserves an established GET route with the same contract, instead of inventing a duplicate endpoint:
 
+<!-- source:examples/e10-existing-functions-retrofit/project/src/capability.mjs#http-get-override -->
 ~~~js
 http: {
   path: '/api/content/search',
@@ -118,6 +121,7 @@ http: {
 ~~~
 
 [View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/capability.mjs#L33)
+<!-- /source -->
 
 For your own site, adapt the namespace/operation names and input/output schemas from the actual operation. A registry is not a permission policy: supply an application authorization port **on every execution**, even for explicitly public reads. The E10 sample authorizer permits exactly public reads. Do not copy it to a protected write or assume an unauthenticated visitor owns someone else's data. [Capabilities and bindings](capabilities-and-bindings.md) explains this boundary.
 
@@ -125,6 +129,7 @@ For your own site, adapt the namespace/operation names and input/output schemas 
 
 E10's [HTTP mount](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/http.mjs) wraps the same registry in `createHttpHandler` from `@uppercut-labs/agent-native/http`, supplying a caller and explicit `authorization` through `resolveExecutionContext`. It adapts the Web-standard handler to its pre-existing Node HTTP server and leaves unrelated `/api/health` and content routes intact.
 
+<!-- source:examples/e10-existing-functions-retrofit/project/src/http.mjs#adoption-http -->
 ~~~js
 const generatedHandler = createHttpHandler(registry, {
   resolveExecutionContext: () => ({
@@ -135,6 +140,7 @@ const generatedHandler = createHttpHandler(registry, {
 ~~~
 
 [View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/http.mjs#L7)
+<!-- /source -->
 
 By default, public read capabilities may be invoked by `POST /agent-native/v1/capabilities/{namespace}/{name}/v{major}/invoke` and are described at `GET /agent-native/v1/openapi.json`; E10 demonstrates an approved GET override at the original path. The HTTP adapter in 1.0.0 exposes **only public reads**; user-specific or destructive operations are not automatically routable. See [HTTP/OpenAPI](http.md).
 
