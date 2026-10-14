@@ -42,7 +42,7 @@ operation are not advertised by this adapter.
 ## Registry release - 2026-10-05
 
 [`@uppercut-labs/agent-native@0.1.1`](https://www.npmjs.com/package/@uppercut-labs/agent-native/v/0.1.1)
-is published and npm `latest` resolves to 0.1.1. Its registry download matches the
+was published and npm `latest` resolved to 0.1.1 at the 2026-10-05 checkpoint. Its registry download matches the
 reviewed GitHub release archive byte-for-byte: SHA-256
 `a1ce884f89eadba319d6fbad5c9b09b05575a7ab15998bcfd4a6ad8cc8228fbb`, source
 `ab79aed4b8556752b33286f2edf261a07b3921d1`, 168772 bytes / 152 files.
