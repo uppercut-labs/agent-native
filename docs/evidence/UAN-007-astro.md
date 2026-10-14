@@ -25,7 +25,7 @@ the example tests, then builds and verifies the integrated static output. The ch
 
 The WebMCP API and Astro lifecycle are simulated in Node tests. Astro's production static build is
 real. No graphical browser, real WebMCP implementation, agent host, deployment provider, or
-lilgohan.com site was tested or changed. This fixture makes no production-hosting assumption.
+production website was tested or changed. This fixture makes no production-hosting assumption.
 
 ## Dependency audit limit
 
