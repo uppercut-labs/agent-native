@@ -151,6 +151,12 @@ npm ci
 npm run example:e10
 ```
 
+To verify the published registry package independently, run `npm run check:adoption`.
+It installs 1.0.0 in a clean consumer, preserves the E10 domain function, runs its HTTP/CLI
+tests, and uses the official MCP client over an actual local socket. The client validates
+`structuredContent.result`, rejects invalid input before the function, and cannot discover
+or call a protected canary. This is maintainer loopback proof, not an outsider pilot.
+
 Inside the generated E10 project, the [README](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/README.md) documents `npm ci`, `npm test`, `npm run search -- --query night --limit 1`, `npm start` and `curl 'http://127.0.0.1:8788/api/content/search?q=night&limit=1'`. In this fixture, that URL returns its first search match. Missing query, a fractional limit or an empty CLI query fails input validation before executing the existing function. POST to the preserved read GET route returns `405` with `Allow: GET`; unrelated health and catalog routes remain available.
 
 For **your site**, perform the equivalent on its actual local server, not the package fixture. Record the operation name and version, URL/host, expected schema, valid result, malformed input failure, denied or hidden operation, and unchanged human website flow. For MCP, use a compatible client to list tools and call one (not a hand-built success assertion). If only local route tests passed, describe that honestly; deployed provider and live commercial-host claims require separate verification. See [compatibility](compatibility.md) and [support limits](support-and-limitations.md).
