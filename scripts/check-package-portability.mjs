@@ -7,6 +7,7 @@ import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 import { marked } from 'marked';
+import { agentResources } from '../docs-site/agent-resource-paths.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const npmCli = process.env.npm_execpath;
@@ -48,9 +49,13 @@ try {
   const pack = Array.isArray(packed) ? packed[0] : Object.values(packed)[0];
   assert.ok(pack, 'npm pack returned no archive');
   for (const file of pack.files) {
-    assert.match(file.path, /^(?:dist\/|docs\/|LICENSE$|README\.md$|package\.json$)/);
+    if (!agentResources.some(([source]) => source === file.path)) {
+      assert.match(file.path, /^(?:dist\/|docs\/|LICENSE$|README\.md$|package\.json$)/);
+    }
   }
   const packedPaths = new Set(pack.files.map((file) => file.path));
+  for (const [source] of agentResources)
+    assert.ok(packedPaths.has(source), `Missing packed handoff: ${source}`);
   const brokenDocLinks = [];
   const repositoryBlobPrefix = 'https://github.com/uppercut-labs/agent-native/blob/main/';
   for (const file of pack.files.filter((entry) => entry.path.endsWith('.md'))) {

@@ -1,5 +1,7 @@
 # Adapter surfaces
 
+To wrap a working site’s existing operation, follow [adopt an existing site](adopt-existing-site.md).
+
 All adapters project the same capability definitions and invoke the shared executor. Adapters are separate package subpaths; importing a surface does not make unrelated runtime SDKs part of the root entrypoint.
 
 | Surface | Package subpath | Typical runtime | Discovery and call boundary |

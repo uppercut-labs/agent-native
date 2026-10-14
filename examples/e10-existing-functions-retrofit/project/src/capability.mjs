@@ -4,6 +4,7 @@ import { fromZod } from '@uppercut-labs/agent-native/schema/zod';
 import * as z from 'zod';
 import { searchContent } from './existing/content.mjs';
 
+// docs:start adoption-contract
 const contentItem = z.object({
   slug: z.string(),
   title: z.string(),
@@ -57,3 +58,4 @@ export const publicReadAuthorization = {
     return request.risk === 'read' && request.access.kind === 'public';
   },
 };
+// docs:end adoption-contract

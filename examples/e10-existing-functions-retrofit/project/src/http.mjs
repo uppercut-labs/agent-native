@@ -3,12 +3,15 @@ import { createHttpHandler } from '@uppercut-labs/agent-native/http';
 import { getContent } from './existing/content.mjs';
 import { publicReadAuthorization, registry } from './capability.mjs';
 
+// docs:start adoption-http
 const generatedHandler = createHttpHandler(registry, {
   resolveExecutionContext: () => ({
     caller: { kind: 'anonymous' },
     authorization: publicReadAuthorization,
   }),
 });
+
+// docs:end adoption-http
 
 function sendJson(response, status, body) {
   response.writeHead(status, { 'content-type': 'application/json; charset=utf-8' });

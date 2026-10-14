@@ -1,6 +1,8 @@
 # Doctor, inspect, and authorized list
 
-The experimental `@uppercut-labs/agent-native/doctor` entrypoint provides read-only diagnostic building blocks. Applications supply checks and observations; the package does not discover credentials, probe a host, modify project files, or invoke capability handlers on its own. This entrypoint is available in the `0.1.0` preview.
+To wrap a working site’s existing operation, follow [adopt an existing site](adopt-existing-site.md).
+
+The experimental `@uppercut-labs/agent-native/doctor` entrypoint provides read-only diagnostic building blocks. Applications supply checks and observations; the package does not discover credentials, probe a host, modify project files, or invoke capability handlers on its own. It is published in `1.0.0` and remains experimental; the stable core and surface entry points are listed in [stability](stability.md).
 
 ## Machine report and exits
 

@@ -3,6 +3,7 @@ import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promi
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Marked, marked } from 'marked';
+import { agentResources } from './agent-resource-paths.mjs';
 import { expandSourceRegions } from './source-regions.mjs';
 
 const siteRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -15,8 +16,10 @@ const outputRoot = path.join(siteRoot, 'dist');
 const repositoryUrl = 'https://github.com/uppercut-labs/agent-native';
 
 const guideOrder = [
-  'getting-started',
+  'adopt-existing-site',
   'installation',
+  'for-agents',
+  'getting-started',
   'capabilities-and-bindings',
   'frameworks',
   'static-sites',
@@ -143,6 +146,8 @@ function localHref(href, page, pages) {
     throw new Error(`${page.file}: missing heading in ${href}`);
   }
   const suffix = fragment ? `#${encodeURIComponent(decodeURIComponent(fragment))}` : '';
+  const resource = agentResources.find(([source]) => source === relative.split(path.sep).join('/'));
+  if (resource) return `${'../'.repeat(page.key.split('/').length)}${resource[1]}${suffix}`;
   return destination
     ? `${pageUrl(page.key, destination.key)}${suffix}`
     : `${sourceUrl(target)}${suffix}`;
@@ -236,6 +241,11 @@ async function build() {
   for (const asset of ['site.css', 'site.js'])
     await copyFile(path.join(siteRoot, asset), path.join(outputRoot, 'assets', asset));
 
+  for (const [source, destination] of agentResources) {
+    await mkdir(path.dirname(path.join(outputRoot, destination)), { recursive: true });
+    await copyFile(path.join(repositoryRoot, source), path.join(outputRoot, destination));
+  }
+
   for (const page of pages.values()) {
     const content = renderMarkdown(page, pages);
     await writePage(
@@ -250,10 +260,10 @@ async function build() {
   const intro = `<h1>Typed capabilities for the sites you already run.</h1>
     <p class="lead">Agent Native defines one capability contract and binds it to local, browser, CLI, HTTP, and MCP surfaces.</p>
     <div class="notice"><strong>Version ${escapeHtml(packageVersion)}.</strong> Install <code>@uppercut-labs/agent-native</code> from npm. <a href="${pageUrl('', 'stability')}">Stability</a> lists the stable and experimental entry points. Evidence pages record exactly which fixtures and hosts were tested; they are not production host certification.</div>
-    <div class="cards"><a href="${pageUrl('', 'getting-started')}"><span>01 / Start</span><strong>Existing Astro site</strong><span>Plan a narrow retrofit and inspect the E01 fixture.</span></a>
+    <div class="cards"><a href="${pageUrl('', 'adopt-existing-site')}"><span>01 / Start</span><strong>Adopt an existing site</strong><span>Bind a real public read and verify a server call.</span></a>
     <a href="${pageUrl('', 'capabilities-and-bindings')}"><span>02 / Model</span><strong>Capabilities and bindings</strong><span>Learn the contract, runtime and authorization boundaries.</span></a>
     <a href="${pageUrl('', 'support-and-limitations')}"><span>03 / Verify</span><strong>Support and limitations</strong><span>See what current fixtures prove and what remains open.</span></a></div>
-    <p>All pages are available as <a href="${pageUrl('', 'getting-started')}" >HTML</a> and raw Markdown. The site works without an account or runtime service.</p>`;
+    <p>All pages are available as <a href="${pageUrl('', 'adopt-existing-site')}" >HTML</a> and raw Markdown. The site works without an account or runtime service.</p>`;
   await writePage(
     '',
     shell({

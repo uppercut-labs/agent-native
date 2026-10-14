@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { agentResources, validateAgentResources } from './agent-resources.mjs';
 import { validateCoverage } from './coverage-check.mjs';
 import { currentReference } from './reference.mjs';
 
@@ -19,7 +20,12 @@ async function collectHtml(directory) {
 }
 
 const htmlFiles = await collectHtml(root);
-const failures = [];
+const failures = await validateAgentResources(repositoryRoot);
+for (const [source, destination] of agentResources) {
+  const original = await readFile(path.join(repositoryRoot, source));
+  const generated = await readFile(path.join(root, destination));
+  if (!original.equals(generated)) failures.push(`${destination}: agent resource byte drift`);
+}
 for (const file of htmlFiles) {
   const html = await readFile(file, 'utf8');
   if (!html.includes('<nav id="site-nav"') || !html.includes('id="site-search"')) {

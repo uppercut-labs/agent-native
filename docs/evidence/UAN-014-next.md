@@ -1,4 +1,6 @@
-# UAN-014 Next.js integration evidence (draft)
+# UAN-014 Next.js integration evidence
+
+Local fixture record from October 2, 2026; deployed-host support is not established by this record.
 
 ## Scope
 

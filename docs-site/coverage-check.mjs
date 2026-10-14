@@ -1,5 +1,6 @@
 import { readFile, readdir, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { agentResources } from './agent-resources.mjs';
 
 const expectedIds = Array.from(
   { length: 12 },
@@ -44,6 +45,36 @@ export async function validateCoverage(repositoryRoot, suppliedManifest) {
   const packageJson = JSON.parse((await checkedFile('package.json', 'package')) ?? '{}');
   const scripts = packageJson.scripts ?? {};
   const checkCommand = scripts.check ?? '';
+  const resources = manifest.agentResources;
+  if (
+    !resources ||
+    JSON.stringify(resources.sources) !== JSON.stringify(agentResources.map(([source]) => source))
+  ) {
+    failures.push(
+      'coverage manifest: agentResources must cover the exact canonical source allowlist',
+    );
+  } else {
+    for (const source of resources.sources) await checkedFile(source, 'agent resource');
+    for (const guide of ['docs/adopt-existing-site.md', 'docs/for-agents.md']) {
+      if (!resources.guides?.includes(guide))
+        failures.push(`coverage manifest: missing adoption guide ${guide}`);
+      await checkedFile(guide, 'adoption guide');
+    }
+    if (
+      resources.validator !== 'docs-site/agent-resources.mjs' ||
+      resources.test !== 'docs-site/agent-resources.test.mjs'
+    ) {
+      failures.push('coverage manifest: agent resource validator/test must remain enabled');
+    }
+    if (
+      !scripts['docs:check']?.includes('docs-site/agent-resources.test.mjs') ||
+      !checkCommand.includes('npm run check:adoption')
+    ) {
+      failures.push(
+        'package.json: check must run agent resource mutation tests and the published adoption consumer',
+      );
+    }
+  }
   if (!/(?:^|\s)npm run docs:check(?:\s|$)/.test(checkCommand)) {
     failures.push('package.json: check must invoke docs:check');
   }

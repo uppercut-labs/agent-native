@@ -1,11 +1,15 @@
 # Framework support
 
+To wrap a working site’s existing operation, follow [adopt an existing site](adopt-existing-site.md).
+
 This table records framework surfaces actually built and checked in this package. It is not a
 compatibility promise for every release in a listed major version.
 
 | Framework | Supported shape | Verified environment | Boundary |
 | --- | --- | --- | --- |
 | Astro | Static browser bootstrap or application-owned on-demand HTTP/MCP routes | Astro 7.3.5, `@astrojs/node` 11.1.6, Node 22.12+ fixtures | Integration installs no adapter; on-demand mode requires a supported application adapter |
+| Next App Router | App-owned HTTP/MCP route factories on the Node runtime | Next 16.3.8 E03; official MCP 2.3.0 client | Experimental adapter; keep registry server-only; local fixture only |
+| Cloudflare Worker sidecar (runtime) | Separate dynamic HTTP/MCP server while Astro stays static | E04 local workerd fixture; see [static sites](static-sites.md) | No deployment or DNS claim; configure Host/Origin/CORS in the sidecar |
 | Hono | One Node application mounting the Web-standard HTTP and MCP handlers | Hono 4.13.12, `@hono/node-server` 2.1.3, Node 22+ E05 fixture | Loopback lab host; no provider deployment or production identity integration |
 
 The Astro integration uses the documented `astro:config:setup` page-script injection hook and
@@ -22,7 +26,7 @@ routes, a missing server adapter, and protocol-looking static files; it never re
 historical `output: 'hybrid'` value.
 
 The browser capability host remains experimental. E01 exercises a simulated WebMCP API in Node
-tests, not a real browser or agent. Other Astro releases, server output, deployment providers, and
+tests, not a real browser or agent. Other Astro releases, deployment providers, and
 real-host WebMCP behavior are unverified. E02 proves only the pinned local Node standalone adapter;
 it is not a claim about other adapters or external hosts.
 

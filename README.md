@@ -1,9 +1,15 @@
 # Uppercut Agent Native
 
-Uppercut Agent Native `1.0.0` defines typed capability contracts once and serves them on local,
+Uppercut Agent Native `1.0.1` defines typed capability contracts once and serves them on local,
 HTTP, CLI, MCP, Node/Hono, browser, and Astro static/on-demand surfaces. It is distributed as
 `@uppercut-labs/agent-native` under the MIT license. See [installation](docs/installation.md)
 for the first programmatic capability.
+
+To expose a real operation from a working app, start with [adopt an existing site](docs/adopt-existing-site.md).
+For a coding assistant, use [the portable skill or standalone prompt](docs/for-agents.md).
+Node.js 22+ is required. Eleven entry points are stable under SemVer; browser, framework, init
+and harness integrations are experimental. See [stability](docs/stability.md). The package
+ships importable APIs, including an app-owned CLI runner, and no package-level executable.
 
 ## Current scope
 
@@ -149,7 +155,7 @@ official MCP client SDK is pinned for the local protocol fixture only. See [UAN-
 
 ## Status
 
-Version `1.0.0` is released under MIT. Stable entry points follow semantic versioning; see [stability](docs/stability.md) and [upgrading from 0.1.x](docs/upgrading-to-1.0.md). UAN-002 local acceptance and limitations are in
+Version `1.0.1` is released under MIT. Stable entry points follow semantic versioning; see [stability](docs/stability.md) and [upgrading from 0.1.x](docs/upgrading-to-1.0.md). UAN-002 local acceptance and limitations are in
 [UAN-002 evidence](https://github.com/uppercut-labs/agent-native/blob/main/evidence/UAN-002.md); pinned tool versions and upstream references are in [VERSION-EVIDENCE.md](https://github.com/uppercut-labs/agent-native/blob/main/VERSION-EVIDENCE.md).
 The current init acceptance and limits are in [UAN-009 evidence](docs/evidence/UAN-009-init.md).
 The local trusted-auth and grant acceptance is in [UAN-010 evidence](docs/evidence/UAN-010-auth.md).

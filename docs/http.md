@@ -28,7 +28,7 @@ http: {
 },
 ~~~
 
-[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/capability.mjs#L32)
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/capability.mjs#L33)
 <!-- /source -->
 
 The `query` map runs from input property to query parameter. GET conversion supports string,

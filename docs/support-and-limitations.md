@@ -1,6 +1,8 @@
 # Support and limitations
 
-Agent Native `1.0.0` promises stable contracts for the entry points in [stability](stability.md). The repository documents local fixtures, narrowly verified hosts and one real deployment ([Domain Expansion](evidence/gate-2-domain-expansion.md)); publication of the package does not certify every production deployment.
+To wrap a working site’s existing operation, follow [adopt an existing site](adopt-existing-site.md).
+
+Agent Native `1.0.1` promises stable contracts for the entry points in [stability](stability.md). The repository documents local fixtures, narrowly verified hosts and one real deployment ([Domain Expansion](evidence/gate-2-domain-expansion.md)); publication of the package does not certify every production deployment.
 
 ## Fixture-tested surfaces
 

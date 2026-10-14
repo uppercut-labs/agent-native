@@ -16,3 +16,11 @@ All twelve example exports are wired into the root check and Node 22/24 CI. Each
 `coverage.json` maps E01-E12 to a root export script, runnable project source, public guide with a source-backed snippet, evidence note, requirement IDs, instructions, and a negative test probe. `docs:check` rejects missing or stale paths, absent probes, script mismatches, and examples omitted from the root `check` command. That root command is the Node 22/24 CI export gate. The manifest checks coverage wiring; it does not run examples or claim external host support.
 
 The [API and CLI reference](../docs/reference.md) is generated from the package export map, CLI parser, and exported adapter option declarations with `node docs-site/reference.mjs`. The docs check compares the rendered source to current implementation and fails on drift.
+
+## Agent handoff resources
+
+`agentResources` in coverage.json records the two adoption guides and five canonical assets.
+agent-resources.mjs parses frontmatter as YAML and validates its mapping, typed name/description, version and referenced public source paths.
+agent-resource-paths.mjs owns the dependency-free download allowlist. Its mutation
+tests reject damaged skill metadata and missing references. The renderer emits only its explicit
+source/destination allowlist, and check.mjs requires byte identity with upstream source.
