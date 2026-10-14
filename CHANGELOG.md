@@ -2,6 +2,14 @@
 
 All notable changes will be recorded here.
 
+## 1.0.1 - 2026-10-14
+
+- Add an existing-site integration guide before the optional Astro init path.
+- Include the portable Agent Native skill, its adapter/verification references, and full/short coding-agent prompts in the npm archive.
+- Check source-backed documentation, YAML skill metadata, links, versions and packaged handoff files for drift.
+- Clarify framework/server prerequisites and public-read authorization using independent Next and Astro adoption pilots.
+- Runtime behavior and the stable API remain unchanged from 1.0.0.
+
 ## 1.0.0 - 2026-10-12
 
 The first stable release. [Stability](docs/stability.md) lists the stable and experimental entry points and what counts as a breaking change; [upgrading from 0.1.x](docs/upgrading-to-1.0.md) covers the changes below.

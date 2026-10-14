@@ -1,6 +1,6 @@
 # Make an existing website agent-native
 
-**Target:** Agent Native 1.0.0 · Node.js 22+ · an existing JavaScript/TypeScript website.  
+**Target:** Agent Native 1.0.1 · Node.js 22+ · an existing JavaScript/TypeScript website.
 **Result:** A real operation the website already supports, available to an agent over an actual HTTP and/or MCP server surface, with the same input checks and explicit authorization the application expects.
 
 Agent Native is not a chatbot widget or an automatic site conversion tool. It defines reusable operations that software—including suitable agents—can discover and invoke through selected adapters. Your existing pages, functions and ownership rules remain your responsibility.
@@ -26,7 +26,7 @@ Check which execution model your website actually has before choosing an adapter
 In the consuming website repository with Node 22 or later, install the public package:
 
 ```sh
-npm install @uppercut-labs/agent-native@1.0.0
+npm install @uppercut-labs/agent-native@1.0.1
 npm install zod@4.6.5
 ```
 
@@ -153,7 +153,7 @@ const generatedHandler = createHttpHandler(registry, {
 [View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e10-existing-functions-retrofit/project/src/http.mjs#L7)
 <!-- /source -->
 
-By default, public read capabilities may be invoked by `POST /agent-native/v1/capabilities/{namespace}/{name}/v{major}/invoke` and are described at `GET /agent-native/v1/openapi.json`; E10 demonstrates an approved GET override at the original path. The HTTP adapter in 1.0.0 exposes **only public reads**; user-specific or destructive operations are not automatically routable. See [HTTP/OpenAPI](http.md).
+By default, public read capabilities may be invoked by `POST /agent-native/v1/capabilities/{namespace}/{name}/v{major}/invoke` and are described at `GET /agent-native/v1/openapi.json`; E10 demonstrates an approved GET override at the original path. The HTTP adapter in 1.0.1 exposes **only public reads**; user-specific or destructive operations are not automatically routable. See [HTTP/OpenAPI](http.md).
 
 For agent-native MCP clients, add the isolated `/mcp` adapter and mount it at a real `/mcp` route, with the host's request-specific authorization context. Use the official MCP server SDK and a compatible MCP client. Successful structured results appear under `structuredContent.result`. MCP protected discovery, scopes, revocable grants and per-resource authorization are covered in [remote MCP](mcp.md) and [permissions](permissions-and-discovery.md). **Do not turn on protected MCP in the beginner read-only sample without an actual verified identity source.**
 
@@ -169,7 +169,7 @@ npm run example:e10
 ```
 
 To verify the published registry package independently, run `npm run check:adoption`.
-It installs 1.0.0 in a clean consumer, preserves the E10 domain function, runs its HTTP/CLI
+It installs the 1.0.0 compatibility baseline in a clean consumer, preserves the E10 domain function, runs its HTTP/CLI
 tests, and uses the official MCP client over an actual local socket. The client validates
 `structuredContent.result`, rejects invalid input before the function, and cannot discover
 or call a protected canary. This is maintainer loopback proof, not an outsider pilot.

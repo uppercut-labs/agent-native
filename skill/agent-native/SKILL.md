@@ -14,7 +14,7 @@ Use the published `@uppercut-labs/agent-native` library to expose **real existin
 **Security:** https://github.com/uppercut-labs/agent-native/blob/main/docs/permissions-and-discovery.md  
 **Support boundary:** https://github.com/uppercut-labs/agent-native/blob/main/docs/support-and-limitations.md
 
-The inspected version is `1.0.0` and requires Node.js 22+. Verify the application's package lock and available published version before installing. Do not silently upgrade incompatible peers or edit unrelated work.
+The inspected version is `1.0.1` and requires Node.js 22+. Verify the application's package lock and available published version before installing. Do not silently upgrade incompatible peers or edit unrelated work.
 
 ## 1. Inspect the existing project first
 

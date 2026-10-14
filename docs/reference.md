@@ -3,7 +3,7 @@
 This page is generated from [package.json](../package.json) and the
 [CLI parser](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts). Run `node docs-site/reference.mjs` after changing those
 sources. `npm run docs:check` fails if this page drifts. Agent Native
-`1.0.0`. Stable and experimental entry points are listed in [stability](stability.md).
+`1.0.1`. Stable and experimental entry points are listed in [stability](stability.md).
 
 ## Typed package entrypoints
 

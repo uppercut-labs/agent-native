@@ -4,7 +4,7 @@ For the general adoption path, begin with [adopt an existing site](adopt-existin
 This optional guide handles only a narrowly recognized static Astro configuration.
 
 The `@uppercut-labs/agent-native/init` entrypoint is available in the
-`1.0.0` package. There is no `agent-native init` executable yet. Use the E01 fixture to try the current
+`1.0.1` package. There is no `agent-native init` executable yet. Use the E01 fixture to try the current
 programmatic flow from a local package tarball:
 
 ```sh

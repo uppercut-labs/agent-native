@@ -1,6 +1,6 @@
 # Release and provider handoff
 
-This handoff covers how a release candidate is checked and published; the current release is `1.0.0`. The public source is [uppercut-labs/agent-native](https://github.com/uppercut-labs/agent-native); `@uppercut-labs/agent-native` is its npm name and MIT is its license. Check the registry before claiming publication. Older entries below are dated release snapshots; their `latest` tags describe that publication date, not today. See [UAN-024 release evidence](evidence/UAN-024-release-readiness.md) for the earlier `0.0.0` preparation snapshot.
+This handoff covers how a release candidate is checked and published; the current release is `1.0.1`. The public source is [uppercut-labs/agent-native](https://github.com/uppercut-labs/agent-native); `@uppercut-labs/agent-native` is its npm name and MIT is its license. Check the registry before claiming publication. Older entries below are dated release snapshots; their `latest` tags describe that publication date, not today. See [UAN-024 release evidence](evidence/UAN-024-release-readiness.md) for the earlier `0.0.0` preparation snapshot.
 
 ## Package release sequence
 

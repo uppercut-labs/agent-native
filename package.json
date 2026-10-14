@@ -1,6 +1,6 @@
 {
   "name": "@uppercut-labs/agent-native",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "description": "Typed, permission-checked capability contracts with stable HTTP, CLI and MCP adapters and experimental browser/framework integrations.",
   "repository": {

@@ -17,9 +17,9 @@ agent-native/
     verification.md
 ```
 
-The reviewed source tree stores this folder under `skill/agent-native/`.
-The published 1.0.0 npm archive predates these handoff assets; use the source tree
-or the reviewed documentation downloads for them. Downloading only
+The npm package includes this folder under
+`node_modules/@uppercut-labs/agent-native/skill/agent-native/` starting in 1.0.1.
+Copy the whole folder into your coding agent’s skill directory. Downloading only
 `SKILL.md` requires fetching its two linked references as well. The standalone prompt
 is a single file.
 
@@ -28,7 +28,7 @@ There are two independent instructions paths:
 - **Portable Agent Native skill:** a short `SKILL.md` for agents supporting portable Agent Skills format, with optional references for adapter selection and verification. Read the skill source from the public package, or download the canonical asset from Uppercut's documentation host when that route is available.
 - **Standalone agent prompt:** copy/paste text for any coding agent with repository access. It includes necessary behavior without requiring a skill/plugin installation.
 
-**Planned download destinations:** `https://docs.uppercut-labs.com/agent-native/skill/agent-native/SKILL.md` and `https://docs.uppercut-labs.com/agent-native/agent-prompt.md`. Verify the returned content is actual Markdown before giving either link to users; these paths are not promised live until separately published and tested. The public package repository remains the authoritative source.
+**Documentation downloads:** `https://docs.uppercut-labs.com/agent-native/skill/agent-native/SKILL.md` and `https://docs.uppercut-labs.com/agent-native/agent-prompt.md`. The installed npm package and public package repository contain the same canonical assets.
 
 ## What the agent should accomplish
 
@@ -39,7 +39,7 @@ There are two independent instructions paths:
 5. Verify one allowed call, one schema rejection before the handler, one denial/hidden path and an unchanged human UI.
 6. Report changed files, versions, observed commands/results and remaining hosting/identity responsibilities.
 
-Do not claim that the 1.0.0 library includes a global `agent-native init` executable, production identity service, default-enabled browser WebMCP or verified commercial MCP Apps host rendering. Review [support and limitations](support-and-limitations.md).
+Do not claim that the 1.0.1 library includes a global `agent-native init` executable, production identity service, default-enabled browser WebMCP or verified commercial MCP Apps host rendering. Review [support and limitations](support-and-limitations.md).
 
 ## If the agent only has public docs
 

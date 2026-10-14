@@ -2,7 +2,7 @@
 
 To wrap a working site’s existing operation, follow [adopt an existing site](adopt-existing-site.md).
 
-Agent Native `1.0.0`. The table describes the exact local fixtures and hosts
+Agent Native `1.0.1`, with the same runtime and API as `1.0.0`. The table describes the exact local fixtures and hosts
 that were tested; it is not a claim for all releases of a runtime or every client.
 
 | Surface | Runnable check | Verified boundary |
