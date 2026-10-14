@@ -36,6 +36,12 @@ Zod is only needed if you use the `/schema/zod` adapter. To serve MCP, add the t
 npm install @modelcontextprotocol/server@2.3.0
 ```
 
+For official client verification, install `npm install --save-dev @modelcontextprotocol/client@2.3.0`.
+Import `Client` and `StreamableHTTPClientTransport` from `@modelcontextprotocol/client`;
+connect the transport to your actual mounted MCP URL, list tools, and call the expected
+capability with its schema-valid input. For Next, also install `server-only@0.0.1` and
+follow the [authorized route example](next.md).
+
 No package-level `agent-native` executable ships. The `@uppercut-labs/agent-native/init` import is an experimental, narrowly recognized programmatic Astro static retrofit; it does **not** automatically discover your business functions, publish a Worker or install a global `init` command. See [installation](installation.md) and [Astro init details](getting-started.md).
 
 ## 3. Define and bind your **existing** function

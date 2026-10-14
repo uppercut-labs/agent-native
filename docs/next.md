@@ -4,14 +4,33 @@ The experimental Next.js integration targets Next 16.3.8 App Router routes on th
 does not import Next itself: App Router supplies standard Web `Request` objects, and the adapter
 returns standard `Response` objects from the existing HTTP and official MCP handlers.
 
+For a public read, install the server peer and the server-boundary marker, and install the
+client in development for protocol verification:
+
+```sh
+npm install @modelcontextprotocol/server@2.3.0 server-only@0.0.1
+npm install --save-dev @modelcontextprotocol/client@2.3.0
+```
+
+The app-owned server registry module exports its public-read-only authorizer, such as the
+checked policy in [adopt an existing site](adopt-existing-site.md). Supply it in the route:
+
 ```js
 // app/mcp/route.js
 import { createNextMcpRoute } from '@uppercut-labs/agent-native/next';
-import { registry } from '../../lib/server-registry.js';
+import { registry, publicReadAuthorization } from '../../lib/server-registry.js';
 
 export const runtime = 'nodejs';
-export const { GET, POST, DELETE } = createNextMcpRoute(registry);
+export const { GET, POST, DELETE } = createNextMcpRoute(registry, {
+  resolveExecutionContext: () => ({
+    caller: { kind: 'anonymous' },
+    authorization: publicReadAuthorization,
+  }),
+});
 ```
+
+This policy permits explicitly public reads. Protected tools require the request-specific
+verified identity and grants described in [permissions](permissions-and-discovery.md).
 
 Mount `createNextHttpRoute` from a catch-all route covering `/agent-native/v1`. Keep server registry
 modules marked `server-only`. The two route factories share the existing registry/executor behavior,
