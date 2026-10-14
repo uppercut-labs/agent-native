@@ -17,7 +17,9 @@ agent-native/
     verification.md
 ```
 
-The npm archive includes this folder under `skill/agent-native/`. Downloading only
+The reviewed source tree stores this folder under `skill/agent-native/`.
+The published 1.0.0 npm archive predates these handoff assets; use the source tree
+or the reviewed documentation downloads for them. Downloading only
 `SKILL.md` requires fetching its two linked references as well. The standalone prompt
 is a single file.
 
