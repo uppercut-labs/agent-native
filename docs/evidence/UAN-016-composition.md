@@ -18,7 +18,7 @@ contract-only import.
 Use the required Node release from the repository root:
 
 ```sh
-export PATH=/Users/research/.nvm/versions/node/v24.18.0/bin:$PATH
+# Use Node.js 24 on PATH (the recorded run used 24.18.0).
 npm run typecheck
 npm run lint
 npm run format:check
