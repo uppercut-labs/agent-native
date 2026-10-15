@@ -32,7 +32,7 @@ There are two independent instructions paths:
 
 ## What the agent should accomplish
 
-1. Read the site's existing framework, runtime, source, tests, auth and repository instructions.
+1. Read the site's repository instructions, package manifest, lockfile, actual entry points, framework/runtime, tests, auth and human workflows. Treat a user-named stack or host as an acceptance condition: verify it against these sources, explain any mismatch and follow the explicit request.
 2. Choose a real existing public read, not arbitrary generated demo logic, and create a typed capability with honest risk/access.
 3. Bind the unchanged application function in a checked registry and enforce authorization every call.
 4. Expose one real HTTP or official MCP surface with the correct runtime and optional dependencies. A static site cannot run dynamic MCP unaided.
