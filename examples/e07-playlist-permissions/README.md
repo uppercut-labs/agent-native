@@ -7,3 +7,12 @@ From the repository root, run `npm run example:e07`. The check builds a local pa
 The example's `src/test-auth.mjs` uses static token names solely for local protocol tests. `src/grant-store.mjs` persists disposable grant records in a JSON file. Both require explicit test mode and reject `NODE_ENV=production`. The file store supports a single process, not concurrent independent writers. They are not deployment integrations. A real host must supply an official SDK token verifier backed by its identity provider, a durable grant store, a trusted principal mapper and resource ownership checks.
 
 Grant revocation is read from the file on every protected invocation in this sequential example. No browser, commercial MCP host, provider deployment or external identity service was tested. Host confirmation prompts remain outside the library's control.
+
+The same check also runs `src/recovery-demo.mjs`: a protected write times out after reserving
+an application-owned idempotency key, status first reports pending, and the original write
+later commits once. The test controls deadline and commit independently, checks persisted
+state after reopening the journal, rejects a different value for the same key, and denies
+unauthorized status reads. After export, run `npm run recovery` in `.exported` to repeat it.
+The journal is a single-process fixture; production needs transactional persistence and crash
+recovery. A missing or pending status never authorizes blind replay. See the
+[MCP recovery guide](https://github.com/uppercut-labs/agent-native/blob/main/docs/mcp.md#reconcile-an-uncertain-write).

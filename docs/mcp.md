@@ -58,6 +58,49 @@ that the write may have completed. The adapter does not retry; callers must chec
 retry unless the application defines an idempotency contract. Host code remains responsible for
 identity-provider configuration, transport security, grant persistence and rate limiting.
 
+### Reconcile an uncertain write
+
+The [E07 recovery recipe](https://github.com/uppercut-labs/agent-native/blob/main/examples/e07-playlist-permissions/project/src/recovery-demo.mjs)
+connects an application-owned idempotency key to a protected status capability. Run
+`npm run example:e07` from the repository root to build, install and execute it. To repeat
+only the demo, run `npm run recovery` in `examples/e07-playlist-permissions/.exported`.
+
+The original write reserves the caller's key in a file journal, deliberately ignores abort,
+and waits on a deferred commit. After the MCP deadline warning, status returns `pending`.
+The application then completes the original operation; the next status returns `committed`
+with one commit. Reopening the journal preserves the outcome. No automatic retry occurs.
+
+<!-- source:examples/e07-playlist-permissions/project/src/recovery-demo.mjs#reconcile-write -->
+~~~js
+const pending = await fixture.call('status', { key: 'operation-1' });
+assert.deepEqual(pending.structuredContent.result, { state: 'pending', commits: 0 });
+// The fixture now allows the original operation to finish; do not submit another write.
+fixture.release.resolve();
+await fixture.completed.promise;
+const committed = await fixture.call('status', { key: 'operation-1' });
+assert.deepEqual(committed.structuredContent.result, { state: 'committed', commits: 1 });
+assert.equal(fixture.counts().writes, 1);
+assert.equal(fixture.counts().invocations, 1);
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e07-playlist-permissions/project/src/recovery-demo.mjs#L19)
+<!-- /source -->
+
+Keep the same key and value while reconciling. A pending operation must remain pending until
+the application can establish its outcome. A missing record is not proof that a remote write
+never happened: investigate the application's persistence and recovery contract before
+resubmitting. The fixture separately verifies that an explicit duplicate with the same value
+does not start a second write, a different value conflicts, and an unauthorized status reader
+receives no protected state. Status requires its own current grant and ownership check.
+
+The file journal demonstrates single-process persistence, not production crash safety or
+cross-process locking. A production application must atomically reserve the caller-scoped key
+and persist the mutation and outcome, or reconcile with its downstream provider. Define key
+retention and recovery for abandoned pending operations. Agent Native supplies no durable
+operation ledger, rollback-on-timeout or exactly-once guarantee. The deterministic test advances
+the deadline with Node's mock timers and controls commit with a deferred promise; it uses no
+wall-clock sleeps to decide correctness.
+
 A real local HTTP socket fixture uses the official client and server packages, both pinned to
 version 2.3.0. The observed client session negotiated protocol version 2025-11-25. It discovers
 and invokes the sample album capability, checks the structured result against the canonical output
@@ -86,6 +129,26 @@ Every binding receives the caller the executor authorized as `context.caller`. F
 ## Operator failure hook
 
 Tool errors returned to the client are deliberately generic. To see why a call failed, pass `onToolFailure`. It receives the capability ID, the tool name, a reason (an executor failure kind, or `context-unavailable`, `not-exposed`, `result-not-serializable` or `adapter-error`) and the executor's `DiagnosticObservation`. It never receives input, output, credentials or exception text. Errors thrown by the hook are ignored. To log a binding exception, catch it inside the binding.
+
+The [E11 executor and operator recipe](https://github.com/uppercut-labs/agent-native/blob/main/examples/e11-diagnostics-fault-lab/project/src/executor-selection.mjs)
+runs with `npm run example:e11`; repeat it with `npm run selection` in the exported project.
+It receives `handler-failed` and `invalid-output` privately while clients receive the same
+bounded error. Sentinel checks reject input, output, credential or exception disclosure in
+both client results and operator events. Hidden tools remain undiscoverable and uncallable.
+
+<!-- source:examples/e11-diagnostics-fault-lab/project/src/executor-selection.mjs#operator-hook -->
+~~~js
+const handler = createMcpHandler(registry, {
+  resolveExecutionContext: () => ({ caller: { kind: 'anonymous' }, authorization: publicRead }),
+  onToolFailure: (failure) => {
+    // Store only the bounded diagnostic in the application's private operator sink.
+    failures.push(failure);
+  },
+});
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e11-diagnostics-fault-lab/project/src/executor-selection.mjs#L110)
+<!-- /source -->
 
 ## Tool names
 

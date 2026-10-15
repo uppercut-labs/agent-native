@@ -40,3 +40,14 @@ Every sandbox advertises `example:catalog.erase@1` as a mutation canary. Its han
 that sandbox's `data/catalog.json`, writes `canary-invoked.marker`, then throws. Launching fixtures
 and all doctor checks must never call it. Tests confirm the data remains and the marker never
 appears. The canary is for safety verification only.
+
+## Executor selection and operator diagnostics
+
+`npm run example:e11` also tests and runs `src/executor-selection.mjs` against the installed
+package. Repeat it with `npm run selection` inside the exported project. It passes separate
+namespace/name/version fields, distinguishes invalid identity, missing capability, wrong runtime
+and ambiguous binding, then explicitly selects `primary`. Failed selections run no handler.
+Its MCP requests use official client and server SDKs with an in-process fetch transport.
+The operator hook receives bounded failure reasons while client errors omit input, output,
+credential and exception sentinels. A hidden capability cannot be listed or called.
+This does not establish a commercial MCP host or network transport qualification.
