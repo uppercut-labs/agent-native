@@ -2,6 +2,13 @@
 
 All notable changes will be recorded here.
 
+## Unreleased
+
+- Add an E07 protected-write recovery recipe with application-owned idempotency keys, persisted pending/committed status, deterministic deadline control and denied-read checks.
+- Add an E11 exact-identity/binding-selection recipe and private MCP operator diagnostics with redaction checks.
+- Run both recipes in the existing standalone exports and isolated-install checks; document their application responsibilities and fixture limits.
+- Package runtime behavior, stable exports and version remain unchanged.
+
 ## 1.0.1 - 2026-10-14
 
 - Add an existing-site integration guide before the optional Astro init path.

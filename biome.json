@@ -16,6 +16,8 @@
       "!examples/e08-reusable-versioned-pack/.exported",
       "!examples/e03-next-reading-list/site-before",
       "!examples/e04-worker-sidecar/.exported",
+      "!examples/e07-playlist-permissions/.exported",
+      "!examples/e11-diagnostics-fault-lab/.exported",
       "!examples/e09-album-explorer/.exported"
     ]
   },

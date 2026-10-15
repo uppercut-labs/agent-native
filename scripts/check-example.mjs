@@ -113,4 +113,6 @@ if (exampleId === 'e04-worker-sidecar' || exampleId === 'e03-next-reading-list')
 else if (exampleId === 'e10-existing-functions-retrofit')
   runNpm(['run', 'search', '--', '--query', 'night', '--limit', '1'], exportRoot);
 else runNpm(['start'], exportRoot);
+if (exampleId === 'e07-playlist-permissions') runNpm(['run', 'recovery'], exportRoot);
+if (exampleId === 'e11-diagnostics-fault-lab') runNpm(['run', 'selection'], exportRoot);
 process.stdout.write(`Standalone ${exampleId} installed and tested at ${exportRoot}\n`);
