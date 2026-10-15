@@ -28,7 +28,11 @@ for (const [source, destination] of agentResources) {
 }
 for (const file of htmlFiles) {
   const html = await readFile(file, 'utf8');
-  const page = path.relative(root, file).split(path.sep).join('/').replace(/(?:^|\/)index\.html$/, '');
+  const page = path
+    .relative(root, file)
+    .split(path.sep)
+    .join('/')
+    .replace(/(?:^|\/)index\.html$/, '');
   if (!html.includes('<nav id="site-nav"') || !html.includes('id="site-search"')) {
     failures.push(`${file}: missing navigation or search`);
   }
