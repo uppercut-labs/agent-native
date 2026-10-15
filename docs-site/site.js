@@ -28,6 +28,33 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
+for (const button of document.querySelectorAll('[data-copy-agent-prompt]')) {
+  button.addEventListener('click', async () => {
+    const prompt = document.querySelector('#agent-prompt-text');
+    const status = document.querySelector('#agent-prompt-status');
+    const details = button.closest('.agent-prompt')?.querySelector('.agent-prompt-preview');
+    if (!prompt || !status || !details) {
+      throw new Error('Agent prompt control is missing its text or feedback');
+    }
+    try {
+      await navigator.clipboard.writeText(prompt.textContent.trim());
+      status.textContent = 'Prompt copied.';
+      button.textContent = 'Prompt copied!';
+      window.setTimeout(() => {
+        button.textContent = 'Copy prompt';
+      }, 2200);
+    } catch {
+      details.open = true;
+      const range = document.createRange();
+      range.selectNodeContents(prompt);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      status.textContent = 'Copy is unavailable. The prompt is selected for manual copying.';
+    }
+  });
+}
+
 let searchIndex;
 async function loadIndex() {
   if (!searchIndex) {
