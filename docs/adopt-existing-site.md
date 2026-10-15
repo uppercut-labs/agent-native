@@ -11,7 +11,7 @@ Choose something low risk: search public content, retrieve an album, list public
 
 A representative complete example is [E10 existing functions retrofit](https://github.com/uppercut-labs/agent-native/tree/main/examples/e10-existing-functions-retrofit). It leaves an existing `searchContent({query, limit})` function intact, defines a typed Agent Native capability around it, and preserves the site's established `GET /api/content/search` shape. It is much closer to a real integration than inventing a new `greet` operation.
 
-Check which execution model your website actually has before choosing an adapter:
+Compare any user-named stack or host with the package manifest, lockfile, actual entry point, and build/deployment configuration. Explain a mismatch and follow the explicit request; then choose an adapter for the website's actual execution model:
 
 | Your website | How remote agents call it | Example and limitation |
 | --- | --- | --- |
