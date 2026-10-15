@@ -21,14 +21,14 @@ const commands = {
   'e04-worker-sidecar': [['test'], ['run', 'verify']],
   'e05-node-cli': [['test'], ['start']],
   'e06-browser-only-theme-controls': [['test'], ['start']],
-  'e07-playlist-permissions': [['test'], ['start']],
+  'e07-playlist-permissions': [['test'], ['start'], ['run', 'recovery']],
   'e08-reusable-versioned-pack': [['test'], ['start']],
   'e09-album-explorer': [['test'], ['start']],
   'e10-existing-functions-retrofit': [
     ['test'],
     ['run', 'search', '--', '--query', 'night', '--limit', '1'],
   ],
-  'e11-diagnostics-fault-lab': [['test'], ['start']],
+  'e11-diagnostics-fault-lab': [['test'], ['start'], ['run', 'selection']],
   'e12-shared-unit-converter': [['test'], ['start']],
 };
 const skipped = new Set(['node_modules', 'dist', '.astro', '.next', '.worker-bundle', '.wrangler']);

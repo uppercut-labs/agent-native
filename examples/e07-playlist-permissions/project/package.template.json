@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "start": "node src/demo.mjs"
+    "start": "node src/demo.mjs",
+    "recovery": "node src/recovery-demo.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/client": "2.3.0",
