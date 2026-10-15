@@ -14,6 +14,19 @@ const packageVersion = JSON.parse(
 ).version;
 const outputRoot = path.join(siteRoot, 'dist');
 const repositoryUrl = 'https://github.com/uppercut-labs/agent-native';
+const agentPromptPages = new Set(['adopt-existing-site', 'for-agents']);
+const agentPromptText = (
+  await readFile(path.join(repositoryRoot, 'agent/agent-prompt-short.md'), 'utf8')
+).trim();
+if (agentPromptText.length > 300 || agentPromptText.split(/\s+/).length > 40) {
+  throw new Error('The visible agent prompt must stay within 300 characters and 40 words');
+}
+const agentLogos = [
+  ['claude-code.svg', 'Claude Code'],
+  ['codex.svg', 'Codex'],
+  ['cursor.svg', 'Cursor'],
+  ['opencode.svg', 'OpenCode'],
+];
 
 const guideOrder = [
   'adopt-existing-site',
@@ -71,6 +84,23 @@ function pageUrl(fromKey, toKey) {
 function assetUrl(pageKey, asset) {
   const up = path.posix.relative(pageKey || '.', '.');
   return `${up ? `${up}/` : './'}${asset}`;
+}
+
+function agentPromptMarkup(pageKey) {
+  if (!agentPromptPages.has(pageKey)) return '';
+  const logos = agentLogos
+    .map(
+      ([file, name]) =>
+        `<img src="${escapeHtml(assetUrl(pageKey, `assets/agent-logos/${file}`))}" alt="${escapeHtml(name)}" width="20" height="20">`,
+    )
+    .join('');
+  return `<aside class="agent-prompt" aria-label="Agent Native coding prompt">
+    <span class="agent-prompt-label">Agent prompt</span>
+    <span class="agent-prompt-logos">${logos}</span>
+    <button class="agent-prompt-copy" type="button" data-copy-agent-prompt aria-describedby="agent-prompt-status">Copy prompt</button>
+    <details class="agent-prompt-preview"><summary>View prompt</summary><pre id="agent-prompt-text" tabindex="0">${escapeHtml(agentPromptText)}</pre></details>
+    <p class="agent-prompt-status" id="agent-prompt-status" role="status" aria-live="polite"></p>
+  </aside>`;
 }
 
 async function collectMarkdown(directory) {
@@ -200,12 +230,13 @@ function shell({ pageKey, title, content, guides, evidence, source }) {
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light"><title>${escapeHtml(title)} · Agent Native docs</title>
 <link rel="stylesheet" href="${escapeHtml(assetUrl(pageKey, 'assets/site.css'))}">
+<link rel="stylesheet" href="${escapeHtml(assetUrl(pageKey, 'assets/agent-prompt.css'))}">
 <script type="module" src="${escapeHtml(assetUrl(pageKey, 'assets/site.js'))}"></script></head>
 <body><a class="skip" href="#main">Skip to content</a>
 <header class="masthead"><a class="brand" href="${escapeHtml(home)}"><span class="mark" aria-hidden="true">/</span> Agent Native <span class="brand-small">docs</span></a>
 <span class="release-tag">v${escapeHtml(packageVersion)}</span><button class="menu-button" type="button" aria-controls="site-nav" aria-expanded="false">Menu</button></header>
 <div class="layout">${navigation(pageKey, guides, evidence)}
-<div class="main-column"><form class="search" role="search"><label for="site-search">Search documentation</label><input id="site-search" type="search" autocomplete="off" placeholder="Search guides and evidence" aria-controls="search-results"><span class="search-hint">Press / to search</span><ul id="search-results" class="search-results" aria-live="polite" hidden></ul></form>
+<div class="main-column">${agentPromptMarkup(pageKey)}<form class="search" role="search"><label for="site-search">Search documentation</label><input id="site-search" type="search" autocomplete="off" placeholder="Search guides and evidence" aria-controls="search-results"><span class="search-hint">Press / to search</span><ul id="search-results" class="search-results" aria-live="polite" hidden></ul></form>
 <main id="main"><div class="eyebrow">Uppercut Labs / Agent Native</div><article class="prose">${content}</article>
 ${source ? `<div class="source-links"><a href="${escapeHtml(sourceUrl(source))}">View source on GitHub</a>${raw ? `<a href="${escapeHtml(raw)}">Raw Markdown</a>` : ''}</div>` : ''}</main>
 <footer>Agent Native ${escapeHtml(packageVersion)} documentation. <a href="${escapeHtml(pageUrl(pageKey, 'support-and-limitations'))}">Read support and limitations</a>.</footer></div></div></body></html>`;
@@ -238,8 +269,19 @@ async function build() {
   await rm(outputRoot, { recursive: true, force: true });
   await mkdir(path.join(outputRoot, 'assets'), { recursive: true });
   await mkdir(path.join(outputRoot, 'raw'), { recursive: true });
-  for (const asset of ['site.css', 'site.js'])
+  for (const asset of ['site.css', 'site.js', 'agent-prompt.css'])
     await copyFile(path.join(siteRoot, asset), path.join(outputRoot, 'assets', asset));
+  const logoOutput = path.join(outputRoot, 'assets/agent-logos');
+  await mkdir(logoOutput, { recursive: true });
+  for (const asset of [
+    'claude-code.svg',
+    'codex.svg',
+    'cursor.svg',
+    'opencode.svg',
+    'LICENSE.txt',
+  ]) {
+    await copyFile(path.join(siteRoot, 'agent-logos', asset), path.join(logoOutput, asset));
+  }
 
   for (const [source, destination] of agentResources) {
     await mkdir(path.dirname(path.join(outputRoot, destination)), { recursive: true });

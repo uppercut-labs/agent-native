@@ -28,8 +28,22 @@ for (const [source, destination] of agentResources) {
 }
 for (const file of htmlFiles) {
   const html = await readFile(file, 'utf8');
+  const page = path.relative(root, file).split(path.sep).join('/').replace(/(?:^|\/)index\.html$/, '');
   if (!html.includes('<nav id="site-nav"') || !html.includes('id="site-search"')) {
     failures.push(`${file}: missing navigation or search`);
+  }
+  const shouldHaveAgentPrompt = ['adopt-existing-site', 'for-agents'].includes(page);
+  const hasAgentPrompt = html.includes('class="agent-prompt"');
+  if (shouldHaveAgentPrompt !== hasAgentPrompt) {
+    failures.push(`${file}: agent prompt placement does not match its guide`);
+  }
+  if (
+    shouldHaveAgentPrompt &&
+    (!html.includes('data-copy-agent-prompt') ||
+      !html.includes('class="agent-prompt-logos"') ||
+      html.indexOf('class="agent-prompt"') > html.indexOf('<form class="search"'))
+  ) {
+    failures.push(`${file}: missing branded prompt controls at the top of the guide`);
   }
   for (const match of html.matchAll(/<(?:a|link|script|img)\b[^>]*\b(?:href|src)="([^"]+)"/g)) {
     const href = match[1].replaceAll('&amp;', '&');
