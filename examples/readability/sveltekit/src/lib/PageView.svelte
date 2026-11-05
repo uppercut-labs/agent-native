@@ -3,7 +3,9 @@ import { onMount } from 'svelte';
 let { page, workshop = false } = $props();
 let saved = $state(false);
 let isReady = $state(false);
-onMount(() => { isReady = true; });
+onMount(() => {
+  isReady = true;
+});
 const script = (value) =>
   '<script type="application/ld+json">' +
   JSON.stringify(value).replaceAll('<', '\\u003c') +
