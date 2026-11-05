@@ -1,0 +1,9 @@
+*/generated/
+*/public/agent-native/
+*/public/llms*.txt
+*/.astro/
+*/.next/
+astro/dist-static/
+
+*/public/agent-native-witness.json
+*/static/agent-native-witness.json

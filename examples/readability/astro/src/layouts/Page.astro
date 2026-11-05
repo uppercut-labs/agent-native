@@ -1,0 +1,11 @@
+---
+const { page, title = page.title, markdown = page.markdown } = Astro.props;
+---
+<!doctype html>
+<html lang={page.locale}><head><meta charset="utf-8"><title>{title}</title>
+<link rel="canonical" href={page.canonical}>{page.mirror && <link rel="alternate" type="text/markdown" href={page.mirror}>}
+{page.jsonld && <script is:inline type="application/ld+json" set:html={JSON.stringify(page.jsonld).replaceAll('<','\\u003c')} />}
+</head><body><nav><a href="/">Field notes</a> · <a href="/guides/getting-started">Field guide</a></nav>
+<main><h1>{title}</h1><p>{markdown}</p>
+{page.links.map((link) => <p><a href={link.route}>{link.title}</a></p>)}<slot/></main>
+</body></html>

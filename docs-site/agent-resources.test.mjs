@@ -10,8 +10,25 @@ test('agent resources validate actual public sources and reject damaged handoffs
   assert.deepEqual(await validateAgentResources(root), []);
   const temp = await mkdtemp(path.join(os.tmpdir(), 'agent-resources-'));
   try {
+    const generated = new Set([
+      'node_modules',
+      '.exported',
+      '.angular',
+      '.astro',
+      '.next',
+      '.nuxt',
+      '.output',
+      '.svelte-kit',
+      '.react-router',
+      'dist',
+      'build',
+      'generated',
+    ]);
     for (const file of ['skill', 'agent', 'docs', 'examples', 'package.json']) {
-      await cp(path.join(root, file), path.join(temp, file), { recursive: true });
+      await cp(path.join(root, file), path.join(temp, file), {
+        recursive: true,
+        filter: (source) => !generated.has(path.basename(source)),
+      });
     }
     const skill = path.join(temp, 'skill/agent-native/SKILL.md');
     const original = await readFile(skill, 'utf8');

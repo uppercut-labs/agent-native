@@ -1,6 +1,6 @@
 # Uppercut Agent Native
 
-Uppercut Agent Native `1.0.1` defines typed capability contracts once and serves them on local,
+Uppercut Agent Native defines typed capability contracts once and serves them on local,
 HTTP, CLI, MCP, Node/Hono, browser, and Astro static/on-demand surfaces. It is distributed as
 `@uppercut-labs/agent-native` under the MIT license. See [installation](docs/installation.md)
 for the first programmatic capability.
@@ -9,7 +9,11 @@ To expose a real operation from a working app, start with [adopt an existing sit
 For a coding assistant, use [the portable skill or standalone prompt](docs/for-agents.md).
 Node.js 22+ is required. Eleven entry points are stable under SemVer; browser, framework, init
 and harness integrations are experimental. See [stability](docs/stability.md). The package
-ships importable APIs, including an app-owned CLI runner, and no package-level executable.
+ships importable capability APIs and an app-owned CLI runner. The development branch adds an experimental [site publication CLI](docs/site-publication.md).
+
+## 1.1.0 candidate
+
+This branch builds a candidate archive for `@uppercut-labs/agent-native@1.1.0`. Install the archive from the passing production-fixture workflow run to try it before registry publication. [Site publication CLI](docs/site-publication.md) · [Eight native examples](docs/readability-frameworks.md).
 
 ## Current scope
 

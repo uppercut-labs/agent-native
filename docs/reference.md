@@ -3,7 +3,7 @@
 This page is generated from [package.json](../package.json) and the
 [CLI parser](https://github.com/uppercut-labs/agent-native/blob/main/src/cli.ts). Run `node docs-site/reference.mjs` after changing those
 sources. `npm run docs:check` fails if this page drifts. Agent Native
-`1.0.1`. Stable and experimental entry points are listed in [stability](stability.md).
+`1.1.0`. Stable and experimental entry points are listed in [stability](stability.md).
 
 ## Typed package entrypoints
 
@@ -30,9 +30,10 @@ sources. `npm run docs:check` fails if this page drifts. Agent Native
 | `@uppercut-labs/agent-native/mcp-apps` | `./dist/mcp-apps.d.ts` | `./dist/mcp-apps.js` |
 | `@uppercut-labs/agent-native/harness/mcp-bridge` | `./dist/harness-mcp-bridge.d.ts` | `./dist/harness-mcp-bridge.js` |
 | `@uppercut-labs/agent-native/harness/codex` | `./dist/harness-codex.d.ts` | `./dist/harness-codex.js` |
+| `@uppercut-labs/agent-native/publication` | `./dist/publication.d.ts` | `./dist/publication.js` |
 
 The package's optional peers are listed in [installation](installation.md). Import only
-the subpath needed by the application. A package-level executable is not shipped.
+the subpath needed by the application. The experimental [site publication CLI](site-publication.md) operates on approved public content.
 
 ## Application CLI arguments
 
