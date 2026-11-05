@@ -2,6 +2,8 @@
 
 The unreleased experimental `/publication` import and `agent-native-site` executable generate a text index, directly readable Markdown mirrors, optional aggregate text and JSON-LD for approved public pages. Your app owns its human HTML, data permissions and cache invalidation.
 
+[Framework integrations and showcases](readability-frameworks.md)
+
 ## Try a source-backed example
 
 Use Node 22+ and a checkout of this branch. From the repository root, run the following commands. The example creates a small workshop site in a new working directory with a private manifest, an empty state directory and a separate public output directory.
@@ -24,6 +26,12 @@ In a clean consumer that installed the candidate tarball, use `npm exec -- agent
 ```sh
 node bin/agent-native-site.mjs verify --manifest workshop-demo/site.json
 ```
+
+## Discover review candidates in existing projects
+
+Run `agent-native-site discover --framework next --project .` on an App Router app. Astro, Next.js App Router, Nuxt and SvelteKit use conventional filesystem page paths. Dynamic parameters stay unresolved, and discovery reads filenames without running loaders or opening page bodies. Angular can read an existing `dist/prerendered-routes.json`. For React/Vite, Vue/Vite, React Router framework mode and Angular, pass `--routes routes.json` with an application-exported route table (paths or nested records with path, index and children). A custom route file must be inside the project. Redirects, internationalization, custom framework directories, aliases and complex mounted routers require developer review.
+
+The output is private review material. Every discovered route has unknown visibility, a source locator and a stable candidate ID. Enumerate the finite public routes and select their public fields to construct the manifest. An automatically discovered path cannot authorize publication.
 
 ## Supply public projections
 

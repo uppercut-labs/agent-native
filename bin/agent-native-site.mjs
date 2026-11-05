@@ -4,10 +4,11 @@ import { lstat, mkdir, readFile, realpath, rename, unlink, writeFile } from 'nod
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { planPublication, safePublicationPath } from '@uppercut-labs/agent-native/publication';
+import { discoverRoutes } from './discover-routes.mjs';
 import { verifyProtocol, verifyPublication } from './verify-publication.mjs';
 
 const help =
-  'agent-native-site <preview|apply|restore-preview|restore|verify> --manifest FILE [--out EXISTING_DIR --state EXISTING_PRIVATE_DIR] [--approve DIGEST]';
+  'agent-native-site discover --framework NAME --project DIR [--routes TABLE.json]  |  agent-native-site <preview|apply|restore-preview|restore|verify> --manifest FILE [--out EXISTING_DIR --state EXISTING_PRIVATE_DIR] [--approve DIGEST]';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const fail = (code, detail) => {
   throw Object.assign(new Error(code), { diagnostic: code, detail });
@@ -104,6 +105,9 @@ async function main(argv) {
     allowPositionals: true,
     options: {
       manifest: { type: 'string' },
+      framework: { type: 'string' },
+      project: { type: 'string' },
+      routes: { type: 'string' },
       out: { type: 'string' },
       state: { type: 'string' },
       approve: { type: 'string' },
@@ -112,6 +116,9 @@ async function main(argv) {
   });
   if (values.help || argv.length === 0) return { usage: help };
   const [command] = positionals;
+  if (command === 'discover' && positionals.length === 1 && values.framework && values.project) {
+    return discoverRoutes(values.framework, values.project, values.routes);
+  }
   if (
     positionals.length !== 1 ||
     !['preview', 'apply', 'restore-preview', 'restore', 'verify'].includes(command) ||

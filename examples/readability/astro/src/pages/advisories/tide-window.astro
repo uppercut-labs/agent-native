@@ -1,0 +1,9 @@
+---
+import model from '../../../generated/publication.json';
+import Page from '../../layouts/Page.astro';
+export const prerender = false;
+const page = model.pages.find((item) => item.id === 'tide-window');
+if (!page) return new Response('Page not found', { status: 404 });
+Astro.response.headers.set('Cache-Control', 'no-store');
+---
+<Page page={page}><a href="/field-notes/breakwater">Read the breakwater field note</a></Page>

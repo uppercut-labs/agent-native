@@ -1,0 +1,5 @@
+.nuxt/
+.output/
+generated/
+public/agent-native/
+public/llms*.txt

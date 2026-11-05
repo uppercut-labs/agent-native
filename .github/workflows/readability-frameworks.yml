@@ -1,0 +1,53 @@
+name: Production readability fixtures
+on:
+  pull_request:
+    paths:
+      - 'src/publication.ts'
+      - 'bin/**'
+      - 'examples/readability/**'
+      - '.github/workflows/readability-frameworks.yml'
+      - 'package*.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [astro, next, react-vite, vue-vite, sveltekit, nuxt, react-router, angular]
+    env:
+      SITE_URL: http://127.0.0.1:4173
+      NEXT_TELEMETRY_DISABLED: 1
+      NUXT_TELEMETRY_DISABLED: 1
+      FRAMEWORK: ${{ matrix.framework }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: echo "READABILITY_PROOF_CODE=$(node -e "process.stdout.write(require('node:crypto').randomBytes(12).toString('hex'))")" >> "$GITHUB_ENV"
+      - run: npm ci && npm run build
+      - run: npm pack --pack-destination "$RUNNER_TEMP"
+      - run: |
+          cd "examples/readability/$FRAMEWORK"
+          npm ci
+          npm install --no-save --package-lock=false "$RUNNER_TEMP"/uppercut-labs-agent-native-*.tgz
+          READABILITY_EDITION=original npm run build
+      - run: |
+          cd examples/readability/checks
+          npm ci
+          npx playwright install --with-deps chromium
+          READABILITY_EDITION=original node verify.mjs "$FRAMEWORK" --http-only
+      - run: |
+          cd "examples/readability/$FRAMEWORK"
+          READABILITY_EDITION=updated npm run build
+          cd ../checks
+          READABILITY_EDITION=updated node verify.mjs "$FRAMEWORK"
