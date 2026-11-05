@@ -88,7 +88,8 @@ try {
   const original = process.env.READABILITY_EDITION === 'original';
   const witness = await fetch(new URL('/agent-native-witness.json', origin));
   assert.equal(witness.status, 200);
-  const identity = await witness.json();
+  const witnessBytes = await witness.text();
+  const identity = JSON.parse(witnessBytes);
   assert.equal(identity.edition, original ? 'original' : 'updated');
   if (process.env.READABILITY_PROOF_CODE) {
     assert.equal(
@@ -225,7 +226,10 @@ try {
       mode: remote ? 'hosted production' : 'local production',
       origin: origin.href,
       publication: humanOnly ? 'disabled' : 'enabled',
+      observedAt: new Date().toISOString(),
+      witnessSha256: createHash('sha256').update(witnessBytes).digest('hex'),
       httpChecks: result.checks.length,
+      checks: result.checks,
       showcase: actualShowcase.route,
       chromium: browser?.version() ?? null,
     }),
