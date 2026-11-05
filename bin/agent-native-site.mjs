@@ -131,7 +131,8 @@ async function main(argv) {
   const plan = await planPublication(input.config, input.candidates, { verifyProtocol });
   if (!restore && plan.diagnostics.some((d) => d.severity === 'error'))
     fail('invalid-publication', plan.diagnostics);
-  if (command === 'verify') return verifyPublication(plan, input.config, input.verify);
+  if (command === 'verify')
+    return verifyPublication(plan, input.config, input.verify, input.candidates);
   if (!values.out || !values.state) fail('invalid-usage', help);
   const [out, state] = await Promise.all([realpath(values.out), realpath(values.state)]);
   if (

@@ -7,6 +7,6 @@
     "src"
   ],
   "peerDependencies": {
-    "@uppercut-labs/agent-native": "1.0.1"
+    "@uppercut-labs/agent-native": "1.1.0"
   }
 }

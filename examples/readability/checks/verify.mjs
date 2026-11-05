@@ -94,7 +94,7 @@ try {
       { path: '/agent-native/guides/retired.md', status: original ? 200 : 404 },
     ],
   };
-  const result = await verifyPublication(plan, manifest.config, probes);
+  const result = await verifyPublication(plan, manifest.config, probes, manifest.candidates);
   assert.equal(
     result.status,
     'verified',

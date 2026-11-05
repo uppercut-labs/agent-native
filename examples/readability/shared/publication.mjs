@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
+import { writeFixtureFiles } from './fixture-files.mjs';
 import { reference, reviewedReferenceRoutes } from './reference.mjs';
 
 const run = promisify(execFile);
@@ -63,31 +64,6 @@ export async function preparePublication({
   const errors = plan.diagnostics.filter(({ severity }) => severity === 'error');
   if (errors.length) throw new Error(JSON.stringify(errors));
 
-  const generated = path.join(appDir, 'generated');
-  const state = path.join(generated, '.ownership');
-  const out = path.resolve(appDir, assetDir);
-  const model = path.resolve(appDir, modelFile);
-  await Promise.all([
-    mkdir(state, { recursive: true }),
-    mkdir(out, { recursive: true }),
-    mkdir(path.dirname(model), { recursive: true }),
-  ]);
-  const manifest = path.join(generated, 'manifest.json');
-  await writeFile(manifest, JSON.stringify({ config, candidates }), { mode: 0o600 });
-  // Build owners review explicit routes above. Use the CLI's ownership / conflict checks for file writes.
-  const cli = path.join(sdk, pkg.bin['agent-native-site']);
-  const args = ['--manifest', manifest, '--out', out, '--state', state];
-  async function command(name, ...extra) {
-    try {
-      const { stdout } = await run(process.execPath, [cli, name, ...args, ...extra]);
-      return JSON.parse(stdout);
-    } catch (error) {
-      throw new Error(error.stdout || error.message, { cause: error });
-    }
-  }
-  const preview = await command('preview');
-  await command('apply', '--approve', preview.digest);
-
   const included = plan.manifest.entries.filter((entry) => entry.status === 'included');
   const includedIds = new Set(included.map((entry) => entry.sourceId));
   const pages = included.map((entry) => {
@@ -112,7 +88,6 @@ export async function preparePublication({
     };
   });
   const projection = { siteUrl, pages };
-  await writeFile(model, JSON.stringify(projection, null, 2) + '\n');
   // Public fixture identity contains hashes only. Never serialize the build environment.
   const digest = (s) => createHash('sha256').update(s).digest('hex');
   const witness = {
@@ -123,6 +98,28 @@ export async function preparePublication({
       : null,
     projectionHash: digest(JSON.stringify(projection)),
   };
-  await writeFile(path.join(out, 'agent-native-witness.json'), JSON.stringify(witness) + '\n');
+  await writeFixtureFiles({
+    appDir,
+    assetDir,
+    modelFile,
+    input: JSON.stringify({ config, candidates }),
+    model: JSON.stringify(projection, null, 2) + '\n',
+    witness: JSON.stringify(witness) + '\n',
+    publish: async ({ manifest, out, state }) => {
+      // Build owners review explicit routes above. Use the CLI's ownership / conflict checks for file writes.
+      const cli = path.join(sdk, pkg.bin['agent-native-site']);
+      const args = ['--manifest', manifest, '--out', out, '--state', state];
+      async function command(name, ...extra) {
+        try {
+          const { stdout } = await run(process.execPath, [cli, name, ...args, ...extra]);
+          return JSON.parse(stdout);
+        } catch (error) {
+          throw new Error(error.stdout || error.message, { cause: error });
+        }
+      }
+      const preview = await command('preview');
+      await command('apply', '--approve', preview.digest);
+    },
+  });
   return projection;
 }

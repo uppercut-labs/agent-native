@@ -2,12 +2,16 @@
 
 All notable changes will be recorded here.
 
-## Unreleased
+## 1.1.0 candidate · unreleased
+
+- Discover native route candidates for private review and publish only approved public content through the experimental `/publication` API and `agent-native-site` executable.
+- Ship framework integrations in eight runnable production examples, covering canonical HTML, Markdown, JSON-LD, withdrawal and real Chromium interaction.
+- Add an installed-archive consumer check and anonymous HTTP conformance checks for the publication workflow.
 
 - Add an E07 protected-write recovery recipe with application-owned idempotency keys, persisted pending/committed status, deterministic deadline control and denied-read checks.
 - Add an E11 exact-identity/binding-selection recipe and private MCP operator diagnostics with redaction checks.
 - Run both recipes in the existing standalone exports and isolated-install checks; document their application responsibilities and fixture limits.
-- Package runtime behavior, stable exports and version remain unchanged.
+- The existing eleven stable capability entry points retain their 1.x contract.
 
 ## 1.0.1 - 2026-10-14
 
