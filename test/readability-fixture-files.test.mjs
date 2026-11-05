@@ -111,3 +111,26 @@ test('hard-link aliases cannot turn private fixture files into public files', as
   await assert.rejects(run({ showcase: { ...page, revision: 'two' } }), /Unsafe fixture file/);
   assert.equal(await readFile(manifest, 'utf8'), before);
 });
+
+test('human pages survive opt-in and withdrawal without publishing disabled metadata', async (t) => {
+  const { app, run } = await fixture(t);
+  const before = await run({ enabled: false });
+  assert.equal(before.publicationEnabled, false);
+  assert.ok(before.pages.some((entry) => entry.id === page.id));
+  assert.ok(before.pages.every((entry) => entry.mirror === null && entry.jsonld === null));
+  await assert.rejects(readFile(path.join(app, 'public/llms.txt')), { code: 'ENOENT' });
+  const active = await run({ enabled: true });
+  assert.equal(active.publicationEnabled, true);
+  assert.match(await readFile(path.join(app, 'public/llms.txt'), 'utf8'), /The offer/);
+  const after = await run({ enabled: false });
+  assert.deepEqual(after, before);
+  for (const file of [
+    'llms.txt',
+    'llms-full.txt',
+    'agent-native/page.md',
+    'agent-native/page.jsonld',
+  ]) {
+    await assert.rejects(readFile(path.join(app, 'public', file)), { code: 'ENOENT' });
+  }
+  assert.doesNotMatch(JSON.stringify(before), /PRIVATE-DRAFT|\/account\/settings/);
+});

@@ -4,7 +4,9 @@ export function metadata(page) {
     { title: page.title },
     ...(page.jsonld ? [{ 'script:ld+json': page.jsonld }] : []),
     { tagName: 'link', rel: 'canonical', href: page.canonical },
-    { tagName: 'link', rel: 'alternate', type: 'text/markdown', href: page.mirror },
+    ...(page.mirror
+      ? [{ tagName: 'link', rel: 'alternate', type: 'text/markdown', href: page.mirror }]
+      : []),
   ];
 }
 export function Page({ page, children }) {

@@ -8,7 +8,7 @@ const script = (value) =>
   '/script>';
 </script>
 <svelte:head>
-  <title>{page.title}</title><link rel="canonical" href={page.canonical}/><link rel="alternate" type="text/markdown" href={page.mirror}/>
+  <title>{page.title}</title><link rel="canonical" href={page.canonical}/>{#if page.mirror}<link rel="alternate" type="text/markdown" href={page.mirror}/>{/if}
   {#if page.jsonld}{@html script(page.jsonld)}{/if}
 </svelte:head>
 <main><nav><a href="/guides/getting-started">Public guide</a></nav><h1>{page.title}</h1><p>{page.markdown}</p>

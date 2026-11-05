@@ -69,12 +69,24 @@ jobs:
           cd "examples/readability/$FRAMEWORK"
           npm ci
           npm install --no-save --package-lock=false "$RUNNER_TEMP"/site-candidate/uppercut-labs-agent-native-*.tgz
-          READABILITY_EDITION=original npm run build
+          READABILITY_EDITION=original READABILITY_PUBLICATION=disabled npm run build
       - run: |
           cd examples/readability/checks
           npm ci
           npx playwright install --with-deps chromium
-          READABILITY_EDITION=original node verify.mjs "$FRAMEWORK" --http-only
+          READABILITY_EDITION=original node verify.mjs "$FRAMEWORK" --human-only
+      - name: Opt in with the same human content
+        run: |
+          cd "examples/readability/$FRAMEWORK"
+          READABILITY_EDITION=original npm run build
+          cd ../checks
+          READABILITY_EDITION=original node verify.mjs "$FRAMEWORK"
+      - name: Withdraw publication and repeat the human controls
+        run: |
+          cd "examples/readability/$FRAMEWORK"
+          READABILITY_EDITION=original READABILITY_PUBLICATION=disabled npm run build
+          cd ../checks
+          READABILITY_EDITION=original node verify.mjs "$FRAMEWORK" --human-only
       - run: |
           cd "examples/readability/$FRAMEWORK"
           READABILITY_EDITION=updated npm run build

@@ -29,6 +29,8 @@
       "!examples/readability/**/dist",
       "!examples/readability/**/build",
       "!examples/readability/**/generated",
+      "!examples/readability/**/public/agent-native-witness.json",
+      "!examples/readability/**/static/agent-native-witness.json",
       "!examples/readability/**/.publication-state"
     ]
   },

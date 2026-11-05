@@ -9,7 +9,9 @@ export function documentFor(template, page) {
   const head = [
     `<title>${escapeText(page.title)}</title>`,
     `<link rel="canonical" href="${escapeText(page.canonical)}">`,
-    `<link rel="alternate" type="text/markdown" href="${escapeText(page.mirror)}">`,
+    page.mirror
+      ? `<link rel="alternate" type="text/markdown" href="${escapeText(page.mirror)}">`
+      : '',
     page.jsonld
       ? `<script type="application/ld+json">${JSON.stringify(page.jsonld).replaceAll('<', '\\u003c')}</script>`
       : '',

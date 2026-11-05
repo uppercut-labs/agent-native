@@ -10,6 +10,7 @@ export function setPageHead(page) {
     ['canonical', page.canonical, ''],
     ['alternate', page.mirror, 'text/markdown'],
   ]) {
+    if (!href) continue;
     const link = document.createElement('link');
     link.rel = rel;
     link.href = href;

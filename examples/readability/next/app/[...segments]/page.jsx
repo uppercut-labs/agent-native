@@ -14,7 +14,10 @@ export async function generateMetadata({ params }) {
   const page = await lookup(params);
   return {
     title: page.title,
-    alternates: { canonical: page.canonical, types: { 'text/markdown': page.mirror } },
+    alternates: {
+      canonical: page.canonical,
+      ...(page.mirror ? { types: { 'text/markdown': page.mirror } } : {}),
+    },
   };
 }
 export default async function CoursePage({ params }) {

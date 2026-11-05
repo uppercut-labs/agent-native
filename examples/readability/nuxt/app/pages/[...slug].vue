@@ -38,7 +38,7 @@ useHead(() => ({
     <p v-if="current">{{ current.markdown }}</p>
     <nav aria-label="Museum collection">
       <NuxtLink v-for="item in publication.pages" :key="item.id" :to="item.route">{{ item.title }}</NuxtLink>
-      <a href="/llms.txt">Machine-readable guide</a>
+      <a v-if="publication.publicationEnabled" href="/llms.txt">Machine-readable guide</a>
     </nav>
   </main>
 </template>

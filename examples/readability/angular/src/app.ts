@@ -1,6 +1,12 @@
 import { DOCUMENT, NgComponentOutlet } from '@angular/common';
-import { Component, inject, signal, Type } from '@angular/core';
-import { ActivatedRoute, ResolveFn, RouterLink, RouterOutlet, Routes } from '@angular/router';
+import { Component, inject, signal, type Type } from '@angular/core';
+import {
+  ActivatedRoute,
+  type ResolveFn,
+  RouterLink,
+  RouterOutlet,
+  type Routes,
+} from '@angular/router';
 import publication from '../generated/publication.json';
 
 type Page = (typeof publication.pages)[number];
@@ -9,10 +15,12 @@ type Page = (typeof publication.pages)[number];
   selector: 'equipment-desk',
   imports: [RouterLink, RouterOutlet],
   template: `<header><nav aria-label="Desk"><a routerLink="/">Equipment desk</a> ·
-    <a routerLink="/guides/getting-started">Field guide</a> · <a href="/llms.txt">Site index</a></nav></header>
+    <a routerLink="/guides/getting-started">Field guide</a>@if (publicationEnabled) { · <a href="/llms.txt">Site index</a> }</nav></header>
     <main><router-outlet /></main>`,
 })
-export class App {}
+export class App {
+  readonly publicationEnabled: boolean = publication.publicationEnabled;
+}
 
 @Component({
   imports: [RouterLink],
@@ -30,7 +38,7 @@ class Home {
       <ul>@for (link of p.links; track link.route) {
         <li><a [routerLink]="link.route">{{link.title}}</a></li>
       }</ul>
-      <a [href]="p.mirror">Read as Markdown</a>
+      @if (p.mirror) { <a [href]="p.mirror">Read as Markdown</a> }
       @if (p.route.startsWith('/equipment/')) {
         <section><h2>Before use</h2><button type="button" (click)="start()">Start checklist</button>
           <ng-container *ngComponentOutlet="checklist()" />
@@ -51,7 +59,8 @@ class Detail {
       this.doc.title = page.title;
       this.doc.documentElement.lang = page.locale;
       this.addHead('link', 'canonical', page.canonical);
-      this.addHead('link', 'alternate', page.mirror);
+      if (page.mirror) this.addHead('link', 'alternate', page.mirror);
+      else this.doc.getElementById('desk-alternate')?.remove();
       this.doc.getElementById('content-schema')?.remove();
       if (page.jsonld) {
         const block = this.doc.createElement('script');

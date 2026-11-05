@@ -17,6 +17,7 @@ export async function preparePublication({
   approvedRoutes,
   assetDir = 'public',
   modelFile = 'generated/publication.json',
+  enabled = process.env.READABILITY_PUBLICATION !== 'disabled',
 }) {
   if (appDir instanceof URL) appDir = fileURLToPath(appDir);
   if (!Array.isArray(approvedRoutes)) throw new Error('Supply the reviewed showcase route list');
@@ -45,7 +46,7 @@ export async function preparePublication({
     };
   });
   const config = {
-    enabled: true,
+    enabled,
     siteUrl,
     title: 'Port Almanac',
     description: 'Reviewed guides and public records.',
@@ -60,7 +61,8 @@ export async function preparePublication({
   const { planPublication } = await import(
     pathToFileURL(path.join(sdk, pkg.exports['./publication'].import))
   );
-  const plan = await planPublication(config, candidates);
+  // Human pages retain their approved source data when publication is disabled or withdrawn.
+  const plan = await planPublication({ ...config, enabled: true }, candidates);
   const errors = plan.diagnostics.filter(({ severity }) => severity === 'error');
   if (errors.length) throw new Error(JSON.stringify(errors));
 
@@ -82,12 +84,12 @@ export async function preparePublication({
       markdown: item.markdown,
       locale: item.locale || 'en',
       canonical: entry.canonical,
-      mirror: entry.mirror,
-      jsonld: sidecar ? JSON.parse(sidecar.content) : null,
+      mirror: enabled ? entry.mirror : null,
+      jsonld: enabled && sidecar ? JSON.parse(sidecar.content) : null,
       links,
     };
   });
-  const projection = { siteUrl, pages };
+  const projection = { siteUrl, publicationEnabled: enabled, pages };
   // Public fixture identity contains hashes only. Never serialize the build environment.
   const digest = (s) => createHash('sha256').update(s).digest('hex');
   const witness = {

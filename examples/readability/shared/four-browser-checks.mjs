@@ -1,13 +1,17 @@
 import assert from 'node:assert/strict';
 
-export async function verifyInteraction(framework, page, origin) {
+export async function verifyInteraction(framework, page, origin, edition = 'updated') {
   if (framework === 'react-vite') {
     await page.getByRole('button', { name: 'Add to queue' }).click();
     await page.getByText('Playback queue: Night Ferry', { exact: true }).waitFor();
     await page.getByRole('link', { name: 'Field guide', exact: true }).click();
     await page.getByRole('heading', { name: 'Harbor field guide' }).waitFor();
     await page.getByRole('link', { name: 'Meridian crossing' }).click();
-    await page.getByText('The Meridian crossing departs from Pier Seven at 08:15.').waitFor();
+    await page
+      .getByText(
+        `The Meridian crossing departs from ${edition === 'original' ? 'Pier Four' : 'Pier Seven'} at 08:15.`,
+      )
+      .waitFor();
   } else if (framework === 'vue-vite') {
     await page.getByRole('link', { name: 'Parts catalog', exact: true }).click();
     await page.getByLabel('Filter parts').fill('no-match');
