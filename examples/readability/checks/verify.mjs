@@ -158,6 +158,19 @@ try {
     browser = await chromium.launch(
       process.env.READABILITY_CHROMIUM ? { executablePath: process.env.READABILITY_CHROMIUM } : {},
     );
+    if (framework === 'sveltekit') {
+      const noScript = await browser.newContext({ javaScriptEnabled: false });
+      try {
+        const initial = await noScript.newPage();
+        await initial.goto(new URL(actualShowcase.route, origin).href);
+        assert.equal(
+          await initial.getByRole('button', { name: 'Save workshop', exact: true }).isDisabled(),
+          true,
+        );
+      } finally {
+        await noScript.close();
+      }
+    }
     const page = await browser.newPage();
     let payloadChecks = [];
     page.on('response', (response) => {

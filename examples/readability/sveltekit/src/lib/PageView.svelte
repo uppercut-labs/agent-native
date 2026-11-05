@@ -1,6 +1,9 @@
 <script>
+import { onMount } from 'svelte';
 let { page, workshop = false } = $props();
 let saved = $state(false);
+let isReady = $state(false);
+onMount(() => { isReady = true; });
 const script = (value) =>
   '<script type="application/ld+json">' +
   JSON.stringify(value).replaceAll('<', '\\u003c') +
@@ -13,5 +16,5 @@ const script = (value) =>
 </svelte:head>
 <main><nav><a href="/guides/getting-started">Public guide</a></nav><h1>{page.title}</h1><p>{page.markdown}</p>
   {#each page.links ?? [] as link}<a href={link.route}>{link.title}</a>{/each}
-  {#if workshop}<button type="button" onclick={()=>saved=!saved}>{saved?'Saved to schedule':'Save workshop'}</button>{/if}
+  {#if workshop}<button type="button" disabled={!isReady} onclick={()=>saved=!saved}>{saved?'Saved to schedule':'Save workshop'}</button>{/if}
 </main>
