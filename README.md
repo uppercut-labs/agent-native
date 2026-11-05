@@ -9,7 +9,7 @@ To expose a real operation from a working app, start with [adopt an existing sit
 For a coding assistant, use [the portable skill or standalone prompt](docs/for-agents.md).
 Node.js 22+ is required. Eleven entry points are stable under SemVer; browser, framework, init
 and harness integrations are experimental. See [stability](docs/stability.md). The package
-ships importable APIs, including an app-owned CLI runner, and no package-level executable.
+ships importable capability APIs and an app-owned CLI runner. The development branch adds an experimental [site publication CLI](docs/site-publication.md).
 
 ## Current scope
 

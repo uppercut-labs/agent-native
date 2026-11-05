@@ -1,6 +1,6 @@
 # Generated CLI
 
-This slice exports a runner from the separate `@uppercut-labs/agent-native/cli` entrypoint and includes runnable installed application CLIs in E05/E12. It does not yet ship a package-level `bin` command or global `agent-native` executable. Applications provide
+This slice exports a runner from the separate `@uppercut-labs/agent-native/cli` entrypoint and includes runnable installed application CLIs in E05/E12. Applications own their capability executable. The development branch also provides a separate [site publication command](site-publication.md). Applications provide
 a capability registry, caller, authorization port, and stream adapter. The library does not
 discover application capabilities or credentials implicitly.
 

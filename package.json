@@ -21,6 +21,7 @@
   },
   "files": [
     "dist",
+    "bin",
     "README.md",
     "LICENSE",
     "docs",
@@ -111,6 +112,10 @@
     "./harness/codex": {
       "types": "./dist/harness-codex.d.ts",
       "import": "./dist/harness-codex.js"
+    },
+    "./publication": {
+      "types": "./dist/publication.d.ts",
+      "import": "./dist/publication.js"
     }
   },
   "scripts": {
@@ -178,5 +183,8 @@
     "zod": {
       "optional": true
     }
+  },
+  "bin": {
+    "agent-native-site": "bin/agent-native-site.mjs"
   }
 }

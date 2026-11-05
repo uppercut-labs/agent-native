@@ -10,7 +10,7 @@ This handoff covers how a release candidate is checked and published; the curren
 4. Publish that exact archive under the organization scope with public access. Record the registry URL and digest. Keep the source tag and registry artifact tied to the same source commit.
 5. Perform a post-publish clean registry install and the documented first-run path. If publication or provenance verification fails, report the actual registry state and recovery action; never describe a local tarball as a published npm release.
 
-The provider gates below apply to application deployments and full host claims. The package has no `bin` entry; users call its programmatic APIs or application-owned CLI runner. Do not advertise `npx agent-native init` until an executable exists and is tested.
+The provider gates below apply to application deployments and full host claims. The released 1.0.1 package has no `bin` entry; users call its programmatic APIs or application-owned CLI runner. Do not advertise `npx agent-native init` until an executable exists and is tested.
 
 ## Native provider deployment
 

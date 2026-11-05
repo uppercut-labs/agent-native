@@ -15,6 +15,6 @@ The local MCP checks use official SDK client/server packages. The browser draft 
 - All twelve independent example exports and source-backed guide snippets run in CI, but this does not supply real-host evidence.
 - Provider deployment, MCP Apps rendering in commercial hosts, shipping browser agents, default-enabled browser WebMCP, physical devices, and outsider installation are not yet certified.
 - OAuth issuance, durable production grant storage, application record policy, deployment ownership, and hosting remain application responsibilities.
-- The package has no global executable. Applications call the programmatic APIs or own their CLI runner; see [installation](installation.md).
+- Applications own their capability CLI runner. The development branch provides a separate [publication CLI](site-publication.md); see [installation](installation.md).
 
 See [installation](installation.md), [doctor and troubleshooting](doctor-and-troubleshooting.md), [framework support](frameworks.md), [fixture compatibility](compatibility.md), and the individual [adapter surfaces](surfaces.md) for narrower statements. Report documentation problems through the repository's [GitHub issues](https://github.com/uppercut-labs/agent-native/issues); this link uses the actual public repository issue route.
