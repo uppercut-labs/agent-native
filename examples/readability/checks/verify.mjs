@@ -179,14 +179,16 @@ try {
       payloadChecks.push(
         response.body().then(
           (bytes) => ({
+            url: response.url(),
             readable: true,
             privateMarker: privateMarkerPattern.test(bytes.toString()),
           }),
-          () => ({ readable: false, privateMarker: false }),
+          () => ({ url: response.url(), readable: false, privateMarker: false }),
         ),
       );
     });
     await page.goto(new URL(actualShowcase.route, origin).href);
+    await page.waitForLoadState('networkidle');
     await page.getByRole('heading', { name: actualShowcase.title, exact: true }).first().waitFor();
     assert.equal(
       new URL(await page.locator('link[rel=canonical]').first().getAttribute('href'), page.url())
@@ -222,13 +224,15 @@ try {
       await page.getByRole('link', { name: 'Harbor compass', exact: true }).click();
       await page.getByRole('heading', { name: 'Harbor compass', exact: true }).waitFor();
       assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+      await page.waitForLoadState('networkidle');
       assert.equal((await page.goto(new URL('/fr/exhibits/carte', origin).href)).status(), 404);
     }
     await page.waitForLoadState('networkidle');
     const payloads = await Promise.all(payloadChecks);
     assert.ok(payloads.length > 0, 'A positive browser response control must be observed');
-    assert.ok(
-      payloads.every((observation) => observation.readable && !observation.privateMarker),
+    assert.deepEqual(
+      payloads.filter((observation) => !observation.readable || observation.privateMarker),
+      [],
       'Browser-visible payloads must be readable and omit private controls',
     );
     result.checks.push({ test: 'browser-payload-privacy', pass: true, responses: payloads.length });
