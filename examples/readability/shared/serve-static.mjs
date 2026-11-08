@@ -7,6 +7,7 @@ const mime = {
   '.html': 'text/html',
   '.md': 'text/markdown',
   '.txt': 'text/plain',
+  '.json': 'application/json',
   '.jsonld': 'application/ld+json',
   '.js': 'text/javascript',
   '.css': 'text/css',
