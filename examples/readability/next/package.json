@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "node prepare.mjs && next build --webpack",
+    "build": "node prepare.mjs && next build --webpack && node ../shared/finalize-witness.mjs next",
     "start": "node --import ../shared/negotiate.mjs node_modules/next/dist/bin/next start --hostname 127.0.0.1"
   },
   "dependencies": {

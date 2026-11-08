@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { finalizeWitness } from '../shared/finalize-witness.mjs';
 import { preparePublication } from '../shared/publication.mjs';
 import { exhibits } from './exhibits.mjs';
 
@@ -18,6 +19,10 @@ export default defineNuxtConfig({
         showcase: exhibits,
         approvedRoutes: ['/en/exhibits/compass', '/fr/exhibits/boussole'],
       });
+    },
+    // Client bundles exist and public assets are copied, but Nitro has not yet recorded their sizes.
+    async 'nitro:build:public-assets'() {
+      await finalizeWitness(fileURLToPath(new URL('.', import.meta.url)), 'nuxt');
     },
   },
 });

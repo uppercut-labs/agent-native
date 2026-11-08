@@ -114,6 +114,22 @@ try {
       ).includes(process.env.READABILITY_PROOF_CODE),
     );
   }
+  // The witness names every client bundle the build emitted; the host must serve those bytes.
+  assert.equal(typeof identity.bundles, 'object', 'The build witness must list the client bundles');
+  const bundles = Object.entries(identity.bundles);
+  // Astro's pages here ship no client script; every other fixture hydrates in the browser.
+  assert.ok(framework === 'astro' || bundles.length > 0, 'Expected client bundles in the witness');
+  for (const [served, expected] of bundles) {
+    const reply = await fetch(new URL(served, origin));
+    assert.equal(reply.status, 200, served);
+    assert.equal(
+      createHash('sha256')
+        .update(Buffer.from(await reply.arrayBuffer()))
+        .digest('hex'),
+      expected,
+      'Served bundle differs from the build witness: ' + served,
+    );
+  }
   const negotiation = [];
   const varies = (reply) =>
     (reply.headers.get('vary') ?? '')
@@ -157,6 +173,7 @@ try {
     ],
   };
   let result = { checks: [] };
+  result.checks.push({ test: 'bundle-witness', pass: true, bundles: bundles.length });
   if (humanOnly) {
     for (const route of ['/llms.txt', '/llms-full.txt', '/agent-native/guides/meridian.md']) {
       const reply = await fetch(new URL(route, origin));
@@ -170,7 +187,8 @@ try {
       'verified',
       JSON.stringify(result.checks.filter((check) => !check.pass)),
     );
-    }
+    result.checks.push({ test: 'bundle-witness', pass: true, bundles: bundles.length });
+  }
   result.checks.push(...negotiation);
   for (const route of ['/account/settings', '/draft/inspection']) {
     const reply = await fetch(new URL(route, origin));

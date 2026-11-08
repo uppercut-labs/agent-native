@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "vite build",
+    "build": "vite build && node ../shared/finalize-witness.mjs vue-vite",
     "start": "node --import ../shared/negotiate.mjs ../shared/serve-static.mjs"
   },
   "dependencies": {

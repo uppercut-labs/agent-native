@@ -18,7 +18,8 @@
             "index": "src/index.html",
             "tsConfig": "tsconfig.json",
             "assets": [{ "glob": "**/*", "input": "public" }],
-            "optimization": true
+            "optimization": true,
+            "outputHashing": "all"
           }
         }
       }

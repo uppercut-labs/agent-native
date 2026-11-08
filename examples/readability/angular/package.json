@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node prepare.mjs && ng build",
+    "build": "node prepare.mjs && ng build && node ../shared/finalize-witness.mjs angular",
     "verify": "node --test verify.mjs",
     "start": "node --import ../shared/negotiate.mjs serve.mjs"
   },

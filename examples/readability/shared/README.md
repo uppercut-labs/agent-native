@@ -7,7 +7,7 @@ SITE_URL=http://127.0.0.1:4173 npm run build
 HOST=127.0.0.1 PORT=4173 npm start
 ```
 
-Open `/guides/getting-started` for the reference experience and `/llms.txt` for discovery. Each app generates its public HTML and Markdown from the same approved fields. Review changes to the showcase's explicit `approvedRoutes` list before building. Unknown routes and private content cannot enter the public projection just because their data exists. Each fixture's `generated/` directory contains build-private inputs and the CLI ownership journal. Only the framework deployment directories belong on a public host.
+Open `/guides/getting-started` for the reference experience and `/llms.txt` for discovery. `npm start` preloads `shared/negotiate.mjs`, so a request for a published page whose `Accept` header names `text/markdown` receives its Markdown mirror, with `Vary: Accept`. Each build ends with `shared/finalize-witness.mjs`, which adds the SHA-256 of every client bundle the build emitted to `/agent-native-witness.json`. A host or CDN that serves a stale script then no longer matches the witness. Each app generates its public HTML and Markdown from the same approved fields. Review changes to the showcase's explicit `approvedRoutes` list before building. Unknown routes and private content cannot enter the public projection just because their data exists. Each fixture's `generated/` directory contains build-private inputs and the CLI ownership journal. Only the framework deployment directories belong on a public host.
 
 | Example | Showcase route | Native behavior and update boundary |
 | --- | --- | --- |
