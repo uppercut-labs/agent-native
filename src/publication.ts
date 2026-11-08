@@ -17,6 +17,12 @@ export interface PublicationProtocol {
   readonly required?: boolean;
 }
 
+/** An owner-declared labeled value, published beside the prose that states it. */
+export interface PublicationFact {
+  readonly label: string;
+  readonly value: string;
+}
+
 export interface PublicationCandidate {
   /** Stable opaque identifiers. Source paths and credentials do not belong here. */
   readonly id: string;
@@ -37,6 +43,8 @@ export interface PublicationCandidate {
   readonly structuredType?: 'WebPage' | 'Article';
   /** Links to other selected sources. Withdrawal automatically removes the link. */
   readonly links?: readonly string[];
+  /** Labeled values restated from the prose, rendered as a "Key facts" list in the mirror. */
+  readonly facts?: readonly PublicationFact[];
 }
 
 export interface PublicationEntry {
@@ -129,6 +137,27 @@ function opaque(id: unknown): id is string {
 
 function plain(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0 && !/[\r\n<>]/.test(value);
+}
+
+const maxFacts = 20;
+// Raw HTML, URI destinations and reference syntax bypass the projected target allowlist.
+const unreviewedMarkup = /<\/?[a-z!]|\]\s*(?:\(|\[|:)|(?:[a-z][a-z0-9+.-]*:\/\/)|<[^>]+@[^>]+>/i;
+
+function validFacts(facts: unknown): facts is readonly PublicationFact[] {
+  return (
+    Array.isArray(facts) &&
+    facts.length <= maxFacts &&
+    facts.every(
+      (fact) =>
+        fact !== null &&
+        typeof fact === 'object' &&
+        plain(fact.label) &&
+        plain(fact.value) &&
+        fact.label.length <= 120 &&
+        fact.value.length <= 500 &&
+        !unreviewedMarkup.test(`${fact.label}\n${fact.value}`),
+    )
+  );
 }
 
 function escapeLabel(value: string): string {
@@ -266,7 +295,7 @@ export async function planPublication(
         );
         continue;
       }
-      const { title, markdown, category, locale, structuredType, links } = candidate;
+      const { title, markdown, category, locale, structuredType, links, facts } = candidate;
       if (
         !plain(title) ||
         typeof markdown !== 'string' ||
@@ -277,7 +306,8 @@ export async function planPublication(
         (structuredType !== undefined &&
           structuredType !== 'WebPage' &&
           structuredType !== 'Article') ||
-        (links !== undefined && (!Array.isArray(links) || !links.every(opaque)))
+        (links !== undefined && (!Array.isArray(links) || !links.every(opaque))) ||
+        (facts !== undefined && !validFacts(facts))
       ) {
         report(
           'invalid-projection',
@@ -287,8 +317,7 @@ export async function planPublication(
         );
         continue;
       }
-      // Raw HTML, URI destinations and reference syntax bypass the projected target allowlist.
-      if (/<\/?[a-z!]|\]\s*(?:\(|\[|:)|(?:[a-z][a-z0-9+.-]*:\/\/)|<[^>]+@[^>]+>/i.test(markdown)) {
+      if (unreviewedMarkup.test(markdown)) {
         report(
           'unreviewed-markup',
           'Use Markdown prose and headings. Declare navigable links by public source ID.',
@@ -303,6 +332,7 @@ export async function planPublication(
         locale ?? null,
         structuredType ?? null,
         [...new Set(links ?? [])].sort(compare),
+        (facts ?? []).map(({ label, value }) => [label, value]),
       ]);
       const stem = `agent-native/${route.slice(1).replace(/\/$/, '') || 'index'}`;
       const canonical = new URL(route.slice(1), base).href;
@@ -389,7 +419,12 @@ export async function planPublication(
             source.id,
           );
       }
-      const markdown = `# ${escapeLabel(title)}\n\nCanonical: <${canonical}>\n${source.locale ? `\nLanguage: ${source.locale}\n` : ''}\n${body}\n${links.length ? `\n## Related pages\n\n${links.join('\n')}\n` : ''}`;
+      const facts = (source.facts ?? []).map(
+        ({ label, value }) => `- ${escapeLabel(label)}: ${escapeLabel(value)}`,
+      );
+      // The mirror names its own URL, so an agent that reached it through content negotiation
+      // or the aggregate can cite either representation explicitly.
+      const markdown = `# ${escapeLabel(title)}\n\nCanonical: <${canonical}>\nMarkdown: <${mirror}>\n${source.locale ? `\nLanguage: ${source.locale}\n` : ''}\n${body}\n${facts.length ? `\n## Key facts\n\n${facts.join('\n')}\n` : ''}${links.length ? `\n## Related pages\n\n${links.join('\n')}\n` : ''}`;
       add(`${stem}.md`, 'text/markdown', markdown);
       mirrors.push(markdown);
       if (source.structuredType) {
@@ -413,16 +448,24 @@ export async function planPublication(
     if (verified.length)
       sections.push(`## Public protocols\n\n${[...new Set(verified)].sort(compare).join('\n')}`);
     const heading = `# ${escapeLabel(config.title)}\n\n> ${escapeLabel(config.description)}\n`;
-    add('llms.txt', 'text/plain', `${[heading, ...sections].join('\n').trimEnd()}\n`);
-    if (config.full) {
-      const full = [heading, ...mirrors].join('\n');
-      if (encoder.encode(full).length > max)
-        report(
-          'aggregate-too-large',
-          'Reduce the selected content or approve a larger aggregate byte limit.',
-        );
-      else add('llms-full.txt', 'text/plain', full);
-    }
+    const full = config.full ? [heading, ...mirrors].join('\n') : undefined;
+    const fullFits = full !== undefined && encoder.encode(full).length <= max;
+    if (full !== undefined && !fullFits)
+      report(
+        'aggregate-too-large',
+        'Reduce the selected content or approve a larger aggregate byte limit.',
+      );
+    // The index lists the whole approved projection, so it can state its own coverage. An agent
+    // can then decline an unpublished fact without crawling every page first.
+    const coverage =
+      `This index lists every page this site publishes (${pages.length} ${pages.length === 1 ? 'page' : 'pages'}). ` +
+      'A fact that is not stated on these pages is not published by this site. ' +
+      'Private, draft, authenticated and personalized records are never published here.\n' +
+      (fullFits
+        ? `\n- [All published pages in one file](${new URL('llms-full.txt', base).href})\n`
+        : '');
+    add('llms.txt', 'text/plain', `${[heading, coverage, ...sections].join('\n').trimEnd()}\n`);
+    if (full !== undefined && fullFits) add('llms-full.txt', 'text/plain', full);
     const paths = new Set<string>();
     for (const asset of emitted) {
       if (!safePublicationPath(asset.path))
@@ -473,5 +516,149 @@ export async function planPublication(
     manifest: { entries },
     assets,
     diagnostics,
+  };
+}
+
+// Markdown content negotiation. A client that names text/markdown in Accept (agents and
+// retrieval tools; browsers never do) receives the approved mirror at the canonical URL.
+
+function quality(params: readonly string[]): number {
+  for (const param of params) {
+    const match = /^q\s*=\s*([01](?:\.\d{0,3})?)$/.exec(param);
+    if (match) return Number(match[1]);
+  }
+  return 1;
+}
+
+/** True when Accept names text/markdown with q > 0 and no lower than the q that admits HTML. */
+export function acceptsMarkdown(accept: string | null | undefined): boolean {
+  if (typeof accept !== 'string' || !accept.trim()) return false;
+  let markdown = -1;
+  let html = -1;
+  let textAny = -1;
+  let any = -1;
+  for (const part of accept.split(',')) {
+    const [type = '', ...params] = part.split(';').map((item) => item.trim().toLowerCase());
+    const q = quality(params);
+    if (type === 'text/markdown') markdown = Math.max(markdown, q);
+    else if (type === 'text/html') html = Math.max(html, q);
+    else if (type === 'text/*') textAny = Math.max(textAny, q);
+    else if (type === '*/*') any = Math.max(any, q);
+  }
+  const htmlQuality = html >= 0 ? html : textAny >= 0 ? textAny : Math.max(any, 0);
+  return markdown > 0 && markdown >= htmlQuality;
+}
+
+function pathKey(pathname: string): string | undefined {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname).normalize('NFC');
+  } catch {
+    return undefined;
+  }
+  return decoded.length > 1 ? decoded.replace(/\/$/, '') : decoded;
+}
+
+/** Canonical path to mirror path for every published page, from plan entries or projection pages. */
+export function markdownMirrors(
+  pages: readonly { readonly canonical?: string; readonly mirror?: string | null }[],
+): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const page of pages) {
+    if (!page?.canonical || !page.mirror) continue;
+    const key = pathKey(new URL(page.canonical).pathname);
+    if (key !== undefined) map[key] = new URL(page.mirror).pathname;
+  }
+  return map;
+}
+
+export interface MarkdownNegotiation {
+  /** Path of the mirror to serve in place of the HTML page, or null to serve the page. */
+  readonly mirror: string | null;
+  /** The response depends on Accept: send `Vary: Accept` whichever representation is served. */
+  readonly vary: boolean;
+}
+
+export function negotiateMarkdown(
+  request: {
+    readonly method?: string | undefined;
+    readonly pathname: string;
+    readonly accept?: string | null | undefined;
+  },
+  mirrors: Readonly<Record<string, string>>,
+): MarkdownNegotiation {
+  const method = (request.method ?? 'GET').toUpperCase();
+  const key = pathKey(request.pathname);
+  const target = key !== undefined && Object.hasOwn(mirrors, key) ? mirrors[key] : undefined;
+  if (!target || (method !== 'GET' && method !== 'HEAD')) return { mirror: null, vary: false };
+  return { mirror: acceptsMarkdown(request.accept) ? target : null, vary: true };
+}
+
+/** Adds a token to a Vary header value without duplicating it. */
+export function addVary(current: unknown, token = 'Accept'): string {
+  const values = (Array.isArray(current) ? current.join(',') : String(current ?? ''))
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (values.includes('*') || values.some((value) => value.toLowerCase() === token.toLowerCase()))
+    return values.join(', ');
+  return [...values, token].join(', ');
+}
+
+interface NodeLikeRequest {
+  readonly method?: string;
+  readonly url?: string;
+  readonly headers: Readonly<Record<string, string | readonly string[] | undefined>>;
+}
+
+interface NodeLikeResponse {
+  statusCode: number;
+  setHeader(name: string, value: string): unknown;
+  getHeader(name: string): unknown;
+  end(body?: string | Uint8Array): unknown;
+}
+
+/**
+ * Node `(req, res, next)` middleware. `read` returns the mirror bytes for a mirror path (for
+ * example from the generated asset directory) or null when it is unavailable.
+ */
+export function markdownNegotiationHandler(
+  mirrors: Readonly<Record<string, string>>,
+  read: (mirrorPath: string) => Promise<string | Uint8Array | null | undefined>,
+) {
+  return (req: NodeLikeRequest, res: NodeLikeResponse, next: (error?: unknown) => void): void => {
+    let pathname: string;
+    try {
+      pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+    } catch {
+      next();
+      return;
+    }
+    const accept = req.headers['accept'];
+    const decision = negotiateMarkdown(
+      {
+        method: req.method,
+        pathname,
+        accept: Array.isArray(accept) ? accept.join(',') : (accept as string | undefined),
+      },
+      mirrors,
+    );
+    if (decision.vary) res.setHeader('Vary', addVary(res.getHeader('vary')));
+    if (!decision.mirror) {
+      next();
+      return;
+    }
+    read(decision.mirror).then(
+      (body) => {
+        if (body === null || body === undefined) {
+          next();
+          return;
+        }
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+        res.end(req.method?.toUpperCase() === 'HEAD' ? undefined : body);
+      },
+      (error) => next(error),
+    );
   };
 }
