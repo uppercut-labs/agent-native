@@ -7,9 +7,12 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { planPublication } from '../../../dist/publication.js';
-import { verifyPublication } from '../../../bin/verify-publication.mjs';
+import { verifyProtocol, verifyPublication } from '../../../bin/verify-publication.mjs';
 
 const privateMarkerPattern = /PRIVATE-(?:DRAFT|ATTENDEE|TRANSIT)-|SERVICE-ONLY-CALIBRATION-/;
+// Every fixture serves /openapi.json without declaring it. Nothing generated may point to it.
+const undeclaredProtocolPath = '/openapi.json';
+const protocolReferencePattern = /openapi|\/api\/departures/i;
 
 const fixtures = {
   astro: '/field-notes/breakwater',
@@ -150,6 +153,63 @@ try {
       status: reply.status,
     });
   }
+  // An unconfigured protocol endpoint exists but has no effect on the publication.
+  const undeclared = await fetch(new URL(undeclaredProtocolPath, origin));
+  assert.equal(undeclared.status, 200, 'The undeclared protocol endpoint must be served');
+  assert.match(
+    undeclared.headers.get('content-type') ?? '',
+    /^application\/json\b/,
+    'The undeclared protocol endpoint must be served as JSON',
+  );
+  assert.ok(JSON.parse(await undeclared.text()).paths['/api/departures'].get);
+  assert.equal(
+    await verifyProtocol({
+      protocol: 'openapi',
+      url: new URL(undeclaredProtocolPath, origin).href,
+    }),
+    true,
+    'The undeclared endpoint must be a protocol description that a declaration could verify',
+  );
+  assert.deepEqual(manifest.config.protocols ?? [], [], 'The fixture owner declares no protocol');
+  for (const [name, value] of [
+    ['manifest.json', manifest],
+    ['publication.json', model],
+  ]) {
+    assert.doesNotMatch(JSON.stringify(value), protocolReferencePattern, name);
+  }
+  assert.deepEqual(
+    plan.diagnostics.filter(({ code }) => code === 'unverified-protocol'),
+    [],
+    'An undeclared protocol produces no diagnostic',
+  );
+  assert.ok(
+    plan.assets.every(({ content }) => !protocolReferencePattern.test(content)),
+    'Generated publication assets must not advertise an undeclared protocol',
+  );
+  result.checks.push({
+    test: 'undeclared-protocol',
+    url: undeclaredProtocolPath,
+    pass: true,
+    status: undeclared.status,
+    declared: false,
+    verifiable: true,
+  });
+  // Served discovery files, mirrors, JSON-LD and human pages omit the undeclared endpoint.
+  const base = new URL(model.siteUrl.replace(/\/?$/, '/'));
+  for (const url of [
+    ...plan.assets.map((asset) => new URL(asset.path, base).href),
+    ...model.pages.map((page) => page.canonical),
+  ]) {
+    const reply = await fetch(url);
+    assert.equal(reply.status, 200, url);
+    assert.doesNotMatch(await reply.text(), protocolReferencePattern, url);
+    result.checks.push({
+      test: 'undeclared-protocol-unadvertised',
+      url: new URL(url).pathname,
+      pass: true,
+      status: reply.status,
+    });
+  }
   if (!humanOnly && !original && ['sveltekit', 'react-router'].includes(framework)) {
     const native = spawnSync(process.execPath, ['--test', 'test.mjs'], {
       cwd: dir,
@@ -187,8 +247,14 @@ try {
             url: response.url(),
             readable: true,
             privateMarker: privateMarkerPattern.test(bytes.toString()),
+            protocolReference: protocolReferencePattern.test(bytes.toString()),
           }),
-          () => ({ url: response.url(), readable: false, privateMarker: false }),
+          () => ({
+            url: response.url(),
+            readable: false,
+            privateMarker: false,
+            protocolReference: false,
+          }),
         ),
       );
     });
@@ -236,9 +302,12 @@ try {
     const payloads = await Promise.all(payloadChecks);
     assert.ok(payloads.length > 0, 'A positive browser response control must be observed');
     assert.deepEqual(
-      payloads.filter((observation) => !observation.readable || observation.privateMarker),
+      payloads.filter(
+        (observation) =>
+          !observation.readable || observation.privateMarker || observation.protocolReference,
+      ),
       [],
-      'Browser-visible payloads must be readable and omit private controls',
+      'Browser-visible payloads must be readable and omit private controls and undeclared protocols',
     );
     result.checks.push({ test: 'browser-payload-privacy', pass: true, responses: payloads.length });
   }

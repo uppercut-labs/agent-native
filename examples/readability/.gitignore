@@ -7,3 +7,5 @@ astro/dist-static/
 
 */public/agent-native-witness.json
 */static/agent-native-witness.json
+*/public/openapi.json
+*/static/openapi.json

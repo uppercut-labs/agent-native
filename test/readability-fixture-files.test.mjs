@@ -1,5 +1,15 @@
 import assert from 'node:assert/strict';
-import { link, lstat, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import {
+  link,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -36,7 +46,8 @@ const targets = [
   'generated/publication.json',
   'public/agent-native-witness.json',
 ];
-for (const target of targets) {
+const undeclaredProtocol = 'public/openapi.json';
+for (const target of [...targets, undeclaredProtocol]) {
   test('fixture refuses a symlink at ' + target + ' before publishing', async (t) => {
     const { dir, app, run } = await fixture(t);
     const dest = path.join(app, target),
@@ -133,4 +144,47 @@ test('human pages survive opt-in and withdrawal without publishing disabled meta
     await assert.rejects(readFile(path.join(app, 'public', file)), { code: 'ENOENT' });
   }
   assert.doesNotMatch(JSON.stringify(before), /PRIVATE-DRAFT|\/account\/settings/);
+});
+
+test('fixture serves an undeclared protocol description that publication never advertises', async (t) => {
+  const { app, run } = await fixture(t);
+  await run();
+  const served = await readFile(path.join(app, undeclaredProtocol), 'utf8');
+  assert.equal(
+    served,
+    await readFile(new URL('../examples/readability/shared/openapi.json', import.meta.url), 'utf8'),
+  );
+  assert.equal(JSON.parse(served).openapi, '3.1.0');
+  const manifest = JSON.parse(await readFile(path.join(app, 'generated/manifest.json'), 'utf8'));
+  assert.equal(manifest.config.protocols, undefined);
+  const published = (await readdir(path.join(app, 'public'), { recursive: true })).filter((file) =>
+    /\.(?:txt|md|jsonld)$/.test(file),
+  );
+  assert.ok(published.includes('llms.txt') && published.includes('llms-full.txt'));
+  for (const file of published) {
+    assert.doesNotMatch(await readFile(path.join(app, 'public', file), 'utf8'), /openapi/i, file);
+  }
+  assert.doesNotMatch(
+    await readFile(path.join(app, 'generated/publication.json'), 'utf8'),
+    /openapi/i,
+  );
+});
+
+test('a journal from before the protocol description adopts it only when absent', async (t) => {
+  const { app, run } = await fixture(t);
+  await run();
+  const journal = path.join(app, 'generated/.ownership/fixture-files.json');
+  const legacy = JSON.parse(await readFile(journal, 'utf8'));
+  delete legacy.files[undeclaredProtocol];
+  const description = path.join(app, undeclaredProtocol);
+  await writeFile(journal, JSON.stringify(legacy));
+  await assert.rejects(run(), /Unowned or modified/);
+  assert.ok((await readFile(description, 'utf8')).includes('openapi'));
+  await rm(description);
+  await writeFile(journal, JSON.stringify(legacy));
+  await run();
+  assert.ok(JSON.parse(await readFile(journal, 'utf8')).files[undeclaredProtocol]);
+  legacy.files['public/unknown.json'] = legacy.files[targets[2]];
+  await writeFile(journal, JSON.stringify(legacy));
+  await assert.rejects(run(), /Invalid fixture ownership journal/);
 });

@@ -107,6 +107,11 @@ export async function preparePublication({
     input: JSON.stringify({ config, candidates }),
     model: JSON.stringify(projection, null, 2) + '\n',
     witness: JSON.stringify(witness) + '\n',
+    // The site really serves this protocol description, but the owner has not declared it in
+    // `config.protocols`. Publication must therefore advertise nothing for it.
+    publicFiles: {
+      'openapi.json': await readFile(new URL('./openapi.json', import.meta.url)),
+    },
     publish: async ({ manifest, out, state }) => {
       // Build owners review explicit routes above. Use the CLI's ownership / conflict checks for file writes.
       const cli = path.join(sdk, pkg.bin['agent-native-site']);

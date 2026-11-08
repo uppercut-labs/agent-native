@@ -62,6 +62,7 @@ export async function writeFixtureFiles({
   input,
   model,
   witness,
+  publicFiles = {},
   publish,
 }) {
   const root = path.resolve(appDir);
@@ -89,6 +90,14 @@ export async function writeFixtureFiles({
     { file: manifest, bytes: input, mode: 0o600 },
     { file: modelPath, bytes: model, mode: 0o600 },
     { file: path.join(out, 'agent-native-witness.json'), bytes: witness, mode: 0o644 },
+    // Site-owned public files beside the publication, such as an undeclared protocol endpoint.
+    ...Object.entries(publicFiles).map(([name, bytes]) => {
+      const file = path.resolve(out, name);
+      if (!inside(out, file) || file === path.join(out, 'agent-native-witness.json')) {
+        throw Error('Overlapping or outside fixture paths');
+      }
+      return { file, bytes, mode: 0o644 };
+    }),
   ];
   const journal = path.join(state, 'fixture-files.json');
   const lock = path.join(state, 'fixture.lock');
@@ -103,7 +112,9 @@ export async function writeFixtureFiles({
         parsed.version !== 1 ||
         parsed.root !== root ||
         !parsed.files ||
-        JSON.stringify(Object.keys(parsed.files).sort()) !== JSON.stringify([...keys].sort()) ||
+        // A journal from an earlier fixture revision may predate newly owned outputs.
+        // Those outputs must then be absent, which the per-file check below enforces.
+        !Object.keys(parsed.files).every((key) => keys.includes(key)) ||
         !Object.values(parsed.files).every(
           (value) => typeof value === 'string' && /^[0-9a-f]{64}$/.test(value),
         )
