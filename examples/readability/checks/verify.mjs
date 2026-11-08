@@ -88,7 +88,11 @@ try {
   const original = process.env.READABILITY_EDITION === 'original';
   const witness = await fetch(new URL('/agent-native-witness.json', origin));
   assert.equal(witness.status, 200);
-  assert.match(witness.headers.get('content-type') ?? '', /^application\/json\b/, 'The build witness must be served as JSON');
+  assert.match(
+    witness.headers.get('content-type') ?? '',
+    /^application\/json\b/,
+    'The build witness must be served as JSON',
+  );
   const witnessBytes = await witness.text();
   const identity = JSON.parse(witnessBytes);
   assert.equal(identity.edition, original ? 'original' : 'updated');
