@@ -5,6 +5,15 @@ const escapeText = (text) =>
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;');
 
+// Owner-declared key facts restate values from the prose as labeled items.
+export function factList(facts = []) {
+  if (!facts.length) return '';
+  const items = facts
+    .map(({ label, value }) => `<li>${escapeText(label)}: ${escapeText(value)}</li>`)
+    .join('');
+  return `<section aria-label="Key facts"><h2>Key facts</h2><ul>${items}</ul></section>`;
+}
+
 export function documentFor(template, page) {
   const head = [
     `<title>${escapeText(page.title)}</title>`,
@@ -19,7 +28,7 @@ export function documentFor(template, page) {
   const links = page.links
     .map(({ route, title }) => `<a href="${escapeText(route)}">${escapeText(title)}</a>`)
     .join(' ');
-  const content = `<main><h1>${escapeText(page.title)}</h1><p>${escapeText(page.markdown)}</p>${links}</main>`;
+  const content = `<main><h1>${escapeText(page.title)}</h1><p>${escapeText(page.markdown)}</p>${factList(page.facts)}${links}</main>`;
   return template.replace('<!--page-head-->', head).replace('<!--page-body-->', content);
 }
 

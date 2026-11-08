@@ -114,6 +114,35 @@ try {
       ).includes(process.env.READABILITY_PROOF_CODE),
     );
   }
+  const negotiation = [];
+  const varies = (reply) =>
+    (reply.headers.get('vary') ?? '')
+      .toLowerCase()
+      .split(',')
+      .map((value) => value.trim())
+      .includes('accept');
+  for (const route of [actualShowcase.route, '/guides/meridian']) {
+    const url = new URL(route, origin);
+    const page = model.pages.find((item) => item.route === route);
+    const asHtml = await fetch(url, {
+      headers: { accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' },
+    });
+    assert.equal(asHtml.status, 200, route);
+    assert.match(asHtml.headers.get('content-type') ?? '', /^text\/html\b/, route);
+    await asHtml.arrayBuffer();
+    const asMarkdown = await fetch(url, { headers: { accept: 'text/markdown, text/html;q=0.9' } });
+    assert.equal(asMarkdown.status, 200, route);
+    const type = asMarkdown.headers.get('content-type') ?? '';
+    if (humanOnly) {
+      assert.match(type, /^text\/html\b/, 'Without publication a page has only its HTML');
+      await asMarkdown.arrayBuffer();
+    } else {
+      assert.match(type, /^text\/markdown\b/, route);
+      assert.equal(await asMarkdown.text(), await (await fetch(page.mirror)).text(), route);
+      assert.ok(varies(asMarkdown) && varies(asHtml), 'Negotiated routes must send Vary: Accept');
+    }
+    negotiation.push({ test: 'markdown-negotiation', url: route, pass: true, type });
+  }
   const probes = {
     responses: [
       {
@@ -141,7 +170,8 @@ try {
       'verified',
       JSON.stringify(result.checks.filter((check) => !check.pass)),
     );
-  }
+    }
+  result.checks.push(...negotiation);
   for (const route of ['/account/settings', '/draft/inspection']) {
     const reply = await fetch(new URL(route, origin));
     assert.ok([401, 403, 404].includes(reply.status), route);

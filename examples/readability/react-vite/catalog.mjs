@@ -6,6 +6,10 @@ export const track = {
   visibility: 'public',
   title: 'Night Ferry',
   markdown: 'Night Ferry features Inez Vale on bowed bass.',
+  facts: [
+    { label: 'Performer', value: 'Inez Vale' },
+    { label: 'Instrument', value: 'bowed bass' },
+  ],
   category: 'Recordings',
   structuredType: 'WebPage',
 };

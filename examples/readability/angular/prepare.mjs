@@ -2,16 +2,17 @@ import { rm } from 'node:fs/promises';
 import { preparePublication } from '../shared/publication.mjs';
 
 const models = [
-  { slug: 'atlas-7', name: 'Atlas 7', instruction: 'Set the torque collar to 18 Nm before use.' },
-  { slug: 'atlas-9', name: 'Atlas 9', instruction: 'Set the torque collar to 24 Nm before use.' },
+  { slug: 'atlas-7', name: 'Atlas 7', torque: '18 Nm' },
+  { slug: 'atlas-9', name: 'Atlas 9', torque: '24 Nm' },
 ];
-const showcase = models.map(({ slug, name, instruction }) => ({
+const showcase = models.map(({ slug, name, torque }) => ({
   id: slug,
   revision: 'manual-4',
   route: '/equipment/' + slug,
   visibility: 'public',
   title: name + ' operator handbook',
-  markdown: instruction,
+  markdown: `Set the torque collar to ${torque} before use.`,
+  facts: [{ label: 'Torque collar setting', value: torque }],
   structuredType: 'Article',
   category: 'Equipment handbooks',
 }));

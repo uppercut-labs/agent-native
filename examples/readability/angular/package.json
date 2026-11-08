@@ -5,7 +5,7 @@
   "scripts": {
     "build": "node prepare.mjs && ng build",
     "verify": "node --test verify.mjs",
-    "start": "node serve.mjs"
+    "start": "node --import ../shared/negotiate.mjs serve.mjs"
   },
   "dependencies": {
     "@angular/common": "21.2.0",

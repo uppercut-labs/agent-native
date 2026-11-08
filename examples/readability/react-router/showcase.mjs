@@ -6,6 +6,10 @@ export const showcase = {
   visibility: 'public',
   title: 'Quay stop',
   markdown: `River line trams call every ${quay.minutes} minutes at Quay.`,
+  facts: [
+    { label: 'Transit line', value: 'River line' },
+    { label: 'Tram interval', value: `${quay.minutes} minutes` },
+  ],
   category: 'Transit stops',
   structuredType: 'WebPage',
 };

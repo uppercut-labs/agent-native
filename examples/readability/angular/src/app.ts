@@ -35,6 +35,11 @@ class Home {
   imports: [NgComponentOutlet, RouterLink],
   template: `@if (page(); as p) {
     <article [attr.lang]="p.locale"><h1>{{p.title}}</h1><p>{{p.markdown}}</p>
+      @if (p.facts.length) {
+        <section aria-label="Key facts"><h2>Key facts</h2><ul>@for (fact of p.facts; track fact.label) {
+          <li>{{fact.label}}: {{fact.value}}</li>
+        }</ul></section>
+      }
       <ul>@for (link of p.links; track link.route) {
         <li><a [routerLink]="link.route">{{link.title}}</a></li>
       }</ul>

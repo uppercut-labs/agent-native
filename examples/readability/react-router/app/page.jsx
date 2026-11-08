@@ -17,6 +17,18 @@ export function Page({ page, children }) {
       </nav>
       <h1>{page.title}</h1>
       <p>{page.markdown}</p>
+      {page.facts?.length > 0 && (
+        <section aria-label="Key facts">
+          <h2>Key facts</h2>
+          <ul>
+            {page.facts.map((fact) => (
+              <li key={fact.label}>
+                {fact.label}: {fact.value}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {page.links?.map((link) => (
         <a key={link.route} href={link.route}>
           {link.title}

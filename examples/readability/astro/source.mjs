@@ -9,15 +9,17 @@ export const advisory = {
   visibility: 'public',
   title: 'Tide window advisory',
   markdown: 'The east breakwater walkway opens at 10:20 after the morning tide.',
+  facts: [{ label: 'Walkway opens after the morning tide', value: '10:20' }],
   category: 'Advisories',
   structuredType: 'Article',
 };
 export const candidates = [
-  ...notes.map(({ id, title, markdown, revision }) => ({
+  ...notes.map(({ id, title, markdown, revision, facts }) => ({
     id,
     title,
     markdown,
     revision,
+    facts,
     route: '/field-notes/' + id,
     visibility: 'public',
     category: 'Field notes',

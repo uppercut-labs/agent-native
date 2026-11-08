@@ -5,12 +5,13 @@ export function reference(edition, proofCode) {
   const currentCode = proofCode ? ' The current departure code is ' + proofCode + '.' : '';
   if (!['original', 'updated'].includes(edition)) throw new Error('Unknown reference edition');
   const original = edition === 'original';
-  const page = (id, route, title, markdown, links = []) => ({
+  const page = (id, route, title, markdown, links = [], facts) => ({
     id,
     route,
     title,
     markdown,
     links,
+    ...(facts ? { facts } : {}),
     revision: edition,
     visibility: 'public',
     category: 'Harbor field guide',
@@ -31,6 +32,11 @@ export function reference(edition, proofCode) {
       `The Meridian crossing departs from ${original ? 'Pier Four' : 'Pier Seven'} at 08:15.` +
         currentCode,
       ['harbor'],
+      [
+        { label: 'Departure pier', value: original ? 'Pier Four' : 'Pier Seven' },
+        { label: 'Departure time', value: '08:15' },
+        ...(proofCode ? [{ label: 'Current departure code', value: proofCode }] : []),
+      ],
     ),
     page(
       'harbor',
@@ -38,6 +44,10 @@ export function reference(edition, proofCode) {
       'Harbor crossing',
       'The Harbor crossing departs from Pier Two at 08:45.',
       ['meridian'],
+      [
+        { label: 'Departure pier', value: 'Pier Two' },
+        { label: 'Departure time', value: '08:45' },
+      ],
     ),
     ...(original
       ? [

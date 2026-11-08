@@ -17,6 +17,7 @@ const script = (value) =>
   {#if page.jsonld}{@html script(page.jsonld)}{/if}
 </svelte:head>
 <main><nav><a href="/guides/getting-started">Public guide</a></nav><h1>{page.title}</h1><p>{page.markdown}</p>
+  {#if page.facts?.length}<section aria-label="Key facts"><h2>Key facts</h2><ul>{#each page.facts as fact}<li>{fact.label}: {fact.value}</li>{/each}</ul></section>{/if}
   {#each page.links ?? [] as link}<a href={link.route}>{link.title}</a>{/each}
   {#if workshop}<button type="button" disabled={!isReady} onclick={()=>saved=!saved}>{saved?'Saved to schedule':'Save workshop'}</button>{/if}
 </main>

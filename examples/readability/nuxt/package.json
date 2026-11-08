@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build",
-    "start": "node .output/server/index.mjs"
+    "start": "node --import ../shared/negotiate.mjs .output/server/index.mjs"
   },
   "dependencies": {
     "nuxt": "4.6.4"

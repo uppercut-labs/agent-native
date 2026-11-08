@@ -5,7 +5,7 @@
   "scripts": {
     "prepare:publication": "node prepare.mjs",
     "build": "npm run prepare:publication && react-router build",
-    "start": "react-router-serve build/server/index.js",
+    "start": "node --import ../shared/negotiate.mjs node_modules/@react-router/serve/bin.cjs build/server/index.js",
     "test": "node test.mjs"
   },
   "dependencies": {

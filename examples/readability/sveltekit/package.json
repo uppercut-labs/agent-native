@@ -5,7 +5,7 @@
   "scripts": {
     "prepare:publication": "node prepare.mjs",
     "build": "npm run prepare:publication && vite build",
-    "start": "node build/index.js",
+    "start": "node --import ../shared/negotiate.mjs build/index.js",
     "test": "node test.mjs"
   },
   "dependencies": {

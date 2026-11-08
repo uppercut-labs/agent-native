@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "start": "node ../shared/serve-static.mjs"
+    "start": "node --import ../shared/negotiate.mjs ../shared/serve-static.mjs"
   },
   "dependencies": {
     "vue": "3.5.44",

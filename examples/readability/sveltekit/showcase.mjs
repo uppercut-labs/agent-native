@@ -10,6 +10,10 @@ export const showcase = {
   visibility: 'public',
   title: workshop.title,
   markdown: `Doors open at ${workshop.opens}. Bring one sheet of tracing paper.`,
+  facts: [
+    { label: 'Doors open', value: workshop.opens },
+    { label: 'Bring', value: 'one sheet of tracing paper' },
+  ],
   category: 'Workshops',
   structuredType: 'WebPage',
 };

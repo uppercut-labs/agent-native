@@ -6,6 +6,10 @@ export const modules = [
     visibility: 'public',
     title: 'Field recording',
     markdown: 'Field recording requires the Signal Basics module and a portable recorder.',
+    facts: [
+      { label: 'Prerequisite module', value: 'Signal Basics' },
+      { label: 'Required equipment', value: 'portable recorder' },
+    ],
     category: 'Courses',
     structuredType: 'Article',
   },

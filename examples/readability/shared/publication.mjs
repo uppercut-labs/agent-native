@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
-import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { writeFixtureFiles } from './fixture-files.mjs';
+import { importPublication, locateSdk } from './sdk.mjs';
 import { reference, reviewedReferenceRoutes } from './reference.mjs';
 
 const run = promisify(execFile);
@@ -31,7 +31,7 @@ export async function preparePublication({
     if (visibility !== 'public' || !approved.has(route)) {
       return { id, revision, route, visibility: visibility === 'public' ? 'unknown' : visibility };
     }
-    const { title, markdown, locale, category, structuredType, links } = source;
+    const { title, markdown, locale, category, structuredType, links, facts } = source;
     return {
       id,
       revision,
@@ -43,6 +43,7 @@ export async function preparePublication({
       category,
       structuredType,
       links,
+      facts,
     };
   });
   const config = {
@@ -52,15 +53,8 @@ export async function preparePublication({
     description: 'Reviewed guides and public records.',
     full: true,
   };
-  // CI installs a packed candidate in the example. In a source checkout use the built SDK.
-  const installed = path.join(appDir, 'node_modules/@uppercut-labs/agent-native');
-  const sdk = existsSync(installed)
-    ? installed
-    : fileURLToPath(new URL('../../../', import.meta.url));
-  const pkg = JSON.parse(await readFile(path.join(sdk, 'package.json'), 'utf8'));
-  const { planPublication } = await import(
-    pathToFileURL(path.join(sdk, pkg.exports['./publication'].import))
-  );
+  const { sdk, pkg } = await locateSdk(appDir);
+  const { planPublication } = await importPublication(appDir);
   // Human pages retain their approved source data when publication is disabled or withdrawn.
   const plan = await planPublication({ ...config, enabled: true }, candidates);
   const errors = plan.diagnostics.filter(({ severity }) => severity === 'error');
@@ -82,6 +76,7 @@ export async function preparePublication({
       route: item.route,
       title: item.title,
       markdown: item.markdown,
+      facts: item.facts ?? [],
       locale: item.locale || 'en',
       canonical: entry.canonical,
       mirror: enabled ? entry.mirror : null,
