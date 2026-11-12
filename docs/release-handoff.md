@@ -1,6 +1,6 @@
 # Release and provider handoff
 
-This handoff covers how a release candidate is checked and published; the current release is `1.0.1`. The public source is [uppercut-labs/agent-native](https://github.com/uppercut-labs/agent-native); `@uppercut-labs/agent-native` is its npm name and MIT is its license. Check the registry before claiming publication. Older entries below are dated release snapshots; their `latest` tags describe that publication date, not today. See [UAN-024 release evidence](evidence/UAN-024-release-readiness.md) for the earlier `0.0.0` preparation snapshot.
+This handoff covers how a release candidate is checked and published; the latest npm release is `1.1.0`, while the default `main` source still builds `1.0.1` and the 1.1.0 source is under review in [PR #10](https://github.com/uppercut-labs/agent-native/pull/10). The public source is [uppercut-labs/agent-native](https://github.com/uppercut-labs/agent-native); `@uppercut-labs/agent-native` is its npm name and MIT is its license. Check the registry before claiming publication. Older entries below are dated release snapshots; their `latest` tags describe that publication date, not today. See [UAN-024 release evidence](evidence/UAN-024-release-readiness.md) for the earlier `0.0.0` preparation snapshot.
 
 ## Package release sequence
 
@@ -10,7 +10,7 @@ This handoff covers how a release candidate is checked and published; the curren
 4. Publish that exact archive under the organization scope with public access. Record the registry URL and digest. Keep the source tag and registry artifact tied to the same source commit.
 5. Perform a post-publish clean registry install and the documented first-run path. If publication or provenance verification fails, report the actual registry state and recovery action; never describe a local tarball as a published npm release.
 
-The provider gates below apply to application deployments and full host claims. The released 1.0.1 package has no `bin` entry; users call its programmatic APIs or application-owned CLI runner. Do not advertise `npx agent-native init` until an executable exists and is tested.
+The provider gates below apply to application deployments and full host claims. The 1.0.1 package has no `bin` entry; applications use its APIs or their own capability CLI runner. The published 1.1.0 package introduces the **separate experimental** `agent-native-site` executable for reviewed public content publication. It is not an `init` command or a general deployment tool. Do not advertise `npx agent-native init`. A verified npm version does not prove that an identically named GitHub tag or production deployment exists.
 
 ## Native provider deployment
 
