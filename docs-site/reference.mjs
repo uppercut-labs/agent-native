@@ -69,7 +69,7 @@ sources. \`npm run docs:check\` fails if this page drifts. Agent Native
 ${exportRows.join('\n')}
 
 The package's optional peers are listed in [installation](installation.md). Import only
-the subpath needed by the application. A package-level executable is not shipped.
+the subpath needed by the application. The experimental [site publication CLI](site-publication.md) operates on approved public content.
 
 ## Application CLI arguments
 

@@ -1,8 +1,6 @@
 # Uppercut Agent Native
 
-> **Release status (November 11, 2026):** [Agent Native 1.1.0 is published on npm](https://www.npmjs.com/package/@uppercut-labs/agent-native), while this default `main` source still builds 1.0.1. The 1.1.0 source, experimental `agent-native-site` CLI, and eight framework examples are in [PR #10](https://github.com/uppercut-labs/agent-native/pull/10). For the published package, use the [1.1.0 branch installation guide](https://github.com/uppercut-labs/agent-native/blob/feat/site-publication-v1-1/docs/installation.md); see the [dated release-status note](docs/release-status.md) before following the 1.0.1 source-checkout instructions below.
-
-Uppercut Agent Native `1.0.1` defines typed capability contracts once and serves them on local,
+Uppercut Agent Native defines typed capability contracts once and serves them on local,
 HTTP, CLI, MCP, Node/Hono, browser, and Astro static/on-demand surfaces. It is distributed as
 `@uppercut-labs/agent-native` under the MIT license. See [installation](docs/installation.md)
 for the first programmatic capability.
@@ -11,7 +9,11 @@ To expose a real operation from a working app, start with [adopt an existing sit
 For a coding assistant, use [the portable skill or standalone prompt](docs/for-agents.md).
 Node.js 22+ is required. Eleven entry points are stable under SemVer; browser, framework, init
 and harness integrations are experimental. See [stability](docs/stability.md). The package
-ships importable APIs, including an app-owned CLI runner, and no package-level executable.
+ships importable capability APIs and an app-owned CLI runner. Version 1.1.0 adds an experimental [site publication CLI](docs/site-publication.md) and [eight native framework examples](docs/readability-frameworks.md).
+
+## 1.1.0 on npm
+
+`@uppercut-labs/agent-native@1.1.0` is published to npm. Install it with `npm install @uppercut-labs/agent-native@1.1.0`. This release adds an **experimental** `/publication` API and `agent-native-site` executable for reviewed public site content, plus [eight runnable framework integrations](docs/readability-frameworks.md). Read the [site publication guide](docs/site-publication.md) before using either. The source changes are still in [PR #10](https://github.com/uppercut-labs/agent-native/pull/10), not the default `main` branch; examples and build commands in this checkout apply to the 1.1.0 feature branch. A registry release does not by itself establish hosted compatibility or production deployment approval.
 
 ## Current scope
 
@@ -120,7 +122,7 @@ claim that every commercial client or deployment host is supported.
 
 ## Generated CLI
 
-The separate `@uppercut-labs/agent-native/cli` runner entrypoint builds help and typed field flags from registry schemas. Calls select `--mode local|remote` explicitly; remote calls also select a configured credential profile and use a bounded HTTP request. Invocations write one `uan.cli-result/v1` JSON envelope to stdout and redacted target/failure diagnostics to stderr. No package-level `bin` command ships yet; applications expose the runner with their own registry. See [the CLI guide](docs/cli.md) and the installed E05/E12 examples.
+The separate `@uppercut-labs/agent-native/cli` runner entrypoint builds help and typed field flags from registry schemas. Calls select `--mode local|remote` explicitly; remote calls also select a configured credential profile and use a bounded HTTP request. Invocations write one `uan.cli-result/v1` JSON envelope to stdout and redacted target/failure diagnostics to stderr. No general-purpose capability CLI executable ships; applications expose that runner with their own registry. The separate experimental `agent-native-site` executable is available in 1.1.0 for reviewed content publication. See [the CLI guide](docs/cli.md) and the installed E05/E12 examples.
 
 ## Diagnostics
 
@@ -157,7 +159,7 @@ official MCP client SDK is pinned for the local protocol fixture only. See [UAN-
 
 ## Status
 
-Version `1.0.1` is released under MIT. Stable entry points follow semantic versioning; see [stability](docs/stability.md) and [upgrading from 0.1.x](docs/upgrading-to-1.0.md). UAN-002 local acceptance and limitations are in
+Version `1.1.0` is published to npm under MIT; the corresponding source is currently in [PR #10](https://github.com/uppercut-labs/agent-native/pull/10) rather than the default `main` branch. Stable entry points follow semantic versioning; see [stability](docs/stability.md) and [upgrading from 0.1.x](docs/upgrading-to-1.0.md). UAN-002 local acceptance and limitations are in
 [UAN-002 evidence](https://github.com/uppercut-labs/agent-native/blob/main/evidence/UAN-002.md); pinned tool versions and upstream references are in [VERSION-EVIDENCE.md](https://github.com/uppercut-labs/agent-native/blob/main/VERSION-EVIDENCE.md).
 The current init acceptance and limits are in [UAN-009 evidence](docs/evidence/UAN-009-init.md).
 The local trusted-auth and grant acceptance is in [UAN-010 evidence](docs/evidence/UAN-010-auth.md).

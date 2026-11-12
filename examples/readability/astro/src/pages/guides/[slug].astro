@@ -1,0 +1,10 @@
+---
+import model from '../../../generated/publication.json';
+import Page from '../../layouts/Page.astro';
+export function getStaticPaths() {
+  return model.pages
+    .filter((page) => page.route.startsWith('/guides/'))
+    .map((page) => ({ params: { slug: page.route.split('/').pop() }, props: { page } }));
+}
+---
+<Page page={Astro.props.page}/>

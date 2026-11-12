@@ -1,0 +1,13 @@
+{
+  "name": "agent-native-nuxt-museum-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "start": "node --import ../shared/negotiate.mjs .output/server/index.mjs"
+  },
+  "dependencies": {
+    "nuxt": "4.6.4"
+  }
+}

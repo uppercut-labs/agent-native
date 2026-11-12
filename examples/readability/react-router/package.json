@@ -1,0 +1,20 @@
+{
+  "name": "readability-react-router",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:publication": "node prepare.mjs",
+    "build": "npm run prepare:publication && react-router build && node ../shared/finalize-witness.mjs react-router",
+    "start": "node --import ../shared/negotiate.mjs node_modules/@react-router/serve/bin.cjs build/server/index.js",
+    "test": "node test.mjs"
+  },
+  "dependencies": {
+    "@react-router/dev": "8.5.1",
+    "@react-router/serve": "8.5.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router": "8.5.1",
+    "vite": "8.3.5",
+    "isbot": "5.2.2"
+  }
+}

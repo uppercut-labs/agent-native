@@ -39,7 +39,7 @@ There are two independent instructions paths:
 5. Verify one allowed call, one schema rejection before the handler, one denial/hidden path and an unchanged human UI.
 6. Report changed files, versions, observed commands/results and remaining hosting/identity responsibilities.
 
-Do not claim that the 1.0.1 library includes a global `agent-native init` executable, production identity service, default-enabled browser WebMCP or verified commercial MCP Apps host rendering. Review [support and limitations](support-and-limitations.md).
+Do not claim that Agent Native includes a global `agent-native init` executable, production identity service, default-enabled browser WebMCP or verified commercial MCP Apps host rendering. Version 1.1.0 separately includes the **experimental** [`agent-native-site` publication command](site-publication.md), not a general site-conversion or capability-execution command. Review [support and limitations](support-and-limitations.md).
 
 ## If the agent only has public docs
 

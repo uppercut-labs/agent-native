@@ -50,7 +50,7 @@ try {
   assert.ok(pack, 'npm pack returned no archive');
   for (const file of pack.files) {
     if (!agentResources.some(([source]) => source === file.path)) {
-      assert.match(file.path, /^(?:dist\/|docs\/|LICENSE$|README\.md$|package\.json$)/);
+      assert.match(file.path, /^(?:dist\/|bin\/|docs\/|LICENSE$|README\.md$|package\.json$)/);
     }
   }
   const packedPaths = new Set(pack.files.map((file) => file.path));
@@ -129,6 +129,34 @@ try {
     ],
     consumerRoot,
   );
+  // Exercise the actual installed executable with a framework-free, credential-free consumer.
+  const demo = path.join(consumerRoot, 'workshop.mjs');
+  await copyFile(path.join(repositoryRoot, 'examples/site-publication/build.mjs'), demo);
+  const work = path.join(consumerRoot, 'workshop');
+  run([process.execPath, demo, work, 'https://example.org/'], consumerRoot);
+  const siteArgs = [
+    '--manifest',
+    path.join(work, 'site.json'),
+    '--out',
+    path.join(work, 'public'),
+    '--state',
+    path.join(work, 'state'),
+  ];
+  const invokeSite = (command, args = []) =>
+    JSON.parse(
+      run(
+        ['exec', '--offline', '--', 'agent-native-site', command, ...siteArgs, ...args],
+        consumerRoot,
+        true,
+      ),
+    );
+  const preview = invokeSite('preview');
+  assert.equal(preview.status, 'preview');
+  assert.equal(invokeSite('apply', ['--approve', preview.digest]).status, 'applied');
+  assert.match(await readFile(path.join(work, 'public', 'llms-full.txt'), 'utf8'), /10:30/);
+  const restore = invokeSite('restore-preview');
+  assert.equal(invokeSite('restore', ['--approve', restore.digest]).status, 'restored');
+
   const smokePath = path.join(consumerRoot, 'packed-cli-smoke.mjs');
   const codexSmokePath = path.join(consumerRoot, 'packed-codex-smoke.mjs');
   await copyFile(path.join(repositoryRoot, 'test/fixtures/packed-codex-smoke.mjs'), codexSmokePath);

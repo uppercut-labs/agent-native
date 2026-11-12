@@ -1,0 +1,15 @@
+{
+  "name": "readability-astro",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "astro build && node ../shared/finalize-witness.mjs astro",
+    "start": "node --import ../shared/negotiate.mjs dist/server/entry.mjs",
+    "build:static": "astro build --config astro.static.config.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "11.1.6",
+    "astro": "7.3.5"
+  }
+}
