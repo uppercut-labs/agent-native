@@ -15,4 +15,4 @@ Each project pairs the same Harbor field guide with a distinct application. Star
 
 The route and field allowlists are part of each example. Change those to match the adopting application and review them with its access rules. The examples use the shared experimental publication API and the framework integration code in their source. Version pins and lockfiles specify the tested framework and toolchain. Hosted compatibility and results from independent language models require separate evidence.
 
-[Runnable source and native test instructions](https://github.com/uppercut-labs/agent-native/blob/main/examples/readability/README.md) · [Publication and adoption guide](site-publication.md)
+[Runnable source and native test instructions](https://github.com/uppercut-labs/agent-native/blob/feat/site-publication-v1-1/examples/readability/README.md) · [Publication and adoption guide](site-publication.md)
