@@ -1,5 +1,7 @@
 # Uppercut Agent Native
 
+> **Release status (November 11, 2026):** [Agent Native 1.1.0 is published on npm](https://www.npmjs.com/package/@uppercut-labs/agent-native), while this default `main` source still builds 1.0.1. The 1.1.0 source, experimental `agent-native-site` CLI, and eight framework examples are in [PR #10](https://github.com/uppercut-labs/agent-native/pull/10). For the published package, use the [1.1.0 branch installation guide](https://github.com/uppercut-labs/agent-native/blob/feat/site-publication-v1-1/docs/installation.md); see the [dated release-status note](docs/release-status.md) before following the 1.0.1 source-checkout instructions below.
+
 Uppercut Agent Native `1.0.1` defines typed capability contracts once and serves them on local,
 HTTP, CLI, MCP, Node/Hono, browser, and Astro static/on-demand surfaces. It is distributed as
 `@uppercut-labs/agent-native` under the MIT license. See [installation](docs/installation.md)

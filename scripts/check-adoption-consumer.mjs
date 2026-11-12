@@ -16,7 +16,8 @@ try {
     await cp(path.join(root, source), path.join(temp, target));
   }
   const manifest = JSON.parse(await readFile(path.join(project, 'package.template.json'), 'utf8'));
-  manifest.dependencies['@uppercut-labs/agent-native'] = '1.0.0';
+  // The former 1.0.0 registry pin no longer resolves; verify the published 1.1.0 release.
+  manifest.dependencies['@uppercut-labs/agent-native'] = '1.1.0';
   manifest.dependencies['@modelcontextprotocol/server'] = '2.3.0';
   manifest.dependencies['@modelcontextprotocol/client'] = '2.3.0';
   await writeFile(path.join(temp, 'package.json'), JSON.stringify(manifest));
