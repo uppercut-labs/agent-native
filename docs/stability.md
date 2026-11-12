@@ -25,6 +25,7 @@ From 1.0.0, Agent Native follows [semantic versioning](https://semver.org/) for 
 | `@uppercut-labs/agent-native/next/browser` | Experimental | Next browser registration |
 | `@uppercut-labs/agent-native/init` | Experimental | Narrow existing-project init |
 | `@uppercut-labs/agent-native/doctor` | Experimental | Diagnostics checks and report format |
+| `@uppercut-labs/agent-native/publication` | Experimental (since 1.1.0) | Reviewed public-site projections and publication planning; separate `agent-native-site` CLI |
 | `@uppercut-labs/agent-native/harness` | Experimental | Provider-neutral harness contracts |
 | `@uppercut-labs/agent-native/harness/mcp-bridge` | Experimental | Loopback MCP bridge |
 | `@uppercut-labs/agent-native/harness/codex` | Experimental | Local Codex app-server adapter |
