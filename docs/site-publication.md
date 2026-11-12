@@ -1,12 +1,14 @@
 # Publish public content for reading agents
 
-The unreleased experimental `/publication` import and `agent-native-site` executable generate a text index, directly readable Markdown mirrors, optional aggregate text and JSON-LD for approved public pages. Your app owns its human HTML, data permissions and cache invalidation.
+The experimental `/publication` import and `agent-native-site` executable, published in version 1.1.0, generate a text index, directly readable Markdown mirrors, optional aggregate text and JSON-LD for approved public pages. Your app owns its human HTML, data permissions and cache invalidation.
 
 [Framework integrations and showcases](readability-frameworks.md)
 
+Install the published package with `npm install @uppercut-labs/agent-native@1.1.0`. The repository examples below are source-checkout workflows for [the 1.1.0 branch](https://github.com/uppercut-labs/agent-native/pull/10); the package includes the publication API and executable but not the runnable example projects.
+
 ## Try a source-backed example
 
-Use Node 22+ and a checkout of this branch. From the repository root, run the following commands. The example creates a small workshop site in a new working directory with a private manifest, an empty state directory and a separate public output directory.
+Use Node 22+ and a checkout of the 1.1.0 source branch. From the repository root, run the following commands. The example creates a small workshop site in a new working directory with a private manifest, an empty state directory and a separate public output directory.
 
 ```sh
 npm ci
@@ -21,7 +23,7 @@ Read the proposed changes, included routes and excluded sources. Substitute the 
 node bin/agent-native-site.mjs apply --manifest workshop-demo/site.json --out workshop-demo/public --state workshop-demo/state --approve REVIEWED_DIGEST
 ```
 
-In a clean consumer that installed the candidate tarball, use `npm exec -- agent-native-site` in place of `node bin/agent-native-site.mjs`. The public site must serve the generated files verbatim with the expected media types. Configure `.md` as `text/markdown` or `text/plain`, `.jsonld` as `application/ld+json` or `application/json`, and `.txt` as `text/plain`. Unknown mirror paths should return 404 or 410. The verifier performs anonymous requests against the configured origin and checks canonical HTML, applicable JSON-LD, actual bytes, types and a missing Markdown path.
+In a clean consumer that installed the published 1.1.0 package, use `npm exec -- agent-native-site` in place of `node bin/agent-native-site.mjs`. The public site must serve the generated files verbatim with the expected media types. Configure `.md` as `text/markdown` or `text/plain`, `.jsonld` as `application/ld+json` or `application/json`, and `.txt` as `text/plain`. Unknown mirror paths should return 404 or 410. The verifier performs anonymous requests against the configured origin and checks canonical HTML, applicable JSON-LD, actual bytes, types and a missing Markdown path.
 
 ```sh
 node bin/agent-native-site.mjs verify --manifest workshop-demo/site.json
@@ -35,7 +37,7 @@ The output is private review material. Every discovered route has unknown visibi
 
 ## Supply public projections
 
-A manifest has `config` and `candidates`. Generate these records from the same public fields that render the human site. The CLI consumes a developer-supplied route inventory. The [workshop source](https://github.com/uppercut-labs/agent-native/blob/main/examples/site-publication/build.mjs) drives both the page and its publication records.
+A manifest has `config` and `candidates`. Generate these records from the same public fields that render the human site. The CLI consumes a developer-supplied route inventory. The [workshop source](https://github.com/uppercut-labs/agent-native/blob/feat/site-publication-v1-1/examples/site-publication/build.mjs) drives both the page and its publication records.
 
 ```json
 {
