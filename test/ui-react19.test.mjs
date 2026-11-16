@@ -119,6 +119,19 @@ test('a media key the application did not register produces no source URL', () =
   assert.doesNotMatch(html, /src="/);
 });
 
+test('registered base64 audio data URLs are accepted; other data URLs are refused', () => {
+  const store = storeWith('media');
+  const ok = render(store, 'media', {
+    mediaSources: { 'fixture-audio': 'data:audio/wav;base64,UklGRg==' },
+  });
+  assert.match(ok, /<audio[^>]*src="data:audio\/wav;base64,UklGRg=="/);
+  const refused = render(store, 'media', {
+    mediaSources: { 'fixture-audio': 'data:text/html;base64,PGI+aGk8L2I+' },
+  });
+  assert.doesNotMatch(refused, /src="data:/);
+  assert.match(refused, /No registered media source is available\./);
+});
+
 test('an unregistered action renders its button disabled', () => {
   const store = new UiStore();
   store.apply({

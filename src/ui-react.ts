@@ -680,7 +680,14 @@ export function createReactRenderer<Element>(
           const source: string | undefined = Object.hasOwn(mediaSources, sourceKey)
             ? mediaSources[sourceKey]
             : undefined;
-          if (source === undefined || !/^(?:https?:\/\/|blob:|\/(?!\/)|\.\.?\/)/.test(source))
+          // Application-registered sources only. Base64 audio/video data URLs let a
+          // self-contained view (for example an MCP App with no resource domains) carry media.
+          if (
+            source === undefined ||
+            !/^(?:https?:\/\/|blob:|\/(?!\/)|\.\.?\/|data:(?:audio|video)\/[a-z0-9.+-]+;base64,)/.test(
+              source,
+            )
+          )
             return h(
               'p',
               { ...common, className: 'anui-status', role: 'status' },
