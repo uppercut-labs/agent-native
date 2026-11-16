@@ -27,7 +27,6 @@ import {
   reviewSave,
 } from './contracts.mjs';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const toolNames = Object.fromEntries(
   capabilities.map((c) => [c.identity.name, capabilitySurfaceNames(c.identity).mcp]),
 );
@@ -125,6 +124,9 @@ export function createFixtureState() {
 }
 
 export async function readViews() {
+  // Resolved here, not at import time, so the handler also loads where import.meta.url is
+  // unavailable (for example Cloudflare Workers).
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const entries = await Promise.all(
     Object.keys(viewUris).map(async (pattern) => [
       pattern,

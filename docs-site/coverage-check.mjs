@@ -154,7 +154,7 @@ export async function validateCoverage(repositoryRoot, suppliedManifest) {
     }
     if (
       typeof evidence !== 'string' ||
-      !/^docs\/evidence\/UAN-[0-9]{3}-[a-z0-9-]+\.md$/.test(evidence)
+      !/^docs\/evidence\/(?:UAN|ANUI)-[0-9]{3}-[a-z0-9-]+\.md$/.test(evidence)
     ) {
       failures.push(`${id}: invalid public evidence link`);
     } else await checkedFile(evidence, `${id} evidence`);

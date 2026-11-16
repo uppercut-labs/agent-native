@@ -34,7 +34,13 @@ function fixtureTone() {
       phase < 0.3 ? Math.sin(2 * Math.PI * 220 * t) * Math.sin((Math.PI * phase) / 0.3) * 3200 : 0;
     view.setInt16(44 + i * 2, Math.round(sample), true);
   }
-  return URL.createObjectURL(new Blob([view.buffer], { type: 'audio/wav' }));
+  // A data: URL, not blob:. Host CSPs for MCP Apps may block blob: media; the fixture records
+  // which hosts accept which form.
+  const bytes = new Uint8Array(view.buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return `data:audio/wav;base64,${btoa(binary)}`;
 }
 
 const pattern = document.body.dataset.pattern;

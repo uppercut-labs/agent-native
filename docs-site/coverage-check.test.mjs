@@ -37,7 +37,7 @@ test('omitting an example fails coverage', async () => {
   const incomplete = structuredClone(manifest);
   incomplete.examples.pop();
   const failures = await validateCoverage(repositoryRoot, incomplete);
-  assert.ok(failures.includes('coverage manifest: missing E12'));
+  assert.ok(failures.includes('coverage manifest: missing E13'));
 });
 
 test('omitting canonical agent handoff coverage fails without relaxing examples', async () => {
@@ -49,5 +49,5 @@ test('omitting canonical agent handoff coverage fails without relaxing examples'
       'coverage manifest: agentResources must cover the exact canonical source allowlist',
     ),
   );
-  assert.equal(incomplete.examples.length, 12);
+  assert.equal(incomplete.examples.length, 13);
 });

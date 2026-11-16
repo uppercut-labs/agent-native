@@ -217,8 +217,10 @@ export function createUiAppController({
     /** Host-mediated follow-up read: refetch through the host, keeping local drafts. */
     async refresh() {
       try {
+        // docs:start host-refresh
         const result = await app.callServerTool({ name: toolName(spec.open), arguments: {} });
         return receive(result);
+        // docs:end host-refresh
       } catch {
         status = { kind: 'error', message: 'The host could not refresh this view.' };
         onChange();
