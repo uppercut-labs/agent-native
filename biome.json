@@ -21,6 +21,8 @@
       "!examples/e07-playlist-permissions/.exported",
       "!examples/e11-diagnostics-fault-lab/.exported",
       "!examples/e09-album-explorer/.exported",
+      "!examples/e13-ui-patterns/.exported",
+      "!examples/e13-ui-patterns/project/dist",
       "!examples/readability/**/.next",
       "!examples/readability/**/.nuxt",
       "!examples/readability/**/.output",

@@ -10,7 +10,7 @@ const manifest = JSON.parse(
   await readFile(path.join(repositoryRoot, 'docs-site', 'coverage.json'), 'utf8'),
 );
 
-test('all twelve examples have source, docs, CI, and negative-path coverage', async () => {
+test('all thirteen examples have source, docs, CI, and negative-path coverage', async () => {
   assert.deepEqual(await validateCoverage(repositoryRoot, manifest), []);
 });
 

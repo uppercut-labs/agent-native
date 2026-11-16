@@ -3,7 +3,7 @@ import path from 'node:path';
 import { agentResources } from './agent-resources.mjs';
 
 const expectedIds = Array.from(
-  { length: 12 },
+  { length: 13 },
   (_, index) => `E${String(index + 1).padStart(2, '0')}`,
 );
 
