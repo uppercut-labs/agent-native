@@ -227,7 +227,7 @@ export function createReactRenderer<Element>(
                 type: c.component === 'Slider' ? 'range' : isNumber ? 'number' : 'text',
                 value: text(value),
                 disabled,
-                placeholder: text(c['placeholder']),
+                placeholder: typeof c['placeholder'] === 'string' ? c['placeholder'] : undefined,
                 min: c['min'],
                 max: c['max'],
                 step: c['step'],
@@ -318,11 +318,17 @@ export function createReactRenderer<Element>(
             !store.actionAvailable(actionName) ||
             receipt?.kind === 'pending' ||
             receipt?.kind === 'uncertain';
+          // An ActionResult for this action already announces the receipt; repeating it under
+          // the button would make screen readers announce the same alert twice.
+          const receiptShown: boolean = [...snapshot.components.values()].some(
+            (other: Component): boolean =>
+              other.component === 'ActionResult' && other['actionName'] === actionName,
+          );
           const click = (): void => {
             void store
               .dispatch(surfaceId, id)
               .then((outcome): void => {
-                if (outcome.kind !== 'success') issue(key, outcome.message);
+                if (outcome.kind !== 'success' && !receiptShown) issue(key, outcome.message);
                 else {
                   errors.delete(key);
                   options.onViewChange?.();
@@ -391,7 +397,9 @@ export function createReactRenderer<Element>(
                   'div',
                   { className: 'anui-bar-track', 'aria-hidden': true },
                   h('span', {
-                    style: { width: `${clamp((value / max) * 100, 0, 100)}%` },
+                    style: {
+                      width: `${Math.round(clamp((value / max) * 100, 0, 100) * 100) / 100}%`,
+                    },
                     className: 'anui-bar',
                   }),
                 ),
