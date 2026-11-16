@@ -116,6 +116,34 @@
     "./publication": {
       "types": "./dist/publication.d.ts",
       "import": "./dist/publication.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "import": "./dist/ui.js"
+    },
+    "./ui/react": {
+      "types": "./dist/ui-react.d.ts",
+      "import": "./dist/ui-react.js"
+    },
+    "./ui/dom": {
+      "types": "./dist/ui-dom.d.ts",
+      "import": "./dist/ui-dom.js"
+    },
+    "./ui/patterns": {
+      "types": "./dist/ui-patterns.d.ts",
+      "import": "./dist/ui-patterns.js"
+    },
+    "./ui/presentation": {
+      "types": "./dist/ui-presentation.d.ts",
+      "import": "./dist/ui-presentation.js"
+    },
+    "./ui/mcp": {
+      "types": "./dist/ui-mcp.d.ts",
+      "import": "./dist/ui-mcp.js"
+    },
+    "./ui/styles": {
+      "types": "./dist/ui-styles.d.ts",
+      "import": "./dist/ui-styles.js"
     }
   },
   "scripts": {
@@ -149,7 +177,8 @@
     "check:api": "node scripts/check-api.mjs",
     "proof:codex": "npm run build && node scripts/check-codex-harness.mjs",
     "check:isolated-examples": "node scripts/check-isolated-exports.mjs",
-    "check:adoption": "node scripts/check-adoption-consumer.mjs"
+    "check:adoption": "node scripts/check-adoption-consumer.mjs",
+    "check:ui": "npm run build && tsc -p tsconfig.ui-core.json && node --test test/ui-candidate-*.test.mjs && node scripts/check-ui-isolation.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
