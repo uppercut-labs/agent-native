@@ -20,7 +20,7 @@ The tool checks the package name and exact Git revision, refuses conflicting fil
 
 `./ui`, `./ui/react`, `./ui/patterns`, `./ui/presentation`, `./ui/mcp`, `./ui/styles`, and optional `./ui/dom` preview. Root capability/executor exports do not import any of them. The portable modules import no React, DOM, Node or host SDK. React is supplied by the consuming application; no old React test runtime is added as a dependency.
 
-The candidate uses `React.createElement` as an injected factory. `examples/react-host.mjs` shows a React 18+ consumer-owned `createRoot` mount and subscription lifecycle. The actual available React 16 runtime was exercised; modern React package/type integration remains pending.
+The renderer takes React's `createElement` as an injected factory, so the package never imports React. [test/ui-react19-consumer.ts](https://github.com/uppercut-labs/agent-native/blob/main/test/ui-react19-consumer.ts) is a typed consumer-owned `createRoot` mount and subscription lifecycle; `check:ui` type-checks it against React 19 with no casts and server-renders every pattern. `node test/ui-react19-browser.mjs` (opt-in, needs Google Chrome and `playwright-core`) runs that same mount in Chrome.
 
 ## Preserve the canonical capability output
 
@@ -54,7 +54,7 @@ const handler = createMcpAppsHandler(registry, {
 
 `registry`, `existingMcpOptions` and `bundledViewHtml` belong to the host application. The existing adapter still filters discovery, validates resources and calls the shared authorization/executor. Presentation registration grants no permissions. The UI's action port must map fixed capability IDs to fixed tools and decode authoritative outputs. Server input validation, ownership checks, grants and idempotency remain mandatory.
 
-`examples/mcp-host.mjs` contains client integration source using the **official** `App` bridge. Its imports need the consuming application's React and ext-apps dependencies. It has not been executed against the actual SDK or a commercial host. Normal controls remain local; sharing explicitly allowlisted context does not request a model turn.
+A client host using the **official** `App` bridge is not yet in this repository (ANUI-004). It has not been executed against the actual SDK or a commercial host. Normal controls remain local; sharing explicitly allowlisted context does not request a model turn.
 
 ## Resource/CSP and media
 
@@ -64,4 +64,4 @@ The renderer accepts application-owned media asset keys mapped to approved URLs.
 
 ## Required integration gates
 
-Run the source repository's own compiler, Biome formatting/lint, API/export policy, package portability checks, existing E09 regression and normal `npm run check`, plus the added `check:ui`. Reconcile experimental-export documentation and any API snapshots using the existing policy. No source-baseline regression, official SDK exchange, real ChatGPT/Claude acceptance, current React type-check, physical phone test, or package publication is claimed by this candidate.
+Run the source repository's own compiler, Biome formatting/lint, API/export policy, package portability checks, existing E09 regression and normal `npm run check`, plus the added `check:ui`. Reconcile experimental-export documentation and any API snapshots using the existing policy. `npm run check` runs `check:ui`. No official SDK exchange, real ChatGPT/Claude acceptance, physical phone test, or package publication is claimed.

@@ -12,7 +12,17 @@ Integrated on branch `agent-native-ui` from `feat/site-publication-v1-1` at `a60
 | Negative conformance | Unknown component, unknown property, missing required property, out-of-catalog enum, reserved `Surface`, unregistered function, wrong version and two operations per message are rejected by both the official schema and `UiStore` | The unregistered-function case was accepted by `UiStore` before this integration and is now rejected at validation |
 | Full `npm run check` | See the branch's latest commit message for the recorded run | Includes E09 MCP Apps regression |
 
-Still pending: React 18/19 type and runtime validation, an official ext-apps App/AppBridge exchange driving the UI, real ChatGPT web and Claude web runs, physical-device checks and publication.
+### React 19
+
+| Check | Observed result | Boundary |
+|---|---|---|
+| Types | `tsc -p tsconfig.ui-react.json` passes: a strict consumer passes React 19.3.1's `createElement`, `createRoot` and `renderToString` to the renderer with no casts; a wrong factory is rejected | `@types/react` and `@types/react-dom` 19.3.0 |
+| Server render | `test/ui-react19.test.mjs`: 8 tests across all patterns, empty state, media without autoplay, unregistered media keys, disabled unregistered actions and escaped agent text, with zero React development warnings | react and react-dom 19.3.1 (pinned dev dependencies) |
+| Browser | `test/ui-react19-browser.mjs`: 10 checks in headless Google Chrome 157 with React 19.3.1 development build: typing keeps focus, select and save, denied save keeps input, incoming update preserves a local edit with a conflict choice, slider recalculates locally, audio without autoplay, annotation add and save, 375px layouts without horizontal scroll, no page errors or React warnings | Opt-in; `playwright-core` 1.64.1 installed without saving. Not a physical device or chat host |
+
+Fixed while verifying: a denied action was announced twice (button and receipt both raised an alert), table cells split words mid-word on narrow screens, chart bar widths carried float noise, and empty placeholders were emitted. The muted section label style no longer uses uppercase letter-spacing.
+
+Still pending: an official ext-apps App/AppBridge exchange driving the UI, real ChatGPT web and Claude web runs, physical-device checks and publication.
 
 ## Candidate workspace — November 16, 2026
 
