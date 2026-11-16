@@ -768,7 +768,7 @@ export function createReactRenderer<Element>(
                   type: 'range',
                   min: 0,
                   max: duration,
-                  step: 0.01,
+                  step: 0.1,
                   value,
                   disabled: duration === 0,
                   'aria-label': label,
@@ -788,7 +788,7 @@ export function createReactRenderer<Element>(
                       type: 'number',
                       min: value,
                       max: duration,
-                      step: 0.01,
+                      step: 0.1,
                       value: end,
                       disabled: duration === 0,
                       onInput: (event: unknown): void => {

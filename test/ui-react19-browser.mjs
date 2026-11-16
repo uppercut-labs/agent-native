@@ -139,7 +139,11 @@ try {
     await page.waitForFunction(() => (document.querySelector('audio')?.readyState ?? 0) >= 1);
     assert.equal(await audio.evaluate((el) => el.paused), true);
     assert.equal(await audio.evaluate((el) => el.autoplay), false);
-    await page.getByRole('button', { name: /^Add at / }).click();
+    const playhead = page.getByRole('slider').first();
+    await playhead.focus();
+    await page.keyboard.press('ArrowRight');
+    assert.equal(await page.evaluate(() => globalThis.anui.store.read('media', '/position')), 0.1);
+    await page.getByRole('button', { name: /^Add at 0:00\.1/ }).click();
     await page.getByRole('textbox', { name: 'Annotation 1 note' }).fill('Tone starts');
     await page.getByRole('button', { name: 'Save annotations', exact: true }).click();
     await page.waitForFunction(

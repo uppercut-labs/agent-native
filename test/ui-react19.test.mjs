@@ -112,6 +112,8 @@ test('Media Annotation renders audio and video players without autoplay', () => 
   assert.match(video, /<video[^>]*src="\/media\/v\.mp4"/);
   for (const html of [audio, video]) assert.doesNotMatch(html, /autoplay/i);
   assert.match(audio, /First line/);
+  // The playhead moves in tenths of a second, matching the displayed time.
+  assert.match(audio, /type="range"[^>]*step="0.1"/);
 });
 
 test('a media key the application did not register produces no source URL', () => {
