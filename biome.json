@@ -6,6 +6,8 @@
       "!dist",
       "!docs-site/dist",
       "!.test-dist",
+      "!test/fixtures/a2ui-v1_0",
+      "!docs/ui/a2ui-catalog.json",
       "!examples/e01-album-catalog/.exported",
       "!examples/e02-astro-on-demand-catalog/.exported",
       "!examples/e02-astro-on-demand-catalog/site-before",

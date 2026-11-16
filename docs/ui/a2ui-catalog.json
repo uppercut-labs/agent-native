@@ -117,7 +117,10 @@
           "$ref": "common_types.json#/$defs/DynamicString"
         }
       },
-      "required": ["component", "children"]
+      "required": [
+        "component",
+        "children"
+      ]
     },
     "Row": {
       "type": "object",
@@ -136,7 +139,10 @@
           "$ref": "common_types.json#/$defs/DynamicString"
         }
       },
-      "required": ["component", "children"]
+      "required": [
+        "component",
+        "children"
+      ]
     },
     "Card": {
       "type": "object",
@@ -155,7 +161,10 @@
           "$ref": "common_types.json#/$defs/DynamicString"
         }
       },
-      "required": ["component", "children"]
+      "required": [
+        "component",
+        "children"
+      ]
     },
     "Tabs": {
       "type": "object",
@@ -184,7 +193,12 @@
           "type": "string"
         }
       },
-      "required": ["component", "children", "labels", "value"]
+      "required": [
+        "component",
+        "children",
+        "labels",
+        "value"
+      ]
     },
     "Text": {
       "type": "object",
@@ -197,10 +211,18 @@
         },
         "variant": {
           "type": "string",
-          "enum": ["body", "heading", "caption", "code"]
+          "enum": [
+            "body",
+            "heading",
+            "caption",
+            "code"
+          ]
         }
       },
-      "required": ["component", "text"]
+      "required": [
+        "component",
+        "text"
+      ]
     },
     "Status": {
       "type": "object",
@@ -213,10 +235,20 @@
         },
         "kind": {
           "type": "string",
-          "enum": ["loading", "empty", "error", "denied", "success", "info"]
+          "enum": [
+            "loading",
+            "empty",
+            "error",
+            "denied",
+            "success",
+            "info"
+          ]
         }
       },
-      "required": ["component", "text"]
+      "required": [
+        "component",
+        "text"
+      ]
     },
     "Divider": {
       "type": "object",
@@ -225,7 +257,9 @@
           "const": "Divider"
         }
       },
-      "required": ["component"]
+      "required": [
+        "component"
+      ]
     },
     "TextField": {
       "type": "object",
@@ -249,7 +283,11 @@
           "type": "string"
         }
       },
-      "required": ["component", "label", "value"]
+      "required": [
+        "component",
+        "label",
+        "value"
+      ]
     },
     "NumberField": {
       "type": "object",
@@ -277,7 +315,11 @@
           "exclusiveMinimum": 0
         }
       },
-      "required": ["component", "label", "value"]
+      "required": [
+        "component",
+        "label",
+        "value"
+      ]
     },
     "CheckBox": {
       "type": "object",
@@ -295,7 +337,11 @@
           "$ref": "common_types.json#/$defs/DynamicBoolean"
         }
       },
-      "required": ["component", "label", "value"]
+      "required": [
+        "component",
+        "label",
+        "value"
+      ]
     },
     "ChoicePicker": {
       "type": "object",
@@ -325,16 +371,27 @@
                 "type": "string"
               }
             },
-            "required": ["label", "value"],
+            "required": [
+              "label",
+              "value"
+            ],
             "additionalProperties": false
           }
         },
         "variant": {
           "type": "string",
-          "enum": ["select", "radio"]
+          "enum": [
+            "select",
+            "radio"
+          ]
         }
       },
-      "required": ["component", "label", "value", "options"]
+      "required": [
+        "component",
+        "label",
+        "value",
+        "options"
+      ]
     },
     "Slider": {
       "type": "object",
@@ -365,7 +422,13 @@
           "$ref": "common_types.json#/$defs/DynamicString"
         }
       },
-      "required": ["component", "label", "value", "min", "max"]
+      "required": [
+        "component",
+        "label",
+        "value",
+        "min",
+        "max"
+      ]
     },
     "Button": {
       "type": "object",
@@ -394,11 +457,15 @@
                   }
                 }
               },
-              "required": ["name"],
+              "required": [
+                "name"
+              ],
               "additionalProperties": false
             }
           },
-          "required": ["event"],
+          "required": [
+            "event"
+          ],
           "additionalProperties": false
         },
         "disabled": {
@@ -406,10 +473,17 @@
         },
         "variant": {
           "type": "string",
-          "enum": ["primary", "secondary"]
+          "enum": [
+            "primary",
+            "secondary"
+          ]
         }
       },
-      "required": ["component", "label", "action"]
+      "required": [
+        "component",
+        "label",
+        "action"
+      ]
     },
     "DecisionCard": {
       "type": "object",
@@ -441,11 +515,15 @@
                   }
                 }
               },
-              "required": ["name"],
+              "required": [
+                "name"
+              ],
               "additionalProperties": false
             }
           },
-          "required": ["event"],
+          "required": [
+            "event"
+          ],
           "additionalProperties": false
         },
         "label": {
@@ -455,7 +533,12 @@
           "$ref": "common_types.json#/$defs/DynamicBoolean"
         }
       },
-      "required": ["component", "title", "action", "label"]
+      "required": [
+        "component",
+        "title",
+        "action",
+        "label"
+      ]
     },
     "Diff": {
       "type": "object",
@@ -473,7 +556,11 @@
           "$ref": "common_types.json#/$defs/DynamicValue"
         }
       },
-      "required": ["component", "before", "after"]
+      "required": [
+        "component",
+        "before",
+        "after"
+      ]
     },
     "Table": {
       "type": "object",
@@ -508,7 +595,10 @@
                 "type": "string"
               }
             },
-            "required": ["key", "label"],
+            "required": [
+              "key",
+              "label"
+            ],
             "additionalProperties": false
           }
         },
@@ -522,7 +612,11 @@
           "type": "string"
         }
       },
-      "required": ["component", "rows", "columns"]
+      "required": [
+        "component",
+        "rows",
+        "columns"
+      ]
     },
     "List": {
       "type": "object",
@@ -550,7 +644,10 @@
           "type": "string"
         }
       },
-      "required": ["component", "items"]
+      "required": [
+        "component",
+        "items"
+      ]
     },
     "Chart": {
       "type": "object",
@@ -575,7 +672,11 @@
           "$ref": "common_types.json#/$defs/DynamicNumber"
         }
       },
-      "required": ["component", "label", "points"]
+      "required": [
+        "component",
+        "label",
+        "points"
+      ]
     },
     "Output": {
       "type": "object",
@@ -593,7 +694,11 @@
           "$ref": "common_types.json#/$defs/DynamicString"
         }
       },
-      "required": ["component", "label", "value"]
+      "required": [
+        "component",
+        "label",
+        "value"
+      ]
     },
     "Audio": {
       "type": "object",
@@ -608,7 +713,10 @@
           "$ref": "common_types.json#/$defs/DynamicString"
         }
       },
-      "required": ["component", "source"]
+      "required": [
+        "component",
+        "source"
+      ]
     },
     "Video": {
       "type": "object",
@@ -623,7 +731,10 @@
           "$ref": "common_types.json#/$defs/DynamicString"
         }
       },
-      "required": ["component", "source"]
+      "required": [
+        "component",
+        "source"
+      ]
     },
     "Timeline": {
       "type": "object",
@@ -647,7 +758,11 @@
           "$ref": "common_types.json#/$defs/ComponentId"
         }
       },
-      "required": ["component", "value", "duration"]
+      "required": [
+        "component",
+        "value",
+        "duration"
+      ]
     },
     "Transcript": {
       "type": "object",
@@ -675,7 +790,10 @@
           "$ref": "common_types.json#/$defs/ComponentId"
         }
       },
-      "required": ["component", "lines"]
+      "required": [
+        "component",
+        "lines"
+      ]
     },
     "Annotations": {
       "type": "object",
@@ -703,7 +821,12 @@
           "$ref": "common_types.json#/$defs/DynamicNumber"
         }
       },
-      "required": ["component", "items", "position", "duration"]
+      "required": [
+        "component",
+        "items",
+        "position",
+        "duration"
+      ]
     },
     "ActionResult": {
       "type": "object",
@@ -716,7 +839,10 @@
           "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
         }
       },
-      "required": ["component", "actionName"]
+      "required": [
+        "component",
+        "actionName"
+      ]
     }
   },
   "functions": {
@@ -756,11 +882,17 @@
               ]
             }
           },
-          "required": ["attempts", "rate"],
+          "required": [
+            "attempts",
+            "rate"
+          ],
           "unevaluatedProperties": false
         }
       },
-      "required": ["@call", "args"]
+      "required": [
+        "@call",
+        "args"
+      ]
     },
     "percent": {
       "type": "object",
@@ -784,11 +916,16 @@
               ]
             }
           },
-          "required": ["value"],
+          "required": [
+            "value"
+          ],
           "unevaluatedProperties": false
         }
       },
-      "required": ["@call", "args"]
+      "required": [
+        "@call",
+        "args"
+      ]
     }
   }
 }
