@@ -7,80 +7,38 @@
       "components": [
         {
           "component": "Column",
-          "properties": [
-            "children",
-            "label"
-          ],
-          "required": [
-            "children"
-          ],
-          "childFields": [
-            "children"
-          ]
+          "properties": ["children", "label"],
+          "required": ["children"],
+          "childFields": ["children"]
         },
         {
           "component": "Row",
-          "properties": [
-            "children",
-            "label"
-          ],
-          "required": [
-            "children"
-          ],
-          "childFields": [
-            "children"
-          ]
+          "properties": ["children", "label"],
+          "required": ["children"],
+          "childFields": ["children"]
         },
         {
           "component": "Card",
-          "properties": [
-            "children",
-            "title"
-          ],
-          "required": [
-            "children"
-          ],
-          "childFields": [
-            "children"
-          ]
+          "properties": ["children", "title"],
+          "required": ["children"],
+          "childFields": ["children"]
         },
         {
           "component": "Tabs",
-          "properties": [
-            "children",
-            "labels",
-            "value",
-            "label"
-          ],
-          "required": [
-            "children",
-            "labels",
-            "value"
-          ],
-          "childFields": [
-            "children"
-          ]
+          "properties": ["children", "labels", "value", "label"],
+          "required": ["children", "labels", "value"],
+          "childFields": ["children"]
         },
         {
           "component": "Text",
-          "properties": [
-            "text",
-            "variant"
-          ],
-          "required": [
-            "text"
-          ],
+          "properties": ["text", "variant"],
+          "required": ["text"],
           "childFields": []
         },
         {
           "component": "Status",
-          "properties": [
-            "text",
-            "kind"
-          ],
-          "required": [
-            "text"
-          ],
+          "properties": ["text", "kind"],
+          "required": ["text"],
           "childFields": []
         },
         {
@@ -91,254 +49,110 @@
         },
         {
           "component": "TextField",
-          "properties": [
-            "label",
-            "value",
-            "disabled",
-            "multiline",
-            "placeholder"
-          ],
-          "required": [
-            "label",
-            "value"
-          ],
+          "properties": ["label", "value", "disabled", "multiline", "placeholder"],
+          "required": ["label", "value"],
           "childFields": []
         },
         {
           "component": "NumberField",
-          "properties": [
-            "label",
-            "value",
-            "disabled",
-            "min",
-            "max",
-            "step"
-          ],
-          "required": [
-            "label",
-            "value"
-          ],
+          "properties": ["label", "value", "disabled", "min", "max", "step"],
+          "required": ["label", "value"],
           "childFields": []
         },
         {
           "component": "CheckBox",
-          "properties": [
-            "label",
-            "value",
-            "disabled"
-          ],
-          "required": [
-            "label",
-            "value"
-          ],
+          "properties": ["label", "value", "disabled"],
+          "required": ["label", "value"],
           "childFields": []
         },
         {
           "component": "ChoicePicker",
-          "properties": [
-            "label",
-            "value",
-            "disabled",
-            "options",
-            "variant"
-          ],
-          "required": [
-            "label",
-            "value",
-            "options"
-          ],
+          "properties": ["label", "value", "disabled", "options", "variant"],
+          "required": ["label", "value", "options"],
           "childFields": []
         },
         {
           "component": "Slider",
-          "properties": [
-            "label",
-            "value",
-            "disabled",
-            "min",
-            "max",
-            "step",
-            "suffix"
-          ],
-          "required": [
-            "label",
-            "value",
-            "min",
-            "max"
-          ],
+          "properties": ["label", "value", "disabled", "min", "max", "step", "suffix"],
+          "required": ["label", "value", "min", "max"],
           "childFields": []
         },
         {
           "component": "Button",
-          "properties": [
-            "label",
-            "action",
-            "disabled",
-            "variant"
-          ],
-          "required": [
-            "label",
-            "action"
-          ],
+          "properties": ["label", "action", "disabled", "variant"],
+          "required": ["label", "action"],
           "childFields": []
         },
         {
           "component": "DecisionCard",
-          "properties": [
-            "title",
-            "description",
-            "action",
-            "label",
-            "disabled"
-          ],
-          "required": [
-            "title",
-            "action",
-            "label"
-          ],
+          "properties": ["title", "description", "action", "label", "disabled"],
+          "required": ["title", "action", "label"],
           "childFields": []
         },
         {
           "component": "Diff",
-          "properties": [
-            "label",
-            "before",
-            "after"
-          ],
-          "required": [
-            "before",
-            "after"
-          ],
+          "properties": ["label", "before", "after"],
+          "required": ["before", "after"],
           "childFields": []
         },
         {
           "component": "Table",
-          "properties": [
-            "label",
-            "rows",
-            "columns",
-            "selection",
-            "sort",
-            "emptyText"
-          ],
-          "required": [
-            "rows",
-            "columns"
-          ],
+          "properties": ["label", "rows", "columns", "selection", "sort", "emptyText"],
+          "required": ["rows", "columns"],
           "childFields": []
         },
         {
           "component": "List",
-          "properties": [
-            "label",
-            "items",
-            "selection",
-            "emptyText"
-          ],
-          "required": [
-            "items"
-          ],
+          "properties": ["label", "items", "selection", "emptyText"],
+          "required": ["items"],
           "childFields": []
         },
         {
           "component": "Chart",
-          "properties": [
-            "label",
-            "points",
-            "max"
-          ],
-          "required": [
-            "label",
-            "points"
-          ],
+          "properties": ["label", "points", "max"],
+          "required": ["label", "points"],
           "childFields": []
         },
         {
           "component": "Output",
-          "properties": [
-            "label",
-            "value",
-            "suffix"
-          ],
-          "required": [
-            "label",
-            "value"
-          ],
+          "properties": ["label", "value", "suffix"],
+          "required": ["label", "value"],
           "childFields": []
         },
         {
           "component": "Audio",
-          "properties": [
-            "label",
-            "source"
-          ],
-          "required": [
-            "source"
-          ],
+          "properties": ["label", "source"],
+          "required": ["source"],
           "childFields": []
         },
         {
           "component": "Video",
-          "properties": [
-            "label",
-            "source"
-          ],
-          "required": [
-            "source"
-          ],
+          "properties": ["label", "source"],
+          "required": ["source"],
           "childFields": []
         },
         {
           "component": "Timeline",
-          "properties": [
-            "label",
-            "value",
-            "end",
-            "duration",
-            "mediaId"
-          ],
-          "required": [
-            "value",
-            "duration"
-          ],
+          "properties": ["label", "value", "end", "duration", "mediaId"],
+          "required": ["value", "duration"],
           "childFields": []
         },
         {
           "component": "Transcript",
-          "properties": [
-            "label",
-            "lines",
-            "position",
-            "mediaId"
-          ],
-          "required": [
-            "lines"
-          ],
+          "properties": ["label", "lines", "position", "mediaId"],
+          "required": ["lines"],
           "childFields": []
         },
         {
           "component": "Annotations",
-          "properties": [
-            "label",
-            "items",
-            "position",
-            "duration"
-          ],
-          "required": [
-            "items",
-            "position",
-            "duration"
-          ],
+          "properties": ["label", "items", "position", "duration"],
+          "required": ["items", "position", "duration"],
           "childFields": []
         },
         {
           "component": "ActionResult",
-          "properties": [
-            "actionName"
-          ],
-          "required": [
-            "actionName"
-          ],
+          "properties": ["actionName"],
+          "required": ["actionName"],
           "childFields": []
         }
       ],
