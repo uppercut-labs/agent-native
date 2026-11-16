@@ -1,6 +1,6 @@
 # Protocol profile and interoperability boundary
 
-This is an implementation candidate for the A2UI 1.0 envelope using a custom application catalog. It is **not full A2UI conformance**. Official schema validation and official-renderer interoperability remain pending.
+This is an implementation candidate for the A2UI 1.0 envelope using a custom application catalog. It is **not full A2UI conformance**. The catalog is published as an official A2UI v1.0 catalog definition in [a2ui-catalog.json](a2ui-catalog.json), and the built-in patterns' messages validate against the official v1.0 JSON schemas (see [verification](VERIFICATION.md)). Official-renderer interoperability remains pending.
 
 | Feature | Candidate behavior |
 |---|---|
@@ -22,7 +22,7 @@ Not implemented: `callAgentFunction`/`agentFunctionResponse` lifecycle; asynchro
 
 The default catalog contains 25 component names. Its properties belong to this catalog; familiar names do not imply compatibility with the upstream Basic Catalog's properties. For example this catalog's `Button` uses `label`, not the Basic Catalog's child-component contract. The application must advertise and validate this catalog specifically.
 
-`CatalogRegistry.describe()` returns JSON-safe discovery metadata without callbacks or private state. It does not substitute for a formally published, upstream-schema-compliant catalog. `docs/catalog-discovery.json` is generated from the registered components.
+`CatalogRegistry.describe()` returns JSON-safe discovery metadata without callbacks or private state. `scripts/generate-ui-catalog.mjs` builds the formal catalog definition from the same registrations; `check:ui` fails if the file drifts. `docs/catalog-discovery.json` is generated from the registered components.
 
 ## Safety and resource bounds
 

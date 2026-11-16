@@ -1,0 +1,794 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/uppercut-labs/agent-native/docs/ui/a2ui-catalog.json",
+  "catalogId": "urn:uppercut:agent-native-ui:catalog:1",
+  "protocolVersion": "1.0",
+  "title": "Agent Native UI catalog",
+  "description": "Components and renderer functions accepted by @uppercut-labs/agent-native/ui. A custom catalog: names that match the A2UI Basic Catalog do not share its properties.",
+  "$defs": {
+    "anyComponent": {
+      "oneOf": [
+        {
+          "$ref": "#/components/Column"
+        },
+        {
+          "$ref": "#/components/Row"
+        },
+        {
+          "$ref": "#/components/Card"
+        },
+        {
+          "$ref": "#/components/Tabs"
+        },
+        {
+          "$ref": "#/components/Text"
+        },
+        {
+          "$ref": "#/components/Status"
+        },
+        {
+          "$ref": "#/components/Divider"
+        },
+        {
+          "$ref": "#/components/TextField"
+        },
+        {
+          "$ref": "#/components/NumberField"
+        },
+        {
+          "$ref": "#/components/CheckBox"
+        },
+        {
+          "$ref": "#/components/ChoicePicker"
+        },
+        {
+          "$ref": "#/components/Slider"
+        },
+        {
+          "$ref": "#/components/Button"
+        },
+        {
+          "$ref": "#/components/DecisionCard"
+        },
+        {
+          "$ref": "#/components/Diff"
+        },
+        {
+          "$ref": "#/components/Table"
+        },
+        {
+          "$ref": "#/components/List"
+        },
+        {
+          "$ref": "#/components/Chart"
+        },
+        {
+          "$ref": "#/components/Output"
+        },
+        {
+          "$ref": "#/components/Audio"
+        },
+        {
+          "$ref": "#/components/Video"
+        },
+        {
+          "$ref": "#/components/Timeline"
+        },
+        {
+          "$ref": "#/components/Transcript"
+        },
+        {
+          "$ref": "#/components/Annotations"
+        },
+        {
+          "$ref": "#/components/ActionResult"
+        }
+      ],
+      "discriminator": {
+        "propertyName": "component"
+      }
+    },
+    "anyFunction": {
+      "oneOf": [
+        {
+          "$ref": "#/functions/probability"
+        },
+        {
+          "$ref": "#/functions/percent"
+        }
+      ]
+    }
+  },
+  "components": {
+    "Column": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Column"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "common_types.json#/$defs/ComponentId"
+          },
+          "maxItems": 256
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": ["component", "children"]
+    },
+    "Row": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Row"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "common_types.json#/$defs/ComponentId"
+          },
+          "maxItems": 256
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": ["component", "children"]
+    },
+    "Card": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Card"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "common_types.json#/$defs/ComponentId"
+          },
+          "maxItems": 256
+        },
+        "title": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": ["component", "children"]
+    },
+    "Tabs": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Tabs"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "common_types.json#/$defs/ComponentId"
+          },
+          "maxItems": 256
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DynamicValue"
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "required": ["component", "children", "labels", "value"]
+    },
+    "Text": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Text"
+        },
+        "text": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "variant": {
+          "type": "string",
+          "enum": ["body", "heading", "caption", "code"]
+        }
+      },
+      "required": ["component", "text"]
+    },
+    "Status": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Status"
+        },
+        "text": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["loading", "empty", "error", "denied", "success", "info"]
+        }
+      },
+      "required": ["component", "text"]
+    },
+    "Divider": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Divider"
+        }
+      },
+      "required": ["component"]
+    },
+    "TextField": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "TextField"
+        },
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DataBinding"
+        },
+        "disabled": {
+          "$ref": "common_types.json#/$defs/DynamicBoolean"
+        },
+        "multiline": {
+          "type": "boolean"
+        },
+        "placeholder": {
+          "type": "string"
+        }
+      },
+      "required": ["component", "label", "value"]
+    },
+    "NumberField": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "NumberField"
+        },
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DataBinding"
+        },
+        "disabled": {
+          "$ref": "common_types.json#/$defs/DynamicBoolean"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": ["component", "label", "value"]
+    },
+    "CheckBox": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "CheckBox"
+        },
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DataBinding"
+        },
+        "disabled": {
+          "$ref": "common_types.json#/$defs/DynamicBoolean"
+        }
+      },
+      "required": ["component", "label", "value"]
+    },
+    "ChoicePicker": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "ChoicePicker"
+        },
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DataBinding"
+        },
+        "disabled": {
+          "$ref": "common_types.json#/$defs/DynamicBoolean"
+        },
+        "options": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": ["label", "value"],
+            "additionalProperties": false
+          }
+        },
+        "variant": {
+          "type": "string",
+          "enum": ["select", "radio"]
+        }
+      },
+      "required": ["component", "label", "value", "options"]
+    },
+    "Slider": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Slider"
+        },
+        "label": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DataBinding"
+        },
+        "disabled": {
+          "$ref": "common_types.json#/$defs/DynamicBoolean"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "suffix": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": ["component", "label", "value", "min", "max"]
+    },
+    "Button": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Button"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "action": {
+          "type": "object",
+          "description": "Dispatches a named event; the application maps it to a fixed capability.",
+          "properties": {
+            "event": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "context": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "common_types.json#/$defs/DynamicValue"
+                  }
+                }
+              },
+              "required": ["name"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["event"],
+          "additionalProperties": false
+        },
+        "disabled": {
+          "$ref": "common_types.json#/$defs/DynamicBoolean"
+        },
+        "variant": {
+          "type": "string",
+          "enum": ["primary", "secondary"]
+        }
+      },
+      "required": ["component", "label", "action"]
+    },
+    "DecisionCard": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "DecisionCard"
+        },
+        "title": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "description": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "action": {
+          "type": "object",
+          "description": "Dispatches a named event; the application maps it to a fixed capability.",
+          "properties": {
+            "event": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "context": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "common_types.json#/$defs/DynamicValue"
+                  }
+                }
+              },
+              "required": ["name"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["event"],
+          "additionalProperties": false
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "disabled": {
+          "$ref": "common_types.json#/$defs/DynamicBoolean"
+        }
+      },
+      "required": ["component", "title", "action", "label"]
+    },
+    "Diff": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Diff"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "before": {
+          "$ref": "common_types.json#/$defs/DynamicValue"
+        },
+        "after": {
+          "$ref": "common_types.json#/$defs/DynamicValue"
+        }
+      },
+      "required": ["component", "before", "after"]
+    },
+    "Table": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Table"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "rows": {
+          "oneOf": [
+            {
+              "type": "array"
+            },
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            }
+          ]
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "$ref": "common_types.json#/$defs/ComponentId"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": ["key", "label"],
+            "additionalProperties": false
+          }
+        },
+        "selection": {
+          "$ref": "common_types.json#/$defs/DynamicValue"
+        },
+        "sort": {
+          "$ref": "common_types.json#/$defs/DynamicValue"
+        },
+        "emptyText": {
+          "type": "string"
+        }
+      },
+      "required": ["component", "rows", "columns"]
+    },
+    "List": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "List"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "items": {
+          "oneOf": [
+            {
+              "type": "array"
+            },
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            }
+          ]
+        },
+        "selection": {
+          "$ref": "common_types.json#/$defs/DynamicValue"
+        },
+        "emptyText": {
+          "type": "string"
+        }
+      },
+      "required": ["component", "items"]
+    },
+    "Chart": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Chart"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "points": {
+          "oneOf": [
+            {
+              "type": "array"
+            },
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            }
+          ]
+        },
+        "max": {
+          "$ref": "common_types.json#/$defs/DynamicNumber"
+        }
+      },
+      "required": ["component", "label", "points"]
+    },
+    "Output": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Output"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DynamicValue"
+        },
+        "suffix": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": ["component", "label", "value"]
+    },
+    "Audio": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Audio"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "source": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": ["component", "source"]
+    },
+    "Video": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Video"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "source": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        }
+      },
+      "required": ["component", "source"]
+    },
+    "Timeline": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Timeline"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "value": {
+          "$ref": "common_types.json#/$defs/DynamicNumber"
+        },
+        "end": {
+          "$ref": "common_types.json#/$defs/DynamicNumber"
+        },
+        "duration": {
+          "$ref": "common_types.json#/$defs/DynamicNumber"
+        },
+        "mediaId": {
+          "$ref": "common_types.json#/$defs/ComponentId"
+        }
+      },
+      "required": ["component", "value", "duration"]
+    },
+    "Transcript": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Transcript"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "lines": {
+          "oneOf": [
+            {
+              "type": "array"
+            },
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            }
+          ]
+        },
+        "position": {
+          "$ref": "common_types.json#/$defs/DynamicNumber"
+        },
+        "mediaId": {
+          "$ref": "common_types.json#/$defs/ComponentId"
+        }
+      },
+      "required": ["component", "lines"]
+    },
+    "Annotations": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "Annotations"
+        },
+        "label": {
+          "$ref": "common_types.json#/$defs/DynamicString"
+        },
+        "items": {
+          "oneOf": [
+            {
+              "type": "array"
+            },
+            {
+              "$ref": "common_types.json#/$defs/DataBinding"
+            }
+          ]
+        },
+        "position": {
+          "$ref": "common_types.json#/$defs/DynamicNumber"
+        },
+        "duration": {
+          "$ref": "common_types.json#/$defs/DynamicNumber"
+        }
+      },
+      "required": ["component", "items", "position", "duration"]
+    },
+    "ActionResult": {
+      "type": "object",
+      "properties": {
+        "component": {
+          "const": "ActionResult"
+        },
+        "actionName": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+        }
+      },
+      "required": ["component", "actionName"]
+    }
+  },
+  "functions": {
+    "probability": {
+      "type": "object",
+      "returnType": "number",
+      "allowedCallers": "rendererOrAgent",
+      "properties": {
+        "@call": {
+          "const": "probability"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "attempts": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 10000
+                },
+                {
+                  "$ref": "common_types.json#/$defs/DataBinding"
+                }
+              ]
+            },
+            "rate": {
+              "oneOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                {
+                  "$ref": "common_types.json#/$defs/DataBinding"
+                }
+              ]
+            }
+          },
+          "required": ["attempts", "rate"],
+          "unevaluatedProperties": false
+        }
+      },
+      "required": ["@call", "args"]
+    },
+    "percent": {
+      "type": "object",
+      "returnType": "string",
+      "allowedCallers": "rendererOrAgent",
+      "properties": {
+        "@call": {
+          "const": "percent"
+        },
+        "args": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "common_types.json#/$defs/DataBinding"
+                }
+              ]
+            }
+          },
+          "required": ["value"],
+          "unevaluatedProperties": false
+        }
+      },
+      "required": ["@call", "args"]
+    }
+  }
+}

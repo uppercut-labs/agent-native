@@ -1,4 +1,20 @@
-# Verification — November 16, 2026
+# Verification
+
+## Integrated into the package source — November 16, 2026
+
+Integrated on branch `agent-native-ui` from `feat/site-publication-v1-1` at `a605fde` (package 1.1.0), on macOS with Node.js 26.10.0, the repository's TypeScript 7.0.2 and Biome 2.5.15.
+
+| Check | Observed result | Boundary |
+|---|---|---|
+| Repository build, typecheck and Biome lint/format | Passed after rewriting 291 index-signature property reads to bracket form and applying Biome's fixes | No behavior change |
+| `check:ui` | 55 tests passed: 48 candidate tests and 7 A2UI conformance tests; portable import graph clean | |
+| Official A2UI v1.0 schemas | Catalog validates as a catalog definition; every built-in pattern message plus update and delete messages validate against `agent_to_renderer.json` | Schemas from a2ui-project/a2ui `57f961f`, vendored with hashes in `test/fixtures/a2ui-v1_0` |
+| Negative conformance | Unknown component, unknown property, missing required property, out-of-catalog enum, reserved `Surface`, unregistered function, wrong version and two operations per message are rejected by both the official schema and `UiStore` | The unregistered-function case was accepted by `UiStore` before this integration and is now rejected at validation |
+| Full `npm run check` | See the branch's latest commit message for the recorded run | Includes E09 MCP Apps regression |
+
+Still pending: React 18/19 type and runtime validation, an official ext-apps App/AppBridge exchange driving the UI, real ChatGPT web and Claude web runs, physical-device checks and publication.
+
+## Candidate workspace — November 16, 2026
 
 ## Observed results
 

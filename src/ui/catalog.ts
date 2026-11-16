@@ -391,10 +391,28 @@ export class CatalogRegistry {
         return false;
     }
     try {
-      return definition.validate(component as Component);
+      return (
+        definition.validate(component as Component) && this.callsRegistered(component, catalogId, 0)
+      );
     } catch {
       return false;
     }
+  }
+  /** Every `@call` in a component, including nested arguments and action contexts, must name a
+   * function registered in its catalog, so an unknown call fails at validation, not at render. */
+  private callsRegistered(value: Json | undefined, catalogId: string, depth: number): boolean {
+    if (depth > 32) return false;
+    if (Array.isArray(value))
+      return value.every((item: Json): boolean => this.callsRegistered(item, catalogId, depth + 1));
+    if (!isObject(value)) return true;
+    if (Object.hasOwn(value, '@call')) {
+      const target: string =
+        typeof value['catalogId'] === 'string' ? value['catalogId'] : catalogId;
+      if (this.function(target, String(value['@call'])) === undefined) return false;
+    }
+    return Object.values(value).every((item: Json): boolean =>
+      this.callsRegistered(item, catalogId, depth + 1),
+    );
   }
   public children(component: Component, defaultId: string): readonly string[] {
     const catalogId: string =

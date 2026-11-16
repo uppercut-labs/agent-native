@@ -31,6 +31,13 @@ sources. `npm run docs:check` fails if this page drifts. Agent Native
 | `@uppercut-labs/agent-native/harness/mcp-bridge` | `./dist/harness-mcp-bridge.d.ts` | `./dist/harness-mcp-bridge.js` |
 | `@uppercut-labs/agent-native/harness/codex` | `./dist/harness-codex.d.ts` | `./dist/harness-codex.js` |
 | `@uppercut-labs/agent-native/publication` | `./dist/publication.d.ts` | `./dist/publication.js` |
+| `@uppercut-labs/agent-native/ui` | `./dist/ui.d.ts` | `./dist/ui.js` |
+| `@uppercut-labs/agent-native/ui/react` | `./dist/ui-react.d.ts` | `./dist/ui-react.js` |
+| `@uppercut-labs/agent-native/ui/dom` | `./dist/ui-dom.d.ts` | `./dist/ui-dom.js` |
+| `@uppercut-labs/agent-native/ui/patterns` | `./dist/ui-patterns.d.ts` | `./dist/ui-patterns.js` |
+| `@uppercut-labs/agent-native/ui/presentation` | `./dist/ui-presentation.d.ts` | `./dist/ui-presentation.js` |
+| `@uppercut-labs/agent-native/ui/mcp` | `./dist/ui-mcp.d.ts` | `./dist/ui-mcp.js` |
+| `@uppercut-labs/agent-native/ui/styles` | `./dist/ui-styles.d.ts` | `./dist/ui-styles.js` |
 
 The package's optional peers are listed in [installation](installation.md). Import only
 the subpath needed by the application. The experimental [site publication CLI](site-publication.md) operates on approved public content.
