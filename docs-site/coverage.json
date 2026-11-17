@@ -193,6 +193,22 @@
         "expected": "Invalid units fail before the binding runs."
       },
       "requirements": ["R01", "R02", "R03", "R10"]
+    },
+    {
+      "id": "E13",
+      "feature": "Interactive UI patterns as MCP Apps",
+      "project": "examples/e13-ui-patterns/project",
+      "script": "example:e13",
+      "source": "examples/e13-ui-patterns/project/src/app-controller.mjs",
+      "readme": "examples/e13-ui-patterns/project/README.md",
+      "guide": "docs/mcp-apps.md",
+      "evidence": "docs/evidence/ANUI-004-ui-mcp-apps.md",
+      "negative": {
+        "test": "examples/e13-ui-patterns/project/test/e13.test.mjs",
+        "probe": "a signed-in viewer without the write grant is denied and keeps the edit",
+        "expected": "Hidden save tools are refused and local edits remain."
+      },
+      "requirements": ["R08", "R22"]
     }
   ],
   "agentResources": {

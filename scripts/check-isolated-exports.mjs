@@ -30,6 +30,7 @@ const commands = {
   ],
   'e11-diagnostics-fault-lab': [['test'], ['start'], ['run', 'selection']],
   'e12-shared-unit-converter': [['test'], ['start']],
+  'e13-ui-patterns': [['test'], ['start']],
 };
 const skipped = new Set(['node_modules', 'dist', '.astro', '.next', '.worker-bundle', '.wrangler']);
 const requested = process.argv.slice(2);

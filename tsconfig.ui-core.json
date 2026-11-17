@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "lib": ["ES2022"],
+    "types": [],
+    "noEmit": true
+  },
+  "include": [
+    "src/ui.ts",
+    "src/ui/**/*.ts",
+    "src/ui-patterns.ts",
+    "src/ui-mcp.ts",
+    "src/ui-presentation.ts"
+  ]
+}

@@ -4,7 +4,7 @@ The experimental `/publication` import and `agent-native-site` executable, publi
 
 [Framework integrations and showcases](readability-frameworks.md)
 
-Install the published package with `npm install @uppercut-labs/agent-native@1.1.0`. The repository examples below are source-checkout workflows for [the 1.1.0 branch](https://github.com/uppercut-labs/agent-native/pull/10); the package includes the publication API and executable but not the runnable example projects.
+Install the published package with `npm install @uppercut-labs/agent-native@1.2.0`. The repository examples below are source-checkout workflows for [the 1.1.0 branch](https://github.com/uppercut-labs/agent-native/pull/10); the package includes the publication API and executable but not the runnable example projects.
 
 ## Try a source-backed example
 

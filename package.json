@@ -1,6 +1,6 @@
 {
   "name": "@uppercut-labs/agent-native",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "license": "MIT",
   "description": "Typed, permission-checked capability contracts with stable HTTP, CLI and MCP adapters and experimental browser/framework integrations.",
   "repository": {
@@ -116,6 +116,34 @@
     "./publication": {
       "types": "./dist/publication.d.ts",
       "import": "./dist/publication.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "import": "./dist/ui.js"
+    },
+    "./ui/react": {
+      "types": "./dist/ui-react.d.ts",
+      "import": "./dist/ui-react.js"
+    },
+    "./ui/dom": {
+      "types": "./dist/ui-dom.d.ts",
+      "import": "./dist/ui-dom.js"
+    },
+    "./ui/patterns": {
+      "types": "./dist/ui-patterns.d.ts",
+      "import": "./dist/ui-patterns.js"
+    },
+    "./ui/presentation": {
+      "types": "./dist/ui-presentation.d.ts",
+      "import": "./dist/ui-presentation.js"
+    },
+    "./ui/mcp": {
+      "types": "./dist/ui-mcp.d.ts",
+      "import": "./dist/ui-mcp.js"
+    },
+    "./ui/styles": {
+      "types": "./dist/ui-styles.d.ts",
+      "import": "./dist/ui-styles.js"
     }
   },
   "scripts": {
@@ -138,7 +166,7 @@
     "example:e05": "node scripts/check-example.mjs e05-node-cli",
     "example:e06": "node scripts/check-example.mjs e06-browser-only-theme-controls",
     "example:e03": "node scripts/check-example.mjs e03-next-reading-list",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run check:api && npm run example:e01 && npm run example:e02 && npm run example:e03 && npm run example:e08 && npm run example:e10 && npm run example:e12 && npm run example:e05 && npm run example:e06 && npm run example:e04 && npm run example:e07 && npm run example:e09 && npm run example:e11 && npm run docs:check && npm run check:portability && npm run check:adoption",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build:browser-proof && npm test && npm run check:api && npm run example:e01 && npm run example:e02 && npm run example:e03 && npm run example:e08 && npm run example:e10 && npm run example:e12 && npm run example:e05 && npm run example:e06 && npm run example:e04 && npm run example:e07 && npm run example:e09 && npm run example:e11 && npm run example:e13 && npm run docs:check && npm run check:portability && npm run check:adoption && npm run check:ui",
     "example:e04": "node scripts/check-example.mjs e04-worker-sidecar",
     "example:e07": "node scripts/check-example.mjs e07-playlist-permissions",
     "example:e09": "node scripts/check-example.mjs e09-album-explorer",
@@ -149,7 +177,9 @@
     "check:api": "node scripts/check-api.mjs",
     "proof:codex": "npm run build && node scripts/check-codex-harness.mjs",
     "check:isolated-examples": "node scripts/check-isolated-exports.mjs",
-    "check:adoption": "node scripts/check-adoption-consumer.mjs"
+    "check:adoption": "node scripts/check-adoption-consumer.mjs",
+    "check:ui": "npm run build && tsc -p tsconfig.ui-core.json && tsc -p tsconfig.ui-react.json && node scripts/generate-ui-catalog.mjs --check && node --test test/ui-candidate-*.test.mjs test/ui-a2ui-schema.test.mjs test/ui-react19.test.mjs && node scripts/check-ui-isolation.mjs",
+    "example:e13": "node scripts/check-example.mjs e13-ui-patterns"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
@@ -157,10 +187,14 @@
     "@modelcontextprotocol/ext-apps": "2.0.3",
     "@modelcontextprotocol/server": "2.3.0",
     "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "ajv": "8.20.0",
     "astro": "7.3.5",
     "js-yaml": "4.3.2",
     "marked": "18.0.14",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "typescript": "7.0.2",
     "zod": "4.6.5"
   },

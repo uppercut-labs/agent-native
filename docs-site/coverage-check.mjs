@@ -3,7 +3,7 @@ import path from 'node:path';
 import { agentResources } from './agent-resources.mjs';
 
 const expectedIds = Array.from(
-  { length: 12 },
+  { length: 13 },
   (_, index) => `E${String(index + 1).padStart(2, '0')}`,
 );
 
@@ -154,7 +154,7 @@ export async function validateCoverage(repositoryRoot, suppliedManifest) {
     }
     if (
       typeof evidence !== 'string' ||
-      !/^docs\/evidence\/UAN-[0-9]{3}-[a-z0-9-]+\.md$/.test(evidence)
+      !/^docs\/evidence\/(?:UAN|ANUI)-[0-9]{3}-[a-z0-9-]+\.md$/.test(evidence)
     ) {
       failures.push(`${id}: invalid public evidence link`);
     } else await checkedFile(evidence, `${id} evidence`);

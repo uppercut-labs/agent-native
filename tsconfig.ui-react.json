@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": [],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/ui.ts", "src/ui/**/*.ts", "src/ui-*.ts", "test/ui-react19-consumer.ts"]
+}
