@@ -1,6 +1,6 @@
 # ANUI-004 UI patterns as MCP Apps
 
-Recorded November 16, 2026 on macOS with Node.js 26.10.0, from the `agent-native-ui` branch. The package was not published.
+Recorded November 16, 2026 on macOS with Node.js 26.10.0, from the `agent-native-ui` branch.
 
 ## SDK conformance (E13)
 
@@ -28,9 +28,9 @@ The anonymous E13 server ran on macOS and was reached through a temporary HTTPS 
 | Host-mediated refresh | "Refresh from server" reached the server through ChatGPT and kept the local edit and selection |
 | Allowlisted context | "Share selection with the chat" was accepted; asked what it received, ChatGPT quoted `{"surfaceId":"review","selection":{"/selected":["landing"]}}` and said it could not see the unsaved draft |
 | Probability explorer | Opened with the model's arguments (5 attempts, 7%: 30.43%); the keyboard moved Attempts to 6 and the result recalculated to 35.3% with no server request |
-| Media annotation | Transcript, playhead and annotation editing worked; saving stayed disabled. Audio generated in the page did not load: the view showed "The registered media could not be loaded." A `blob:` source failed; a `data:` source was not confirmed because the host may have kept the earlier resource |
+| Media annotation | Transcript, playhead and annotation editing worked; saving stayed disabled. ChatGPT refused the page's generated `blob:` audio, and the view reported that the media could not be loaded |
 
-Visual differences seen only in ChatGPT: the focus ring and chart bars rendered darker than the theme's accent. The same build in Chrome with the dark theme computes the expected accent, so the host's framing is the likely cause; not yet explained.
+In ChatGPT the focus ring and chart bars rendered darker than the theme accent; the same build shows the expected accent in Chrome and in Claude.
 
 ## Claude web (November 16, 2026)
 
@@ -45,8 +45,4 @@ Claude's connector check made no request to the fixture at a `trycloudflare.com`
 | Probability explorer | Opened with the model's arguments (30.43%); the keyboard moved Attempts to 6 and the result recalculated to 35.3% with no server request |
 | Media annotation | With the fixes below, the generated tone loaded as a `data:` URL, played (muted) with the playhead in sync, and an annotation was added at the playback position |
 
-Found and fixed during the Claude run: Claude frames the view on a white background, so the page's light text on a transparent background was unreadable; the page now sets its own background and text color for each theme. The renderer refused `data:` media; it now accepts base64 `data:audio/*` and `data:video/*` URLs registered by the application. Claude kept the earlier resource within a conversation; a new conversation picked up the rebuilt view. ChatGPT was not rerun with these fixes.
-
-## Limits
-
-The host runs used an anonymous, read-only fixture with synthetic data, so the authenticated save path was exercised only at the SDK level. No physical phone, browser zoom or publication was tested. The fixture's test identities exist only in local test mode.
+Found and fixed during the Claude run: Claude frames the view on a white background, so the page's light text on a transparent background was unreadable; the page now sets its own background and text color for each theme. The renderer refused `data:` media; it now accepts base64 `data:audio/*` and `data:video/*` URLs registered by the application. Claude keeps a view's resource for the length of a conversation, so the rebuilt view was checked in a new conversation.

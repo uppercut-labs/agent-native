@@ -54,7 +54,7 @@ const handler = createMcpAppsHandler(registry, {
 
 `registry`, `existingMcpOptions` and `bundledViewHtml` belong to the host application. The existing adapter still filters discovery, validates resources and calls the shared authorization/executor. Presentation registration grants no permissions. The UI's action port must map fixed capability IDs to fixed tools and decode authoritative outputs. Server input validation, ownership checks, grants and idempotency remain mandatory.
 
-A client host using the **official** `App` bridge is not yet in this repository (ANUI-004). It has not been executed against the actual SDK or a commercial host. Normal controls remain local; sharing explicitly allowlisted context does not request a model turn.
+[E13](https://github.com/uppercut-labs/agent-native/blob/main/examples/e13-ui-patterns/project/README.md) is a complete view built on the **official** `App` bridge. `npm run example:e13` runs it against the official MCP SDK, and it rendered in ChatGPT web and Claude web ([evidence](../evidence/ANUI-004-ui-mcp-apps.md)). Normal controls remain local; sharing explicitly allowlisted context does not request a model turn.
 
 ## Resource/CSP and media
 
