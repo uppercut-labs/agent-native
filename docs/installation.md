@@ -2,13 +2,13 @@
 
 To wrap a working site’s existing operation, follow [adopt an existing site](adopt-existing-site.md).
 
-Agent Native `1.1.0` requires Node.js 22 or newer. Install the package and only the peers your application imports:
+Agent Native `1.2.0` requires Node.js 22 or newer. Install the package and only the peers your application imports:
 
 ```sh
-npm install @uppercut-labs/agent-native@1.1.0
+npm install @uppercut-labs/agent-native@1.2.0
 ```
 
-The published 1.1.0 package adds an [experimental site-publication executable](site-publication.md) and `/publication` API. The [source PR](https://github.com/uppercut-labs/agent-native/pull/10) is not yet merged into `main`; a checkout of `main` still builds 1.0.1. There is no verified `v1.1.0` GitHub tag to recommend as an alternative to npm.
+The published 1.2.0 package adds experimental [UI subpaths](mcp-apps.md#interactive-ui-patterns-e13); 1.1.0 added the [experimental site-publication executable](site-publication.md) and `/publication` API. The source builds on [PR #10](https://github.com/uppercut-labs/agent-native/pull/10), which is not yet merged into `main`; a checkout of `main` still builds 1.0.1. Install from npm rather than a GitHub tag.
 
 If you intentionally need the **older 1.0.1 release**, its public GitHub archive can be installed separately. In a disposable directory, download and verify both release files before installing that archive:
 
@@ -25,7 +25,7 @@ On Linux, `sha256sum -c` can replace `shasum -a 256 -c`. Stop if verification
 fails. The checksum detects an altered download; it is not an npm provenance
 attestation. Those **1.0.1** files are hosted with that older tagged public source. They do not contain the 1.1.0 publication feature.
 
-There is no general `agent-native` or `agent-native init` executable. Applications call the capability APIs or expose their own CLI runner. Version 1.1.0 also ships the distinct experimental `agent-native-site` command for explicitly reviewed public site content; see [site publication](site-publication.md). The repository examples independently install local tarballs so their checks stay tied to a source commit.
+There is no general `agent-native` or `agent-native init` executable. Applications call the capability APIs or expose their own CLI runner. Since 1.1.0 the package also ships the distinct experimental `agent-native-site` command for explicitly reviewed public site content; see [site publication](site-publication.md). The repository examples independently install local tarballs so their checks stay tied to a source commit.
 
 ## First local capability
 

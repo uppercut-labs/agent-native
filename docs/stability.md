@@ -29,13 +29,13 @@ From 1.0.0, Agent Native follows [semantic versioning](https://semver.org/) for 
 | `@uppercut-labs/agent-native/harness` | Experimental | Provider-neutral harness contracts |
 | `@uppercut-labs/agent-native/harness/mcp-bridge` | Experimental | Loopback MCP bridge |
 | `@uppercut-labs/agent-native/harness/codex` | Experimental | Local Codex app-server adapter |
-| `@uppercut-labs/agent-native/ui` | Experimental (unreleased) | Bounded A2UI 1.0 custom-catalog state engine, catalog registry and JSONL decoder; not full A2UI conformance |
-| `@uppercut-labs/agent-native/ui/patterns` | Experimental (unreleased) | Review Queue, Parameter Explorer and Media Annotation surface builders |
-| `@uppercut-labs/agent-native/ui/presentation` | Experimental (unreleased) | Capability-to-view registration for MCP Apps resources |
-| `@uppercut-labs/agent-native/ui/mcp` | Experimental (unreleased) | Host-mediated action port and tool-result projection; no commercial host rendering is verified |
-| `@uppercut-labs/agent-native/ui/react` | Experimental (unreleased) | Renderer for an application-supplied React element factory |
-| `@uppercut-labs/agent-native/ui/dom` | Experimental (unreleased) | Dependency-free DOM preview renderer |
-| `@uppercut-labs/agent-native/ui/styles` | Experimental (unreleased) | Light and dark theme tokens and stylesheet |
+| `@uppercut-labs/agent-native/ui` | Experimental (since 1.2.0) | Bounded A2UI 1.0 custom-catalog state engine, catalog registry and JSONL decoder; not full A2UI conformance |
+| `@uppercut-labs/agent-native/ui/patterns` | Experimental (since 1.2.0) | Review Queue, Parameter Explorer and Media Annotation surface builders |
+| `@uppercut-labs/agent-native/ui/presentation` | Experimental (since 1.2.0) | Capability-to-view registration for MCP Apps resources |
+| `@uppercut-labs/agent-native/ui/mcp` | Experimental (since 1.2.0) | Host-mediated action port and tool-result projection |
+| `@uppercut-labs/agent-native/ui/react` | Experimental (since 1.2.0) | Renderer for an application-supplied React element factory |
+| `@uppercut-labs/agent-native/ui/dom` | Experimental (since 1.2.0) | Dependency-free DOM preview renderer |
+| `@uppercut-labs/agent-native/ui/styles` | Experimental (since 1.2.0) | Light and dark theme tokens and stylesheet |
 
 Paths not listed above, such as `dist/` files, are internal and may change at any time. The package's `exports` map blocks them.
 

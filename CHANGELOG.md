@@ -2,6 +2,13 @@
 
 All notable changes will be recorded here.
 
+## 1.2.0 — npm release (November 2026)
+
+- Add experimental `@uppercut-labs/agent-native/ui` subpaths: a bounded A2UI 1.0 custom-catalog state engine with a JSONL decoder (`/ui`), review queue, parameter explorer and media annotation builders (`/ui/patterns`), capability-to-view registration for MCP Apps (`/ui/presentation`), a host-mediated action port (`/ui/mcp`), a React renderer for an application-supplied element factory (`/ui/react`), a DOM preview renderer (`/ui/dom`) and light and dark theme styles (`/ui/styles`).
+- Check the catalog against the official A2UI v1.0 schemas, and type-check and render the React renderer against React 19.
+- Add E13, which serves the three patterns as MCP App views through the existing adapter with protected, idempotent saves. Its views rendered and ran in ChatGPT web and Claude web ([evidence](docs/evidence/ANUI-004-ui-mcp-apps.md)).
+- The stable entry points are unchanged.
+
 ## 1.1.0 — npm release (November 2026)
 
 - Discover native route candidates for private review and publish only approved public content through the experimental `/publication` API and `agent-native-site` executable.
@@ -12,7 +19,7 @@ All notable changes will be recorded here.
 - Add an E11 exact-identity/binding-selection recipe and private MCP operator diagnostics with redaction checks.
 - Run both recipes in the existing standalone exports and isolated-install checks; document their application responsibilities and fixture limits.
 - The existing eleven stable capability entry points retain their 1.x contract.
-- The npm package is published; the matching source changes remain in [PR #10](https://github.com/uppercut-labs/agent-native/pull/10) pending merge into `main`. A tagged GitHub release or live-host qualification is not implied.
+- The npm package is published; the matching source changes remain in [PR #10](https://github.com/uppercut-labs/agent-native/pull/10) pending merge into `main`.
 
 ## 1.0.1 - 2026-10-14
 
