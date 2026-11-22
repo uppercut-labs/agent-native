@@ -19,7 +19,7 @@ All notable changes will be recorded here.
 - Add an E11 exact-identity/binding-selection recipe and private MCP operator diagnostics with redaction checks.
 - Run both recipes in the existing standalone exports and isolated-install checks; document their application responsibilities and fixture limits.
 - The existing eleven stable capability entry points retain their 1.x contract.
-- The npm package is published; the matching source changes remain in [PR #10](https://github.com/uppercut-labs/agent-native/pull/10) pending merge into `main`.
+- The npm package is published; the matching source is [PR #10](https://github.com/uppercut-labs/agent-native/pull/10), merged into `main` on 2026-11-21.
 
 ## 1.0.1 - 2026-10-14
 
