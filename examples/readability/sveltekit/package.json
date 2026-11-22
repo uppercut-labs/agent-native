@@ -1,0 +1,18 @@
+{
+  "name": "readability-sveltekit",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:publication": "node prepare.mjs",
+    "build": "npm run prepare:publication && vite build",
+    "start": "node --import ../shared/negotiate.mjs build/index.js",
+    "test": "node test.mjs"
+  },
+  "dependencies": {
+    "@sveltejs/adapter-node": "6.0.1",
+    "@sveltejs/kit": "3.1.1",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "svelte": "5.57.3",
+    "vite": "8.3.5"
+  }
+}

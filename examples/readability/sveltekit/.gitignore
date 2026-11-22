@@ -1,0 +1,6 @@
+node_modules/
+generated/
+static/
+build/
+.svelte-kit/
+.react-router/

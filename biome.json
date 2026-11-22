@@ -18,7 +18,20 @@
       "!examples/e04-worker-sidecar/.exported",
       "!examples/e07-playlist-permissions/.exported",
       "!examples/e11-diagnostics-fault-lab/.exported",
-      "!examples/e09-album-explorer/.exported"
+      "!examples/e09-album-explorer/.exported",
+      "!examples/readability/**/.next",
+      "!examples/readability/**/.nuxt",
+      "!examples/readability/**/.output",
+      "!examples/readability/**/.astro",
+      "!examples/readability/**/.angular",
+      "!examples/readability/**/.svelte-kit",
+      "!examples/readability/**/.react-router",
+      "!examples/readability/**/dist",
+      "!examples/readability/**/build",
+      "!examples/readability/**/generated",
+      "!examples/readability/**/public/agent-native-witness.json",
+      "!examples/readability/**/static/agent-native-witness.json",
+      "!examples/readability/**/.publication-state"
     ]
   },
   "formatter": {

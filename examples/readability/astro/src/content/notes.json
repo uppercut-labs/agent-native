@@ -1,0 +1,18 @@
+[
+  {
+    "id": "breakwater",
+    "title": "Breakwater field note",
+    "markdown": "At low water, the east breakwater exposes a basalt shelf with three tide pools.",
+    "revision": "1",
+    "facts": [
+      {
+        "label": "Feature exposed at low water",
+        "value": "basalt shelf"
+      },
+      {
+        "label": "Tide pools on the shelf",
+        "value": "three"
+      }
+    ]
+  }
+]

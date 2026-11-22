@@ -1,0 +1,36 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Departures API",
+    "version": "1.0.0",
+    "description": "Synthetic read-only description served by the fixture but not declared for publication."
+  },
+  "paths": {
+    "/api/departures": {
+      "get": {
+        "operationId": "listDepartures",
+        "summary": "List scheduled departures",
+        "responses": {
+          "200": {
+            "description": "Scheduled departures.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "scheduledAt"],
+                    "properties": {
+                      "id": { "type": "string" },
+                      "scheduledAt": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

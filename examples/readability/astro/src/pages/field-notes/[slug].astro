@@ -1,0 +1,14 @@
+---
+import { getCollection } from 'astro:content';
+import model from '../../../generated/publication.json';
+import Page from '../../layouts/Page.astro';
+export async function getStaticPaths() {
+  const notes = await getCollection('notes');
+  return notes.flatMap((note) => {
+    const page = model.pages.find((item) => item.route === '/field-notes/' + note.id);
+    return page ? [{ params: { slug: note.id }, props: { page, note } }] : [];
+  });
+}
+const { page, note } = Astro.props;
+---
+<Page page={page} title={note.data.title} markdown={note.data.markdown}><a href="/advisories/tide-window">View the tide advisory</a></Page>
