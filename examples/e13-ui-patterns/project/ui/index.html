@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agent Native UI</title>
+    <style>
+      body { margin: 0; padding: 12px; font-family: system-ui, sans-serif; }
+      .e13-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 0; }
+      .e13-bar button { font: inherit; min-height: 40px; padding: 8px 12px; border-radius: 8px; border: 1px solid #c9cfdd; background: transparent; color: inherit; cursor: pointer; }
+      .e13-note { margin: 0 0 12px; font-size: 14px; }
+      .e13-status { margin: 0 0 12px; font-size: 14px; }
+      /* Hosts frame the view on their own background (Claude: white, ChatGPT: dark), so the page
+         sets its own colors for each theme instead of relying on the frame. */
+      body, [data-theme=light] body { color: #192235; background: #fff; }
+      [data-theme=dark] body { color: #edf0f9; background: #141823; }
+      @media (prefers-color-scheme: dark) { :root:not([data-theme=light]) body { color: #edf0f9; background: #141823; } }
+    </style>
+  </head>
+  <body data-pattern="__PATTERN__">
+    <main id="root"><p class="e13-status" role="status">Loading the view…</p></main>
+    <script type="module" src="./view.js"></script>
+  </body>
+</html>

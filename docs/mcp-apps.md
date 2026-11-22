@@ -34,6 +34,21 @@ This fixture is SDK-level evidence, not browser iframe or commercial-host accept
 
 Official API references: [quickstart](https://github.com/modelcontextprotocol/ext-apps/blob/main/docs/quickstart.md) and [overview](https://github.com/modelcontextprotocol/ext-apps/blob/main/docs/overview.md).
 
+## Interactive UI patterns (E13)
+
+[E13](https://github.com/uppercut-labs/agent-native/blob/main/examples/e13-ui-patterns/project/README.md) serves the review queue, probability explorer and media annotation patterns from `@uppercut-labs/agent-native/ui` as MCP App views. `PresentationRegistry` maps each open capability to a `ui://` resource and passes the resources to `createMcpAppsHandler`, so discovery, schemas and authorization are unchanged. The React 19 view keeps local edits in a `UiStore` and refreshes through the host:
+
+<!-- source:examples/e13-ui-patterns/project/src/app-controller.mjs#host-refresh -->
+~~~js
+const result = await app.callServerTool({ name: toolName(spec.open), arguments: {} });
+return receive(result);
+~~~
+
+[View tested source](https://github.com/uppercut-labs/agent-native/blob/main/examples/e13-ui-patterns/project/src/app-controller.mjs#L221)
+<!-- /source -->
+
+Saves are protected capabilities. Anonymous hosts never see them, and the view disables saving while keeping edits. A signed-in caller with the write grant saves through `App.callServerTool`; each save carries a `requestId`, a replay returns the stored result, and a reused `requestId` with different input is refused. Run `npm run example:e13` for the SDK conformance suite, and see the [UI integration guide](ui/INTEGRATION.md).
+
 ## Verify host-mediated follow-up
 
 With Node.js 22 or newer, run `npm ci` and `npm run example:e09` from the package root.

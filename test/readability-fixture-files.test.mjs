@@ -6,6 +6,7 @@ import {
   mkdtemp,
   readdir,
   readFile,
+  realpath,
   rm,
   symlink,
   writeFile,
@@ -24,7 +25,9 @@ const page = {
   markdown: 'The public rate is 19.',
 };
 async function fixture(t) {
-  const dir = await mkdtemp(path.join(tmpdir(), 'publication-files-'));
+  // Resolve the temporary root: macOS tmpdir() is under the /var -> /private/var symlink,
+  // which the fixture writer correctly refuses as an unsafe root.
+  const dir = await realpath(await mkdtemp(path.join(tmpdir(), 'publication-files-')));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const app = path.join(dir, 'app');
   await mkdir(app);
